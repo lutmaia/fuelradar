@@ -1,0 +1,39 @@
+# Dados locais: somente documentação e marcadores entram no Git.
+/data/*
+!/data/README.md
+!/data/raw/
+!/data/processed/
+!/data/quarantine/
+/data/raw/*
+!/data/raw/.gitkeep
+/data/processed/*
+!/data/processed/.gitkeep
+/data/quarantine/*
+!/data/quarantine/.gitkeep
+
+# Configuração local e segredos
+.env
+.env.*
+!.env.example
+
+# Python e ferramentas
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+*.egg-info/
+build/
+dist/
+*.log
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+Desktop.ini

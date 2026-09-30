@@ -1,0 +1,9 @@
+[project]
+name = "radar-combustiveis-sp"
+version = "0.0.1"
+description = "Radar de Combustíveis SP — fundação do projeto"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["openpyxl==3.1.5"]
+
+# Backend de build e ferramentas serão definidos quando necessários.
