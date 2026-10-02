@@ -12,4 +12,4 @@ Na descoberta, registrar origem/URL, data do recebimento, nome e checksum (uma i
 
 No Marco 1, nove XLSX locais foram analisados em modo de leitura. Resultados em [data-discovery.md](../docs/data-discovery.md) e contrato proposto em [data-contract.md](../docs/data-contract.md). Os relatórios derivados ficam em `reports/data-profile/`, fora desta pasta, e não contêm cópias completas das linhas brutas.
 
-Os históricos disponíveis são agregados mensais. Para a futura carga histórica por posto, ainda será necessária uma amostra real CSV/ZIP com observações por revenda. Coloque-a aqui, preservada, e valide seu esquema antes de implementar a ingestão desse formato. Não substitua os arquivos já recebidos.
+Em 2026-10-01, foi recebido e validado `historicos/Preços semestrais - AUTOMOTIVOS_2026.01.csv`, com observações individuais por revenda. Os XLSX mensais continuam sendo agregados: não substituem microdados nem serão inseridos na tabela de observações individuais. Os novos relatórios ficam em `reports/data-profile/historical-validation/`. Não substitua os arquivos já recebidos.

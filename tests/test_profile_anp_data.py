@@ -16,11 +16,101 @@ from scripts.profile_anp_data import (
     ProfileError, identify_header, main, normalize_cnpj, normalize_product,
     normalize_text, normalize_uf, normalize_unit, parse_date, parse_money,
     profile_file, profile_rows, sha256,
+    normalize_identifier, compare_sources, Scope,
 )
 
 
 HEADER = ["CNPJ", "ESTADO", "MUNICÍPIO", "PRODUTO", "UNIDADE DE MEDIDA", "PREÇO DE REVENDA", "DATA DA COLETA"]
 ROW = [12345678000100, "SAO PAULO", "Jundiaí", "GASOLINA COMUM", "R$ / litro", "5,99", "21/09/2026"]
+HISTORICAL_HEADER = ["Regiao - Sigla", "Estado - Sigla", "Municipio", "Revenda", "CNPJ da Revenda",
+                     "Nome da Rua", "Numero Rua", "Complemento", "Bairro", "Cep", "Produto",
+                     "Data da Coleta", "Valor de Venda", "Valor de Compra", "Unidade de Medida", "Bandeira"]
+HISTORICAL_ROW = ["SE", "SP", "Jundiaí", "REVENDA SINTETICA", " 00.123.456/0001-00",
+                  "RUA TESTE", "12", "", "CENTRO", "01234-567", "GASOLINA", "05/01/2026", "5,99", "", "R$ / litro", "BRANCA"]
+
+
+class HistoricalTests(unittest.TestCase):
+    def test_historical_header_and_original_normalized_pairs(self):
+        result = profile_rows([HISTORICAL_HEADER, HISTORICAL_ROW])
+        self.assertEqual(result["kind"], "retail_observation")
+        self.assertEqual(result["column_count"], 16)
+        self.assertEqual(result["canonical_mapping"]["cnpj"], "CNPJ da Revenda")
+        self.assertEqual(result["sp"]["unique_cnpj_count"], 1)
+        self.assertEqual(result["normalization_pairs"]["product"], [{"original": "GASOLINA", "normalized": "GASOLINA_COMUM", "rows": 1}])
+        self.assertEqual(result["normalization_pairs"]["municipality"][0]["original"], "Jundiaí")
+        self.assertEqual(result["normalization_pairs"]["municipality"][0]["normalized"], "JUNDIAI")
+        self.assertEqual(HISTORICAL_ROW[4], " 00.123.456/0001-00")
+
+    def test_identifiers_exact_or_recoverable(self):
+        self.assertEqual(normalize_identifier(" 00.123.456/0001-00", 14), ("00123456000100", "exact_masked_text"))
+        self.assertEqual(normalize_identifier("01234-567", 8), ("01234567", "exact_masked_text"))
+        self.assertEqual(normalize_identifier("01234567", 8), ("01234567", "exact_text"))
+        self.assertEqual(normalize_identifier(1234567, 8), ("01234567", "padded_native_integer"))
+        self.assertEqual(normalize_identifier(123456000100, 14), ("00123456000100", "padded_native_integer"))
+
+    def test_ambiguous_identifiers_never_padded(self):
+        for value in ["1234567", "1.234567E+6", "1234567.0", 1234567.0]:
+            with self.subTest(value=value):
+                normalized, status = normalize_identifier(value, 8)
+                self.assertIsNone(normalized)
+                self.assertTrue(status.startswith("ambiguous"))
+        for value in [-1234567, "-1234567", "123456789", True]:
+            self.assertEqual(normalize_identifier(value, 8)[1], "invalid")
+
+    def test_ambiguous_cnpj_excluded_from_key_but_row_preserved(self):
+        row = HISTORICAL_ROW.copy()
+        row[4], row[9] = "1.23456E+11", "1234567"
+        result = profile_rows([HISTORICAL_HEADER, row])
+        self.assertEqual(result["sp"]["rows"], 1)
+        self.assertEqual(result["sp"]["unique_cnpj_count"], 0)
+        self.assertEqual(result["quality"]["rows_without_complete_candidate_key"], 1)
+        self.assertEqual(result["sp_identifier_status"]["cnpj"]["ambiguous_numeric_text"], 1)
+        self.assertEqual(result["ambiguous_identifier_row_numbers"]["postal_code"], [2])
+
+    def test_unspecified_diesel_not_silently_s500(self):
+        self.assertEqual(normalize_product("DIESEL"), "DIESEL_NAO_ESPECIFICADO")
+        self.assertNotEqual(normalize_product("DIESEL"), normalize_product("DIESEL S500"))
+
+    def test_bom_crcrlf_and_historical_csv_in_zip(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "historical.csv"
+            path.write_bytes((";".join(HISTORICAL_HEADER) + "\r\r\n" + ";".join(HISTORICAL_ROW) + "\r\r\n").encode("utf-8-sig"))
+            original_hash = sha256(path)
+            direct = profile_file(path, None)
+            self.assertEqual(direct["encoding"], "utf-8-sig")
+            self.assertEqual(direct["sheets"][0]["rows"], 1)
+            self.assertEqual(direct["sheets"][0]["blank_rows_after_header"], 2)
+            zip_path = Path(folder) / "historical.zip"
+            with ZipFile(zip_path, "w") as archive:
+                archive.write(path, "nested/historical.csv")
+            zipped_hash = sha256(zip_path)
+            zipped = profile_file(zip_path, None)
+            self.assertEqual(direct["sheets"], zipped["contents"][0]["sheets"])
+            self.assertEqual(original_hash, sha256(path))
+            self.assertEqual(zipped_hash, sha256(zip_path))
+
+    def test_key_conflict_price_and_overlap_across_formats(self):
+        combined = {"sp": Scope(), "jundiai": Scope(), "keys": set(), "duplicates": 0, "sources": []}
+        changed = HISTORICAL_ROW.copy()
+        changed[12] = "6,09"
+        history = profile_rows([HISTORICAL_HEADER, HISTORICAL_ROW, changed], combined)
+        weekly = [123456000100, "SAO PAULO", "JUNDIAI", "GASOLINA COMUM", "R$/l", 5.99, datetime(2026, 1, 5)]
+        profile_rows([HEADER, weekly], combined)
+        for i, source in enumerate(combined["sources"]):
+            source["source"] = str(i)
+        result = compare_sources(combined["sources"])[0]
+        self.assertEqual(history["quality"]["sp_candidate_key_price_conflicts"], 1)
+        self.assertEqual(result["shared_candidate_keys"], 1)
+        self.assertEqual(result["shared_collection_dates"], 1)
+        self.assertEqual(result["shared_keys_conflicting_price_sets"], 1)
+
+    def test_identical_key_price_and_disjoint_dates(self):
+        sources = [{"source": "a", "keys": {("key",): {Decimal("5.99")}}, "dates": {date(2026, 1, 5)}},
+                   {"source": "b", "keys": {("key",): {Decimal("5.99")}}, "dates": {date(2026, 1, 5)}}]
+        self.assertEqual(compare_sources(sources)[0]["shared_keys_same_price_set"], 1)
+        sources[1] = {"source": "b", "keys": {("different",): {Decimal("6.00")}}, "dates": {date(2026, 9, 1)}}
+        self.assertEqual(compare_sources(sources)[0]["shared_candidate_keys"], 0)
+        self.assertEqual(compare_sources(sources)[0]["shared_collection_dates"], 0)
 
 
 class NormalizationTests(unittest.TestCase):

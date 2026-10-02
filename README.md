@@ -2,7 +2,7 @@
 
 Projeto em construção para consultar, comparar e acompanhar os preços de combustíveis pesquisados pela ANP em São Paulo. A arquitetura permite expansão futura por UF.
 
-**Estado atual: Marco 1 — descoberta dos dados.** Nove XLSX reais foram perfilados, com contrato proposto e testes sintéticos. Há um script exploratório executável; ainda não há ingestão definitiva, banco, API, dashboard, modelos ou infraestrutura.
+**Estado atual: Marco 2, etapa 1 — fonte histórica validada.** Após a descoberta dos nove XLSX, um CSV histórico individual por revenda foi validado e comparado às semanas. Há perfil exploratório e 29 testes; o Marco 2 completo permanece pendente, sem ingestão definitiva, banco, API, dashboard, modelos ou infraestrutura.
 
 ## Começar
 
@@ -44,4 +44,10 @@ Os dados são uma pesquisa, não preços em tempo real, e podem não cobrir todo
 
 Variações incomuns não comprovam irregularidade. Previsões futuras serão estimativas com incerteza, sem garantia de preço ou recomendação financeira. A arquitetura aponta cobertura histórica limitada do preço de compra e o exclui como base do primeiro modelo; a descoberta verificará os arquivos reais. Agentes de IA, chat, RAG e sistemas multiagentes estão fora do escopo.
 
-Próximo passo: Marco 2 — ingestão histórica e semanal. Os históricos recebidos são agregados mensais; obter manualmente uma amostra histórica por revenda antes de implementar esse ramo da ingestão.
+Para reproduzir a validação histórica (sem sobrescrever o relatório do Marco 1):
+
+```powershell
+.\.venv\Scripts\python.exe scripts/profile_anp_data.py "data/raw/historicos/*.csv" "data/raw/revendas*.xlsx" --output-dir reports/data-profile/historical-validation
+```
+
+Próximo passo: implementar ingestão histórica e semanal em nova tarefa. Já há histórico individual de jan–jun/2026 e três semanas de setembro; isso não constitui cobertura contínua. Agregados não entrarão na tabela de observações individuais. Consulte as restrições de identificadores e de normalização de DIESEL no contrato.

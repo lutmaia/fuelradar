@@ -11,6 +11,7 @@ from decimal import Decimal, InvalidOperation
 import glob
 import hashlib
 import io
+from itertools import combinations
 import json
 from pathlib import Path
 import re
@@ -45,6 +46,8 @@ PRODUCTS = {
     "ETANOL": "ETANOL_HIDRATADO", "ETANOL HIDRATADO": "ETANOL_HIDRATADO",
     "DIESEL S500": "DIESEL_S500", "OLEO DIESEL": "DIESEL_S500",
     "DIESEL S10": "DIESEL_S10", "OLEO DIESEL S10": "DIESEL_S10",
+    # A fonte histórica não especifica S500 neste rótulo: não fundir por suposição.
+    "DIESEL": "DIESEL_NAO_ESPECIFICADO",
     "GNV": "GNV", "GLP": "GLP",
 }
 MISSING = {"", "-", "NA", "N/A", "NULL"}
@@ -103,15 +106,38 @@ def parse_date(value):
     raise ValueError(f"Data inválida (esperado data Excel, DD/MM/AAAA ou ISO): {value!r}")
 
 
+def normalize_identifier(value, width):
+    """Retorna (texto, status). Não adivinha dígitos de texto curto/científico.
+
+    Inteiros nativos Excel de até 14 dígitos têm precisão representável;
+    completar sua largura fixa é reversível. Isso não valida o cadastro.
+    """
+    if is_missing(value):
+        return None, "missing"
+    if isinstance(value, bool):
+        return None, "invalid"
+    if isinstance(value, int):
+        if 0 < value < 10 ** width:
+            text = str(value)
+            return text.zfill(width), "padded_native_integer" if len(text) < width else "exact_native_integer"
+        return None, "invalid"
+    if not isinstance(value, str):
+        return None, "ambiguous_numeric"
+    text = value.strip()
+    mask = r"[0-9]{2}\.[0-9]{3}\.[0-9]{3}/[0-9]{4}-[0-9]{2}" if width == 14 else r"[0-9]{5}-[0-9]{3}"
+    if re.fullmatch(mask, text):
+        return re.sub(r"[./-]", "", text), "exact_masked_text"
+    if re.fullmatch(r"[0-9]{" + str(width) + r"}", text):
+        return text, "exact_text"
+    if re.fullmatch(r"[0-9]{1," + str(width - 1) + r"}", text):
+        return None, "ambiguous_short_text"
+    if re.fullmatch(r"[0-9]+(?:[.,][0-9]+)?[eE][+-]?[0-9]+", text) or re.fullmatch(r"[0-9]+[.,][0-9]+", text):
+        return None, "ambiguous_numeric_text"
+    return None, "invalid"
+
+
 def normalize_cnpj(value):
-    if is_missing(value) or isinstance(value, bool):
-        return None
-    if isinstance(value, float):
-        if not value.is_integer():
-            return None
-        value = int(value)
-    text = re.sub(r"[./\-\s]", "", str(value))
-    return text.zfill(14) if text.isdigit() and 1 <= len(text) <= 14 else None
+    return normalize_identifier(value, 14)[0]
 
 
 ALIASES = {
@@ -123,6 +149,12 @@ ALIASES = {
     "MES": "reference_month", "DATA INICIAL": "period_start", "DATA FINAL": "period_end",
     "REGIAO": "region", "BRASIL": "country", "PRECO MEDIO REVENDA": "mean_sale_price",
     "NUMERO DE POSTOS PESQUISADOS": "reported_station_count",
+    "REGIAO - SIGLA": "region", "CEP": "postal_code",
+    "REVENDA": "legal_name", "RAZAO": "legal_name", "FANTASIA": "trade_name",
+    "NOME DA RUA": "address", "ENDERECO": "address",
+    "NUMERO RUA": "address_number", "NUMERO": "address_number",
+    "COMPLEMENTO": "address_complement", "BAIRRO": "neighborhood",
+    "VALOR DE COMPRA": "purchase_price",
 }
 
 
@@ -229,9 +261,14 @@ def profile_rows(rows, combined=None):
     dates = {k: set() for k in ("collection_date", "reference_month", "period_start", "period_end") if k in mapping}
     quality = Counter()
     duplicate_key_rows = []
+    identifier_status = {k: Counter() for k in ("cnpj", "postal_code") if k in mapping}
+    sp_identifier_status = {k: Counter() for k in identifier_status}
+    ambiguous_identifier_rows = {k: [] for k in identifier_status}
+    normalization_pairs = {k: Counter() for k in ("uf", "municipality", "product", "unit", "brand") if k in mapping}
+    key_prices = {}
     all_hashes, sp_hashes, all_keys, sp_keys = set(), set(), set(), set()
     sp, jundiai = Scope(), Scope()
-    price_columns = [i for i, h in enumerate(headers) if normalize_text(h).startswith("PRECO ") or normalize_text(h) == "VALOR DE VENDA"]
+    price_columns = [i for i, h in enumerate(headers) if normalize_text(h).startswith("PRECO ") or normalize_text(h) in {"VALOR DE VENDA", "VALOR DE COMPRA"}]
     prices = defaultdict(lambda: (Counter(), []))
     sp_prices = defaultdict(lambda: (Counter(), []))
     total = blank = 0
@@ -268,9 +305,22 @@ def profile_rows(rows, combined=None):
         expected_unit = "BRL/13KG" if product == "GLP" else "BRL/M3" if product == "GNV" else "BRL/L"
         if product and unit and expected_unit != unit:
             quality["product_unit_mismatch"] += 1
-        station = normalize_cnpj(get("cnpj"))
+        normalized_ids = {}
+        for name, statuses in identifier_status.items():
+            value, status = normalize_identifier(get(name), 14 if name == "cnpj" else 8)
+            normalized_ids[name] = value
+            statuses[status] += 1
+            if uf == "SP":
+                sp_identifier_status[name][status] += 1
+            if status.startswith("ambiguous") and len(ambiguous_identifier_rows[name]) < 10:
+                ambiguous_identifier_rows[name].append(row_number)
+        station = normalized_ids.get("cnpj")
         if "cnpj" in mapping and station is None:
             quality["invalid_cnpj_format"] += 1
+        normalized_dimensions = {"uf": uf, "municipality": city, "product": product, "unit": unit,
+                                 "brand": None if is_missing(get("brand")) else normalize_text(get("brand"))}
+        for name, counts in normalization_pairs.items():
+            counts[(get(name), normalized_dimensions[name])] += 1
         parsed_dates = {}
         for key in dates:
             try:
@@ -326,6 +376,15 @@ def profile_rows(rows, combined=None):
                     if key in combined["keys"]:
                         combined["duplicates"] += 1
                     combined["keys"].add(key)
+            if kind == "retail_observation" and key_complete:
+                try:
+                    sale_price = parse_money(get("sale_price"))
+                except ValueError:
+                    sale_price = None
+                values = key_prices.setdefault(key, set())
+                if values and sale_price not in values:
+                    quality["sp_candidate_key_price_conflicts"] += 1
+                values.add(sale_price)
             if "reported_station_count" in mapping:
                 try:
                     count = parse_money(get("reported_station_count"))
@@ -354,11 +413,18 @@ def profile_rows(rows, combined=None):
     for stat in columns:
         stat["missing_fraction"] = stat["missing"] / total if total else None
         stat["sp_missing_fraction"] = stat["sp_missing"] / sp.rows if sp.rows else None
+    if combined is not None and kind == "retail_observation" and "sources" in combined:
+        combined["sources"].append({"keys": key_prices, "dates": sp.dates.copy()})
     return {
         "kind": kind, "header_row": header_row, "column_count": len(headers), "rows": total,
         "blank_rows_after_header": blank, "columns": columns,
         "canonical_mapping": {k: headers[i] for k, i in mapping.items()},
         "dimensions": dimensions, "dates": {k: date_range(v) for k, v in dates.items()},
+        "normalization_pairs": {k: [{"original": original, "normalized": normalized, "rows": n}
+                                     for (original, normalized), n in counts.items()]
+                                for k, counts in normalization_pairs.items()},
+        "identifier_status": identifier_status, "sp_identifier_status": sp_identifier_status,
+        "ambiguous_identifier_row_numbers": ambiguous_identifier_rows,
         "quality": quality, "candidate_key_duplicate_row_numbers": duplicate_key_rows,
         "sp_identifiable": "uf" in mapping,
         "sp": sp.report("municipality" in mapping, "cnpj" in mapping) if "uf" in mapping else None,
@@ -476,8 +542,26 @@ def summary_markdown(report):
     lines += ["", "Agregados em diferentes níveis não devem ser somados. `None`/N/D indica dimensão não disponível.", "", "## Esquemas distintos", ""]
     for group in report["schema_groups"]:
         lines += [f"- {group['kind']} ({len(group['columns'])} colunas, {len(group['sources'])} planilhas): " + "; ".join(group["columns"])]
-    lines += ["", "## União das observações semanais SP", "", "```json", json.dumps(report["combined_retail"], ensure_ascii=False, indent=2), "```", "", "Consulte profile.json para cabeçalhos, tipos, ausências, domínios, preços, duplicidades e hashes."]
+    lines += ["", "## União das observações individuais SP", "", "```json", json.dumps(report["combined_retail"], ensure_ascii=False, indent=2), "```",
+              "", "## Sobreposições entre fontes individuais (SP)", "", "```json", json.dumps(report.get("overlaps_sp", []), ensure_ascii=False, indent=2), "```",
+              "", "Consulte profile.json para cabeçalhos, tipos, ausências, domínios originais/normalizados, preços, identificadores ambíguos, duplicidades e hashes."]
     return "\n".join(lines) + "\n"
+
+
+def compare_sources(sources):
+    """Compara somente chaves completas de observações SP; sem deduplicar."""
+    reports = []
+    for left, right in combinations(sources, 2):
+        shared = left["keys"].keys() & right["keys"].keys()
+        dates = left["dates"] & right["dates"]
+        reports.append({
+            "left": left["source"], "right": right["source"],
+            "shared_collection_dates": len(dates), "shared_date_range": date_range(dates),
+            "shared_candidate_keys": len(shared),
+            "shared_keys_same_price_set": sum(left["keys"][k] == right["keys"][k] for k in shared),
+            "shared_keys_conflicting_price_sets": sum(left["keys"][k] != right["keys"][k] for k in shared),
+        })
+    return reports
 
 
 def main(argv=None):
@@ -495,20 +579,25 @@ def main(argv=None):
     raw = Path("data/raw").resolve()
     if output == raw or raw in output.parents or any(output == p.parent or p.parent in output.parents for p in files):
         parser.error("Diretório de saída deve ficar fora de raw e das pastas de origem")
-    combined = {"sp": Scope(), "jundiai": Scope(), "keys": set(), "duplicates": 0}
-    report = {"profile_version": 1, "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+    combined = {"sp": Scope(), "jundiai": Scope(), "keys": set(), "duplicates": 0, "sources": []}
+    report = {"profile_version": 2, "generated_at_utc": datetime.now(timezone.utc).isoformat(),
               "python_version": sys.version.split()[0], "openpyxl_version": openpyxl_version,
               "script_sha256": sha256(__file__), "files": []}
     for path in sorted(files):
+        source_start = len(combined["sources"])
         try:
             result = profile_file(path, combined)
         except Exception as exc:
             print(f"ERRO em {path.name}: {type(exc).__name__}: {exc}", file=sys.stderr)
             return 1
         report["files"].append(result)
+        source_tables = [(name, sheet) for name, sheet in tables(result) if sheet["kind"] == "retail_observation"]
+        for source, (name, sheet) in zip(combined["sources"][source_start:], source_tables, strict=True):
+            source["source"] = {"input_path": path.as_posix(), "table": name, "sheet": sheet["sheet"]}
         print(f"OK {path.name}: {sum(t['rows'] for _, t in tables(result))} linhas em {sum(1 for _ in tables(result))} planilha(s); SHA-256 preservado", flush=True)
     report["combined_retail"] = {"sp": combined["sp"].report(), "jundiai": combined["jundiai"].report(),
                                  "candidate_key_duplicates_across_inputs": combined["duplicates"]}
+    report["overlaps_sp"] = compare_sources(combined["sources"])
     groups = {}
     for file in report["files"]:
         for name, sheet in tables(file):
