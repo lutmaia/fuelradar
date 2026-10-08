@@ -6,8 +6,7 @@ Uso: python scripts/profile_anp_data.py "data/raw/*.xlsx"
 import argparse
 from collections import Counter, defaultdict
 import csv
-from datetime import date, datetime, timezone
-from decimal import Decimal, InvalidOperation
+from datetime import datetime, timezone
 import glob
 import hashlib
 import io
@@ -17,183 +16,22 @@ from pathlib import Path
 import re
 import statistics
 import sys
-import tempfile
-import unicodedata
 from zipfile import ZipFile
 
 from openpyxl import __version__ as openpyxl_version, load_workbook
 
+# Sem instalação do pacote, o perfil e os testes enxergam `src` por este caminho (docs/decisions/0001).
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-class ProfileError(ValueError):
-    """Arquivo ou esquema não interpretável com as regras conhecidas."""
+from radar_combustiveis.ingestion.normalize import (  # noqa: E402,F401
+    is_missing, normalize_cnpj, normalize_identifier, normalize_product, normalize_text,
+    normalize_uf, normalize_unit, parse_date, parse_money,
+)
+from radar_combustiveis.ingestion.readers import (  # noqa: E402
+    SourceFormatError, detect_csv_format, identify_header, iter_zip_members, sha256,
+)
 
-
-def normalize_text(value):
-    if value is None:
-        return ""
-    text = unicodedata.normalize("NFKD", str(value))
-    return " ".join("".join(c for c in text if not unicodedata.combining(c)).upper().split())
-
-
-UF_NAMES = dict(zip(
-    "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(),
-    "ACRE|ALAGOAS|AMAPA|AMAZONAS|BAHIA|CEARA|DISTRITO FEDERAL|ESPIRITO SANTO|GOIAS|MARANHAO|MATO GROSSO|MATO GROSSO DO SUL|MINAS GERAIS|PARA|PARAIBA|PARANA|PERNAMBUCO|PIAUI|RIO DE JANEIRO|RIO GRANDE DO NORTE|RIO GRANDE DO SUL|RONDONIA|RORAIMA|SANTA CATARINA|SAO PAULO|SERGIPE|TOCANTINS".split("|"),
-))
-UF_CODES = {name: code for code, name in UF_NAMES.items()}
-PRODUCTS = {
-    "GASOLINA": "GASOLINA_COMUM", "GASOLINA COMUM": "GASOLINA_COMUM",
-    "GASOLINA ADITIVADA": "GASOLINA_ADITIVADA",
-    "ETANOL": "ETANOL_HIDRATADO", "ETANOL HIDRATADO": "ETANOL_HIDRATADO",
-    "DIESEL S500": "DIESEL_S500", "OLEO DIESEL": "DIESEL_S500",
-    "DIESEL S10": "DIESEL_S10", "OLEO DIESEL S10": "DIESEL_S10",
-    # A fonte histórica não especifica S500 neste rótulo: não fundir por suposição.
-    "DIESEL": "DIESEL_NAO_ESPECIFICADO",
-    "GNV": "GNV", "GLP": "GLP",
-}
-MISSING = {"", "-", "NA", "N/A", "NULL"}
-
-
-def is_missing(value):
-    return value is None or (isinstance(value, str) and normalize_text(value) in MISSING)
-
-
-def normalize_uf(value):
-    text = normalize_text(value)
-    return text if text in UF_NAMES else UF_CODES.get(text)
-
-
-def normalize_product(value):
-    return PRODUCTS.get(normalize_text(value))
-
-
-def normalize_unit(value):
-    text = normalize_text(value).replace(" ", "")
-    return {"R$/L": "BRL/L", "R$/LITRO": "BRL/L", "R$/M3": "BRL/M3",
-            "R$/13KG": "BRL/13KG"}.get(text)
-
-
-def parse_money(value):
-    if is_missing(value):
-        return None
-    if isinstance(value, bool):
-        raise ValueError("Booleano não é preço")
-    text = str(value).strip()
-    if "," in text:
-        if not re.fullmatch(r"[+-]?(?:\d+|\d{1,3}(?:\.\d{3})+),\d+", text):
-            raise ValueError(f"Valor monetário inválido: {value!r}")
-        text = text.replace(".", "").replace(",", ".")
-    try:
-        result = Decimal(text)
-    except InvalidOperation as exc:
-        raise ValueError(f"Valor monetário inválido: {value!r}") from exc
-    if not result.is_finite():
-        raise ValueError("Valor monetário não finito")
-    return result
-
-
-def parse_date(value):
-    if is_missing(value):
-        return None
-    if isinstance(value, datetime):
-        return value.date()
-    if isinstance(value, date):
-        return value
-    for fmt in ("%d/%m/%Y", "%Y-%m-%d"):
-        try:
-            return datetime.strptime(str(value).strip(), fmt).date()
-        except ValueError:
-            pass
-    raise ValueError(f"Data inválida (esperado data Excel, DD/MM/AAAA ou ISO): {value!r}")
-
-
-def normalize_identifier(value, width):
-    """Retorna (texto, status). Não adivinha dígitos de texto curto/científico.
-
-    Inteiros nativos Excel de até 14 dígitos têm precisão representável;
-    completar sua largura fixa é reversível. Isso não valida o cadastro.
-    """
-    if is_missing(value):
-        return None, "missing"
-    if isinstance(value, bool):
-        return None, "invalid"
-    if isinstance(value, int):
-        if 0 < value < 10 ** width:
-            text = str(value)
-            return text.zfill(width), "padded_native_integer" if len(text) < width else "exact_native_integer"
-        return None, "invalid"
-    if not isinstance(value, str):
-        return None, "ambiguous_numeric"
-    text = value.strip()
-    mask = r"[0-9]{2}\.[0-9]{3}\.[0-9]{3}/[0-9]{4}-[0-9]{2}" if width == 14 else r"[0-9]{5}-[0-9]{3}"
-    if re.fullmatch(mask, text):
-        return re.sub(r"[./-]", "", text), "exact_masked_text"
-    if re.fullmatch(r"[0-9]{" + str(width) + r"}", text):
-        return text, "exact_text"
-    if re.fullmatch(r"[0-9]{1," + str(width - 1) + r"}", text):
-        return None, "ambiguous_short_text"
-    if re.fullmatch(r"[0-9]+(?:[.,][0-9]+)?[eE][+-]?[0-9]+", text) or re.fullmatch(r"[0-9]+[.,][0-9]+", text):
-        return None, "ambiguous_numeric_text"
-    return None, "invalid"
-
-
-def normalize_cnpj(value):
-    return normalize_identifier(value, 14)[0]
-
-
-ALIASES = {
-    "UF": "uf", "ESTADO": "uf", "ESTADOS": "uf", "ESTADO - SIGLA": "uf",
-    "MUNICIPIO": "municipality", "PRODUTO": "product", "BANDEIRA": "brand",
-    "UNIDADE DE MEDIDA": "unit", "CNPJ": "cnpj", "CNPJ DA REVENDA": "cnpj",
-    "DATA DA COLETA": "collection_date", "DATA DE COLETA": "collection_date",
-    "PRECO DE REVENDA": "sale_price", "VALOR DE VENDA": "sale_price",
-    "MES": "reference_month", "DATA INICIAL": "period_start", "DATA FINAL": "period_end",
-    "REGIAO": "region", "BRASIL": "country", "PRECO MEDIO REVENDA": "mean_sale_price",
-    "NUMERO DE POSTOS PESQUISADOS": "reported_station_count",
-    "REGIAO - SIGLA": "region", "CEP": "postal_code",
-    "REVENDA": "legal_name", "RAZAO": "legal_name", "FANTASIA": "trade_name",
-    "NOME DA RUA": "address", "ENDERECO": "address",
-    "NUMERO RUA": "address_number", "NUMERO": "address_number",
-    "COMPLEMENTO": "address_complement", "BAIRRO": "neighborhood",
-    "VALOR DE COMPRA": "purchase_price",
-}
-
-
-def identify_header(rows):
-    """Consome até o cabeçalho e devolve linha, nomes, mapeamento e tipo."""
-    for number, row in enumerate(rows, 1):
-        if number > 50:
-            break
-        names = list(row)
-        while names and names[-1] is None:
-            names.pop()
-        keys = [ALIASES.get(normalize_text(v)) for v in names]
-        if "product" not in keys:
-            continue
-        if "cnpj" in keys or "sale_price" in keys or "collection_date" in keys:
-            required = {"product", "uf", "municipality", "cnpj", "unit", "sale_price", "collection_date"}
-            kind = "retail_observation"
-        elif "reference_month" in keys:
-            required = {"product", "unit", "mean_sale_price", "reference_month", "reported_station_count"}
-            kind = "monthly_aggregate"
-        elif "period_start" in keys:
-            required = {"product", "unit", "mean_sale_price", "period_start", "period_end", "reported_station_count"}
-            kind = "weekly_aggregate"
-        else:
-            raise ProfileError("Cabeçalho com PRODUTO, mas sem data/preço reconhecíveis")
-        missing = required - set(keys)
-        if missing:
-            raise ProfileError(f"Cabeçalho na linha {number}: colunas obrigatórias ausentes: {sorted(missing)}")
-        if kind != "retail_observation" and not set(keys) & {"uf", "region", "country", "municipality"}:
-            raise ProfileError("Agregado sem dimensão geográfica reconhecida")
-        if any(v is None for v in names) or len(set(map(normalize_text, names))) != len(names):
-            raise ProfileError("Cabeçalho com coluna sem nome ou nome duplicado")
-        return number, [str(v) for v in names], {k: i for i, k in enumerate(keys) if k}, kind
-    raise ProfileError("Cabeçalho ANP não identificado nas primeiras 50 linhas")
-
-
-def sha256(path):
-    with Path(path).open("rb") as stream:
-        return hashlib.file_digest(stream, "sha256").hexdigest()
+ProfileError = SourceFormatError
 
 
 def date_range(values):
@@ -466,18 +304,7 @@ def profile_xlsx(source, combined):
 
 
 def profile_csv(stream, combined):
-    sample = stream.read(65536)
-    stream.seek(0)
-    try:
-        decoded = sample.decode("utf-8-sig")
-        encoding = "utf-8-sig"
-    except UnicodeDecodeError:
-        decoded = sample.decode("cp1252")
-        encoding = "cp1252"
-    try:
-        dialect = csv.Sniffer().sniff(decoded, delimiters=";,\t|")
-    except csv.Error as exc:
-        raise ProfileError("Delimitador CSV não identificado") from exc
+    encoding, dialect = detect_csv_format(stream)
     wrapper = io.TextIOWrapper(stream, encoding=encoding, newline="")
     try:
         profile = profile_rows(csv.reader(wrapper, dialect), combined)
@@ -497,21 +324,11 @@ def profile_file(path, combined):
         with path.open("rb") as stream:
             report = profile_csv(stream, combined)
     elif suffix == ".zip":
-        with ZipFile(path) as archive:
-            members = [m for m in archive.infolist() if not m.is_dir()]
-            if not members or any(Path(m.filename).suffix.lower() not in {".csv", ".xlsx"} for m in members):
-                raise ProfileError("ZIP com conteúdo inesperado: esperado somente CSV ou XLSX, sem ZIP aninhado")
-            inner = []
-            for member in members:
-                # Arquivo temporário fora de raw; nunca extrair caminhos do ZIP.
-                with tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024) as stream:
-                    with archive.open(member) as source:
-                        while chunk := source.read(1024 * 1024):
-                            stream.write(chunk)
-                    stream.seek(0)
-                    item = profile_xlsx(stream, combined) if member.filename.lower().endswith(".xlsx") else profile_csv(stream, combined)
-                    inner.append({"member": member.filename, **item})
-            report = {"format": "ZIP", "archive_members": [m.filename for m in members], "contents": inner}
+        inner = []
+        for name, stream in iter_zip_members(path):
+            item = profile_xlsx(stream, combined) if name.lower().endswith(".xlsx") else profile_csv(stream, combined)
+            inner.append({"member": name, **item})
+        report = {"format": "ZIP", "archive_members": [i["member"] for i in inner], "contents": inner}
     else:
         raise ProfileError(f"Formato não suportado: {suffix}; use XLSX, CSV ou ZIP")
     if before != sha256(path):

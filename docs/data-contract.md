@@ -1,6 +1,6 @@
-# Contrato de dados proposto — versão 0.2
+# Contrato de dados proposto — versão 0.3
 
-Validado exploratoriamente nos nove XLSX do Marco 1 e no CSV histórico por revenda recebido em 2026-10-01, descritos em [data-discovery.md](data-discovery.md). Este é um contrato dos formatos observados, não um pipeline de ingestão. O [perfil do Marco 1](../reports/data-profile/profile.json) preserva o diagnóstico inicial; a [validação histórica atual](../reports/data-profile/historical-validation/profile.json) contém o CSV e a nova comparação com as três semanas. A [arquitetura](architecture.md) permanece a especificação principal.
+Validado exploratoriamente nos nove XLSX do Marco 1 e no CSV histórico por revenda recebido em 2026-10-01, descritos em [data-discovery.md](data-discovery.md). Este é um contrato dos formatos observados. A versão 0.3 acrescenta a [saída da ingestão local](#saída-da-ingestão-local-marco-2-etapa-2), que ainda não é a carga definitiva em banco. O [perfil do Marco 1](../reports/data-profile/profile.json) preserva o diagnóstico inicial; a [validação histórica atual](../reports/data-profile/historical-validation/profile.json) contém o CSV e a nova comparação com as três semanas. A [arquitetura](architecture.md) permanece a especificação principal.
 
 ## Granularidades e limites
 
@@ -144,13 +144,26 @@ Em H há seis repetições exatas/chaves repetidas no arquivo completo, nenhuma 
 | `source_member` | Membro de ZIP externo, quando aplicável; `member` |
 | `source_sheet` | Planilha original; `sheet` |
 | `source_header_row` | Linha do cabeçalho iniciando em 1; `header_row` |
-| `source_row_number` | Posição física; amostra de linhas com chave duplicada no perfil; retenção por observação prevista na ingestão |
+| `source_row_number` | Linha física no XLSX e registro lógico (cabeçalho = 1) no CSV; amostra no perfil e, por observação, na saída da ingestão |
 | `source_url`, `source_retrieved_at` | Desconhecidos; preencher com evidência, nunca inferir do nome |
-| `source_revision` | A definir na ingestão; não inventar versão |
+| `source_revision` | `revision` do manifesto: 1 para o primeiro arquivo de um período e +1 para cada SHA-256 novo com o mesmo nome; não vem da ANP |
 | `profile_generated_at`, `profile_script_sha256` | Horário UTC da análise e hash do script no relatório; distintos de coleta/download |
 
 O JSON registra versões Python/openpyxl e compara SHA-256 antes/depois. Falha de leitura/esquema retorna código não zero com arquivo/planilha. Colunas extras nomeadas são perfiladas; valores sem cabeçalho causam erro. Nenhuma fonte é regravada.
 
+## Saída da ingestão local (Marco 2, etapa 2)
+
+`scripts/ingest_local.py` lê `data/raw/` (somente leitura), mantém um manifesto e grava as observações individuais das UFs de `TARGET_UFS` (padrão `["SP"]`). Detalhes da decisão em [ADR 0001](decisions/0001-manifesto-revisoes-e-saida-csv.md).
+
+**Manifesto** (`data/processed/manifest.json`, uma entrada por SHA-256): `source_file_id` (16 primeiros hex do SHA-256), `sha256`, `size_bytes`, `paths` (caminhos relativos a `raw/`; o mesmo conteúdo em dois lugares é uma entrada), `kinds`, `period_key` (nome do arquivo sem extensão), `reference_start`/`reference_end` (do nome, quando traz o período; senão, min/max das datas de coleta ingeridas), `revision`, `is_current`, `first_seen_at`, `source_url`/`retrieved_at` (`null` até haver download com evidência) e `ingestion` (contagens, `target_ufs` e saída). Mesmo `period_key` com SHA-256 novo gera `revision` + 1 e a anterior deixa de ser `is_current`; a saída antiga é preservada. Agregados (M, S, MR) são registrados, mas nunca ingeridos.
+
+**Observações** (`data/processed/observations/<source_file_id>.csv`, UTF-8, `
+`): `uf`, `region`, `municipality_original`, `municipality_normalized`, `legal_name`, `trade_name`, `brand`, `cnpj`, `cnpj_status`, `address`, `address_number`, `address_complement`, `neighborhood`, `cep`, `cep_status`, `product_original`, `product`, `product_category` (`automotivo`, `glp` ou `desconhecido`), `unit_original`, `unit`, `collection_date` (ISO), `sale_price` e `purchase_price` (decimal como texto), `row_key` (chave candidata acima, vazia se incompleta) e a auditoria (`source_file_id`, `source_sha256`, `source_member`, `source_sheet`, `source_row_number`, `source_row_hash`, `ingestion_run_id`). A saída preserva a ordem do arquivo de origem, mantém GLP e **não** remove duplicatas nem extremos.
+
+**Rejeição técnica** (`data/quarantine/<source_file_id>_rejected.csv`): só linhas de UF, preço de venda ou data de coleta ausentes ou não interpretáveis, com o motivo e os valores originais. Preço zero ou negativo, produto ou unidade desconhecidos e CNPJ/CEP inválidos ou ambíguos **permanecem** na observação (campo normalizado vazio e status), para as regras do Marco 3. Vale `rows_read = rows_accepted + rows_out_of_scope + rows_rejected`.
+
+Linhas de outras UFs são contadas (`rows_out_of_scope`), mas não gravadas; o raw nacional não é alterado. Arquivo ilegível ou com valor fora das colunas nomeadas não publica nada daquela versão e é listado em `errors` do relatório (`data/processed/runs/<run_id>.json`).
+
 ## Evidência e pendência
 
-Comandos, contagens e testes estão em [data-discovery.md](data-discovery.md). Já há fonte histórica individual CSV e três semanas por revenda suficientes para iniciar a implementação local da ingestão desses formatos. ZIP mantém teste sintético; nenhum ZIP real foi recebido. Há lacuna de julho/agosto e começo de setembro entre os microdados disponíveis, e a equivalência DIESEL/S500 continua pendente. Agregados não suprem essas lacunas. Esta etapa não conclui o Marco 2.
+Comandos, contagens e testes estão em [data-discovery.md](data-discovery.md). Já há fonte histórica individual CSV e três semanas por revenda suficientes para iniciar a implementação local da ingestão desses formatos. ZIP mantém teste sintético; nenhum ZIP real foi recebido. Há lacuna de julho/agosto e começo de setembro entre os microdados disponíveis, e a equivalência DIESEL/S500 continua pendente. Agregados não suprem essas lacunas. A ingestão local foi executada sobre os arquivos reais (evidências em [PLAN.md](../PLAN.md)); download automático, `source_url` e `retrieved_at` continuam pendentes e o Marco 2 não está concluído.
