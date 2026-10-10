@@ -11,7 +11,8 @@ import os
 from pathlib import Path
 import uuid
 
-from .manifest import load_manifest, register, save_manifest, write_text_atomic
+from .download import read_log
+from .manifest import apply_provenance, load_manifest, register, save_manifest, write_text_atomic
 from .observations import OBSERVATION_COLUMNS, REJECTED_COLUMNS, normalize_row, row_hash
 from .readers import SourceFormatError, iter_tables, sha256
 
@@ -143,6 +144,8 @@ def run_ingestion(raw_dir, out_dir, quarantine_dir, target_ufs):
         report["events"].append({"event": event, "source_file_id": entry["source_file_id"],
                                  "period_key": entry["period_key"], "revision": entry["revision"],
                                  "paths": entry["paths"], "kinds": entry["kinds"]})
+
+    report["provenance_filled"] = apply_provenance(manifest, read_log(out_dir / "downloads.jsonl"))
 
     by_path = {item["path"]: item["absolute"] for item in found}
     for entry in manifest["files"]:

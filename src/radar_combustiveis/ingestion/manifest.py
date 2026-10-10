@@ -63,6 +63,29 @@ def reference_period(path):
     return (match.group(1), match.group(2)) if match else (None, None)
 
 
+def apply_provenance(manifest, records):
+    """Preenche origem a partir do registro de downloads, sem inferir nada pelo nome do arquivo.
+
+    `source_url`: qualquer download salvo ou idêntico a um arquivo já existente prova a URL.
+    `retrieved_at`: só quando o próprio arquivo guardado foi baixado (ação "saved").
+    Valores já preenchidos nunca são trocados. Devolve a quantidade de campos preenchidos.
+    """
+    filled = 0
+    for entry in manifest["files"]:
+        matching = [r for r in records if r.get("sha256") == entry["sha256"]]
+        if entry["source_url"] is None:
+            url = next((r["url"] for r in matching if r["action"] in {"saved", "duplicate"}), None)
+            if url:
+                entry["source_url"] = url
+                filled += 1
+        if entry["retrieved_at"] is None:
+            when = next((r["retrieved_at"] for r in matching if r["action"] == "saved"), None)
+            if when:
+                entry["retrieved_at"] = when
+                filled += 1
+    return filled
+
+
 def find_by_sha(manifest, sha256):
     return next((e for e in manifest["files"] if e["sha256"] == sha256), None)
 

@@ -2,7 +2,7 @@
 
 Coloque os arquivos originais recebidos da ANP em `data/raw/`. Preserve nome e conteúdo, inclusive registros de outras UFs. Não recorte SP, corrija, regrave ou sobrescreva o original. Para nomes repetidos ou revisões, use subpastas distintas por recebimento; preserve também o arquivo compactado original, quando houver.
 
-- `raw/`: arquivos exatamente como recebidos, para auditoria e reprocessamento.
+- `raw/`: arquivos exatamente como recebidos, para auditoria e reprocessamento. `raw/downloads/retrieved_at=<UTC>/` é criada por `scripts/fetch_anp.py`; uma pasta nova por recebimento, nunca sobrescrita.
 - `processed/`: saídas derivadas (`manifest.json`, `observations/`, `runs/`) geradas por `scripts/ingest_local.py`; nunca substituir os originais.
 - `quarantine/`: linhas rejeitadas pela ingestão (UF, preço de venda ou data não interpretáveis), com motivo; as regras formais de qualidade são do Marco 3. A origem nunca é apagada.
 

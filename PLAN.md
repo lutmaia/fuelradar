@@ -4,7 +4,7 @@ A [arquitetura](docs/architecture.md) é a especificação principal. Este plano
 
 - [x] **Marco 0 — Fundação:** documentação, estrutura Python e dados, configuração mínima e proteção no Git. Aceite: conferir estrutura, sintaxe TOML/Python, regras de exclusão e integridade da arquitetura.
 - [x] **Marco 1 — Descoberta e contrato dos dados:** nove XLSX reais (históricos agregados e semanas por revenda/resumos), 21 planilhas analisadas; esquema, formatos, cobertura, produtos e qualidade registrados; contrato proposto, perfil reproduzível e 21 testes aprovados. Histórico individual CSV/ZIP não recebido: validar esse formato antes de implementar seu ramo de ingestão.
-- [ ] **Marco 2 — Ingestão histórica e semanal:** download, manifesto, checksum, versões e rastreabilidade; preservar raw nacional e selecionar SP nas saídas derivadas. Aceite: reexecução sem duplicação e revisão de fonte verificadas em arquivos locais, sem antecipar o banco.
+- [x] **Marco 2 — Ingestão histórica e semanal:** download, manifesto, checksum, versões e rastreabilidade; preservar raw nacional e selecionar SP nas saídas derivadas. Aceite: reexecução sem duplicação e revisão de fonte verificadas em arquivos locais, sem antecipar o banco. Concluído em 2026-10-08: ingestão local e download das semanas por revenda da ANP executados sobre dados reais, 63 testes aprovados. Revisão de fonte verificada só com dados sintéticos (a ANP não revisou nenhum arquivo observado); detalhes na seção "Marco 2 — etapas".
 - [ ] **Marco 3 — Qualidade e normalização:** padronizar campos, validar regras e preservar suspeitos em quarentena. Aceite: casos válidos, inválidos e falhas críticas exercitados e contagens reconciliadas.
 - [ ] **Marco 4 — Banco de dados:** implementar PostgreSQL, migrações, dimensões, fatos e agregações. Aceite: carga, integridade, revisão e consultas verificadas em banco real de teste.
 - [ ] **Marco 5 — API:** consultas de leitura com filtros, paginação, atualidade e cobertura SP. Aceite: contratos, respostas, erros e limite de UF testados.
@@ -15,7 +15,7 @@ A [arquitetura](docs/architecture.md) é a especificação principal. Este plano
 
 ## Limite da tarefa atual
 
-Marco 2, etapa 2: ingestão local concluída em 2026-10-08. Parar aqui: sem download, descoberta de links, banco, API ou painel. O Marco 2 continua aberto até a etapa 3 (descoberta e download com tratamento de falha de rede). Agregados municipais e regionais não são inseridos na tabela de observações individuais.
+Marco 2 concluído em 2026-10-08 (etapa 2: ingestão local; etapa 3: descoberta e download). Parar aqui: sem qualidade formal ou quarentena (Marco 3), banco, API ou painel. O próximo marco, o 3, só começa por solicitação. Agregados municipais e regionais não são inseridos na tabela de observações individuais.
 
 ## Verificação do Marco 0
 
@@ -40,8 +40,8 @@ Concluído em 2026-09-29, limitado à descoberta dos arquivos recebidos. A seç�
 
 - [x] **Etapa 1 — validar histórico individual:** CSV real lido integralmente, esquema comparado com as semanas, perfil e contrato atualizados, identificadores conservadores e sobreposições verificados, testes aprovados.
 - [x] **Etapa 2 — ingestão local:** manifesto por SHA-256, revisões por período, leitura de CSV/XLSX/ZIP, recorte por `TARGET_UFS` e saída CSV; evidências abaixo.
-- [ ] **Etapa 3 — descoberta e download:** manifesto de URLs, cliente com timeout e tentativas, `source_url`/`retrieved_at` com evidência, falha de rede preservando o estado anterior.
-- [ ] Concluir o Marco 2: idempotência e revisão já verificadas localmente; faltam as falhas de rede e a verificação do download real.
+- [x] **Etapa 3 — descoberta e download:** descoberta pelos links da página da ANP (`--url` como alternativa manual), cliente com timeout e tentativas, `source_url`/`retrieved_at` só com evidência, falha de rede preservando o estado anterior; evidências abaixo.
+- [x] Concluir o Marco 2: reexecução sem duplicação, revisão, falha de rede e raw intacto verificados.
 
 ### Evidências da etapa 1 — 2026-10-01
 
@@ -66,4 +66,18 @@ Concluído em 2026-09-29, limitado à descoberta dos arquivos recebidos. A seç�
 - Conferência independente (`csv.DictReader` e `openpyxl` direto, sem código do projeto) reproduziu 422.418 / 117.616 / 100 municípios / 2.599 CNPJs / 117.616 chaves únicas e 13.842 automotivas + 2.111 GLP.
 - Idempotência: a 2ª e a 3ª execução não geraram eventos nem reingestão, não regravaram o manifesto, e as 9 saídas (manifesto, observações, quarentena) ficaram byte a byte idênticas. Revisão, mesmo conteúdo em dois caminhos, troca de `TARGET_UFS`, falha no meio do arquivo sem publicação e esquema desconhecido estão cobertos por testes sintéticos.
 - SHA-256 dos 12 arquivos de `data/raw` idêntico ao inventário anterior; `docs/architecture.md` intacta. `data/processed/` e `data/quarantine/` seguem ignorados pelo Git.
-- Limitações: nenhuma revisão real da fonte foi observada (só sintética); ZIP real não recebido; lacuna de julho a início de setembro; `DIESEL` continua distinto de S500; nenhuma regra de qualidade nem limpeza (preço zero, produto ou unidade desconhecidos seguem nas observações para o Marco 3); `source_url` e `retrieved_at` são `null`; `period_key` pelo nome do arquivo.
+- Limitações: nenhuma revisão real da fonte foi observada (só sintética); ZIP real não recebido; lacuna de julho a início de setembro; `DIESEL` continua distinto de S500; nenhuma regra de qualidade nem limpeza (preço zero, produto ou unidade desconhecidos seguem nas observações para o Marco 3); `source_url` e `retrieved_at` são `null`; `period_key` pelo nome do arquivo. (Os dois últimos itens foram tratados na etapa 3; ver abaixo.)
+
+### Evidências da etapa 3 — 2026-10-08
+
+- Código novo: `src/radar_combustiveis/ingestion/download.py`, `scripts/fetch_anp.py`, `apply_provenance` em `manifest.py` e leitura do registro de downloads no `pipeline.py`. Decisões 10 a 15 no adendo do [ADR 0001](docs/decisions/0001-manifesto-revisoes-e-saida-csv.md). Nenhuma dependência adicionada (`urllib`, `html`, `http.server` só nos testes).
+- Fonte consultada antes de codificar: o HTML das duas páginas da seção 33 da arquitetura foi baixado e os links extraídos por código, sem confiar em resumo. A página "últimas semanas" traz hrefs absolutos `.../arquivos-lpc/AAAA/revendas_lpc_<início>_<fim>.xlsx` e a data "Atualizado em" por arquivo; as 40 semanas por revenda de 2026 têm nomes regulares. O servidor da ANP responde **403 a HEAD** e 200/206 a GET, com identificação honesta de cliente.
+- `.\.venv\Scripts\python.exe -W error::ResourceWarning -m unittest discover -s tests -t .` → **63 testes, OK** (46 anteriores + 17 novos com servidor HTTP local, sem internet). Cobrem: sucesso, retry com espera 2 s e 4 s, falha persistente mantendo o estado, HTTP 404 sem retry, timeout, HTML com status 200, download truncado, limite de tamanho, conteúdo já conhecido, pular URL já obtida, nova data "Atualizado em", destino existente nunca sobrescrito, ponta a ponta com revisão e proveniência, extração de links e CLI. Foi criado `tests/__init__.py`; `python -m unittest discover -s tests` também funciona. `python -m pip check` → **No broken requirements found.**
+- Execução real: `scripts/fetch_anp.py --since 2026-06-28 --dry-run` listou 14 semanas; o download real levou 7 s: **11 salvos, 3 idênticos aos recebidos à mão (06/09, 13/09 e 20/09), 0 erros**. A ANP não revisou esses três: os bytes publicados hoje coincidem com os nossos.
+- Ingestão sobre os novos arquivos: 11 arquivos, 0 rejeitadas e 0 chaves repetidas por arquivo; 5.245 a 5.544 linhas SP por semana. Total de linhas SP em todas as saídas: **193.111**. Conferência independente com `openpyxl` direto, na semana de 09 a 15/08: 5.391 linhas SP, igual à saída.
+- Proveniência no manifesto: os 11 baixados têm `source_url` e `retrieved_at`; os 3 idênticos têm `source_url` e `retrieved_at` nulo; o CSV semestral e os agregados continuam sem URL.
+- Idempotência: a 2ª execução de `fetch_anp.py --ingest` ignorou 14 URLs, não baixou nem gravou nada, e as 32 saídas (manifesto, registro de downloads, observações e quarentena) ficaram byte a byte idênticas. `data/raw` ficou com 23 arquivos antes e depois.
+- Os 12 arquivos originais de `data/raw` mantêm o mesmo SHA-256 do inventário anterior; os 11 novos ficam em `data/raw/downloads/retrieved_at=2026-10-08T19-25-21Z/`.
+- Cobertura: de 01/01 a 02/10/2026, 76 dos 79 dias sem observação em SP são fins de semana. Restam três sextas-feiras sem nenhuma linha (26/06, 24/07 e 04/09), a investigar no Marco 3. A lacuna de julho a início de setembro deixou de existir.
+- Sobreposição: o CSV semestral e a semana de 28/06 a 04/07 compartilham 3.107 chaves (29 e 30/06); 3.094 com o mesmo preço e **13 com preço diferente**. Nada foi deduplicado. A precedência entre fontes precisa ser decidida antes das agregações.
+- Limitações: nenhuma revisão real da ANP foi observada (só sintética); a data "Atualizado em" vem da página e uma correção sem mudança dela só seria vista com `--force`; não foram baixadas as semanas de jan a jun (redundantes com o CSV) nem o ZIP semestral oficial (`ca-2026-01.zip`); ZIP real ainda não passou pela ingestão; `DIESEL` segue distinto de S500; sem regras de qualidade (Marco 3).
