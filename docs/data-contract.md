@@ -1,6 +1,6 @@
-# Contrato de dados proposto — versão 0.3
+# Contrato de dados proposto — versão 0.4
 
-Validado exploratoriamente nos nove XLSX do Marco 1 e no CSV histórico por revenda recebido em 2026-10-01, descritos em [data-discovery.md](data-discovery.md). Este é um contrato dos formatos observados. A versão 0.3 acrescenta a [saída da ingestão local](#saída-da-ingestão-local-marco-2-etapa-2), que ainda não é a carga definitiva em banco. O [perfil do Marco 1](../reports/data-profile/profile.json) preserva o diagnóstico inicial; a [validação histórica atual](../reports/data-profile/historical-validation/profile.json) contém o CSV e a nova comparação com as três semanas. A [arquitetura](architecture.md) permanece a especificação principal.
+Validado exploratoriamente nos nove XLSX do Marco 1 e no CSV histórico por revenda recebido em 2026-10-01, descritos em [data-discovery.md](data-discovery.md). Este é um contrato dos formatos observados. A versão 0.3 acrescentou a [saída da ingestão local](#saída-da-ingestão-local-marco-2-etapa-2) e a 0.4, as [regras de qualidade e a saída publicada](#qualidade-e-saída-publicada-marco-3), que ainda não são a carga definitiva em banco. O [perfil do Marco 1](../reports/data-profile/profile.json) preserva o diagnóstico inicial; a [validação histórica atual](../reports/data-profile/historical-validation/profile.json) contém o CSV e a nova comparação com as três semanas. A [arquitetura](architecture.md) permanece a especificação principal.
 
 ## Granularidades e limites
 
@@ -65,7 +65,7 @@ CNPJ/CEP em H são textos completos com máscara e zeros já preservados; não p
 
 Texto curto, notação científica textual, texto decimal e float são **ambíguos**: o normalizador retorna nulo com status, sem adivinhar zeros ou dígitos. Sinal, pontuação malformada e tamanho excessivo são inválidos. A fonte original permanece acessível sem alteração. O perfil registra contagens de status, inclusive SP, e até dez posições de registros ambíguos. CNPJ ambíguo não entra na contagem de postos únicos nem na comparação de chaves completas; a linha permanece na contagem total.
 
-Essa validação de representação não verifica dígitos verificadores, existência cadastral ou existência do CEP. Descrições completas e regras cadastrais ficam para o Marco 3.
+Essa validação de representação não verifica existência cadastral nem do CEP. O dígito verificador do CNPJ é conferido na qualidade (Marco 3).
 
 `dimensions` mantém domínios originais. `normalization_pairs` registra separadamente `original`, `normalized` e contagem para UF, município, produto, unidade e bandeira; não substitui o original nem exporta uma cópia das linhas. `canonical_mapping` liga cada campo ao nome exato da coluna recebida.
 
@@ -102,15 +102,14 @@ Coerência mínimo/média/máximo, dia 1, contagem inteira e validação complet
 | GASOLINA (H) | GASOLINA_COMUM, alias explícito proposto | BRL/L |
 | GASOLINA ADITIVADA | GASOLINA_ADITIVADA | BRL/L |
 | ETANOL (R); ETANOL HIDRATADO (agregados) | ETANOL_HIDRATADO | BRL/L |
-| DIESEL S500 (R); OLEO DIESEL (agregados) | DIESEL_S500 | BRL/L |
-| DIESEL (H) | DIESEL_NAO_ESPECIFICADO | BRL/L |
+| DIESEL S500 (R); OLEO DIESEL (agregados); DIESEL (H) | DIESEL_COMUM | BRL/L |
 | DIESEL S10 (R); OLEO DIESEL S10 (agregados) | DIESEL_S10 | BRL/L |
 | GNV | GNV | BRL/M3 |
 | GLP | GLP, fora do MVP | BRL/13KG |
 
 O preâmbulo dos agregados informa que OLEO DIESEL se refere a diesel B S500 comum. ETANOL segue a correspondência proposta entre as famílias. `GASOLINA` foi observado em H, junto de GASOLINA ADITIVADA: o alias explícito GASOLINA_COMUM passa a ser exercitado em fonte real, com original preservado. Essa correspondência é uma decisão proposta do contrato, não uma confirmação independente de metadados oficiais.
 
-`DIESEL` não especifica S500 no CSV recebido. Mantê-lo como DIESEL_NAO_ESPECIFICADO até confirmar equivalência com metadados da fonte; não fundir com DIESEL_S500 por suposição. Há seis produtos no histórico e sete nas semanas (incluindo GLP); a união dos nomes canônicos possui oito rótulos devido a essa separação conservadora.
+`DIESEL` (H), `DIESEL S500` (R) e `OLEO DIESEL` (agregados) são o mesmo diesel comum, por decisão do usuário em 2026-10-10, apoiada pela sobreposição: preço idêntico em 305 de 305 pares de posto e dia entre `DIESEL` e `DIESEL S500`, contra 9 de 249 para S10. `DIESEL_S10` permanece separado. O rótulo original continua em `product_original`. Há seis produtos no histórico e sete nas semanas (incluindo GLP), com sete nomes canônicos na união.
 
 `R$/l`/`R$ / litro` → BRL/L; `R$/m3`/`R$/m³`/`R$ / m³` → BRL/M3; `R$/13kg`/`R$ / 13 kg` → BRL/13KG. Desconhecidos são sinalizados, sem associação por similaridade.
 
@@ -164,10 +163,21 @@ O JSON registra versões Python/openpyxl e compara SHA-256 antes/depois. Falha d
 
 **Origem e download** (`scripts/fetch_anp.py`, [ADR 0001](decisions/0001-manifesto-revisoes-e-saida-csv.md)): `data/processed/downloads.jsonl` registra cada tentativa (`url`, `retrieved_at`, `action` = `saved`, `duplicate` ou `error`, `sha256`, `size_bytes`, `http_status`, `raw_path`, `page_updated_on`, `error`). Arquivos novos ficam em `data/raw/downloads/retrieved_at=<UTC>/`. No manifesto, `source_url` vem de um download salvo ou idêntico; `retrieved_at` só de um arquivo que nós baixamos. Arquivos recebidos à mão e idênticos à fonte têm URL, mas `retrieved_at` nulo.
 
-**Sobreposição entre fontes:** a ingestão não deduplica entre arquivos. Com o histórico semestral e as semanas de 28/06 a 03/10 baixadas, 3.107 chaves (29 e 30/06/2026) aparecem no CSV e na semana de 28/06 a 04/07; 3.094 têm o mesmo preço e 13 têm preço diferente. A regra de precedência deve ser definida antes de qualquer agregação.
+**Sobreposição entre fontes:** a ingestão não deduplica entre arquivos. Com o histórico semestral e as semanas de 28/06 a 03/10 baixadas, 3.107 chaves (29 e 30/06/2026) aparecem no CSV e na semana de 28/06 a 04/07; todas têm o mesmo preço quando comparado como número (as 13 "diferenças" registradas antes eram `7.30` contra `7.3`, comparação de texto). A precedência é definida na qualidade, abaixo.
 
 Linhas de outras UFs são contadas (`rows_out_of_scope`), mas não gravadas; o raw nacional não é alterado. Arquivo ilegível ou com valor fora das colunas nomeadas não publica nada daquela versão e é listado em `errors` do relatório (`data/processed/runs/<run_id>.json`).
 
 ## Evidência e pendência
 
-Comandos, contagens e testes estão em [data-discovery.md](data-discovery.md). Já há fonte histórica individual CSV e três semanas por revenda suficientes para iniciar a implementação local da ingestão desses formatos. ZIP mantém teste sintético; nenhum ZIP real foi recebido. Há lacuna de julho/agosto e começo de setembro entre os microdados disponíveis, e a equivalência DIESEL/S500 continua pendente. Agregados não suprem essas lacunas. A ingestão local e o download das semanas por revenda foram executados sobre os arquivos reais (evidências em [PLAN.md](../PLAN.md)). Com as semanas de 28/06 a 03/10, a lacuna de julho a início de setembro deixou de existir: de 01/01 a 02/10/2026, 76 dos 79 dias sem observações em SP são fins de semana e três são sextas-feiras (26/06, 24/07 e 04/09), a avaliar no Marco 3. Preço zero ou negativo e produtos desconhecidos seguem sem tratamento até o Marco 3.
+Comandos, contagens e testes estão em [data-discovery.md](data-discovery.md). Já há fonte histórica individual CSV e três semanas por revenda suficientes para iniciar a implementação local da ingestão desses formatos. ZIP mantém teste sintético; nenhum ZIP real foi recebido. Há lacuna de julho/agosto e começo de setembro entre os microdados disponíveis, e a equivalência DIESEL/S500 continua pendente. Agregados não suprem essas lacunas. A ingestão local e o download das semanas por revenda foram executados sobre os arquivos reais (evidências em [PLAN.md](../PLAN.md)). Com as semanas de 28/06 a 03/10, a lacuna de julho a início de setembro deixou de existir: de 01/01 a 02/10/2026, 76 dos 79 dias sem observações em SP são fins de semana e três são sextas-feiras (26/06, 24/07 e 04/09), a avaliar no Marco 3. Considerando só combustíveis automotivos, são quatro sextas-feiras sem coleta (26/06, 24/07, 04/09 e 18/09; em 18/09 há só duas linhas de GLP). As regras de qualidade estão na seção seguinte.
+
+## Qualidade e saída publicada (Marco 3)
+
+`scripts/check_quality.py` lê o manifesto e as observações das revisões atuais (nunca `data/raw`). Decisões e limites em [ADR 0002](decisions/0002-qualidade-quarentena-e-precedencia.md).
+
+- **Publicadas** (`data/processed/staging/observations.csv`): colunas da observação mais `brand_normalized`, `week_start` (domingo da semana da ANP), `quality_flags` (avisos separados por `;`: `preco_extremo`, `cep_ausente`, `cep_ambiguo_ou_invalido`, `bandeira_ausente`, `razao_social_ausente`, `endereco_ausente`) e `duplicate_sources` (`<source_file_id>:<linha>` das cópias idênticas removidas). `sale_price` e `purchase_price` usam forma canônica sem arredondamento (`7.30`, `5.999`). Uma linha por chave; sem GLP.
+- **Quarentena** (`data/quarantine/quality_observations.csv`): mesmas colunas da observação, `week_start` e `quality_reasons`: `preco_ausente_ou_ilegivel`, `preco_nao_positivo`, `data_invalida`, `data_futura`, `data_fora_do_periodo_do_arquivo`, `uf_ausente`, `municipio_ausente`, `cnpj_ausente`, `cnpj_malformado`, `cnpj_digito_verificador_invalido`, `produto_desconhecido`, `unidade_desconhecida`, `unidade_incompativel` (produto e unidade fora da tabela acima), `conflito_de_preco_mesma_chave` e `preco_implausivel`.
+- **Cobertura** (`data/processed/quality/coverage_weekly.csv` e `coverage_series.csv`): postos e observações por município, produto e semana, mediana de postos das oito semanas anteriores, razão e `low_coverage`; proporção de semanas presentes por série.
+- **Relatório** (`data/processed/quality/runs/<run_id>.json` e `latest.json`): falhas críticas por arquivo, contagens por regra, reconciliação (`rows_ingested = rows_published + rows_quarantined + rows_duplicate_removed + rows_out_of_scope_product`), cobertura, comparação com a execução anterior, amostras sem CNPJ, razão social ou endereço, avisos e decisão (`publicar`, `publicar_com_aviso`, `bloquear`). Com `bloquear`, nenhuma saída é substituída.
+
+Uma mudança de regra de normalização aumenta `NORMALIZATION_VERSION` (em `ingestion/observations.py`); a ingestão refaz uma vez as observações registradas com versão anterior, lendo o raw sem alterá-lo, e grava `normalization_version` no manifesto. A versão 2 trouxe `DIESEL_COMUM`.

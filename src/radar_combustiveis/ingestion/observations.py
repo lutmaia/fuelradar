@@ -13,6 +13,10 @@ from .normalize import (
     normalize_unit, parse_date, parse_money,
 )
 
+# Aumentar quando uma regra de normalização mudar: as observações já gravadas são refeitas.
+# 2: DIESEL e DIESEL S500 passam a DIESEL_COMUM (docs/decisions/0002).
+NORMALIZATION_VERSION = 2
+
 OBSERVATION_COLUMNS = [
     "uf", "region", "municipality_original", "municipality_normalized",
     "legal_name", "trade_name", "brand",

@@ -13,7 +13,7 @@ import uuid
 
 from .download import read_log
 from .manifest import apply_provenance, load_manifest, register, save_manifest, write_text_atomic
-from .observations import OBSERVATION_COLUMNS, REJECTED_COLUMNS, normalize_row, row_hash
+from .observations import NORMALIZATION_VERSION, OBSERVATION_COLUMNS, REJECTED_COLUMNS, normalize_row, row_hash
 from .readers import SourceFormatError, iter_tables, sha256
 
 SUPPORTED_SUFFIXES = {".csv", ".xlsx", ".zip"}
@@ -50,6 +50,7 @@ def _needs_ingestion(entry, out_dir, target_ufs):
         return False
     done = entry["ingestion"]
     return (done is None or done["target_ufs"] != list(target_ufs)
+            or done.get("normalization_version") != NORMALIZATION_VERSION
             or not (out_dir / done["output"]).exists())
 
 
@@ -164,7 +165,8 @@ def run_ingestion(raw_dir, out_dir, quarantine_dir, target_ufs):
         if entry["reference_start"] is None:
             entry["reference_start"], entry["reference_end"] = (
                 stats["collection_date_min"], stats["collection_date_max"])
-        entry["ingestion"] = {"run_id": run_id, "ingested_at": _now(), "target_ufs": list(target_ufs), **stats}
+        entry["ingestion"] = {"run_id": run_id, "ingested_at": _now(), "target_ufs": list(target_ufs),
+                              "normalization_version": NORMALIZATION_VERSION, **stats}
         report["ingested"].append({"source_file_id": entry["source_file_id"], "path": entry["paths"][0], **stats})
 
     changed = [item["path"] for item in found if sha256(item["absolute"]) != item["sha256"]]

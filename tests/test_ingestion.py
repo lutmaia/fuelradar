@@ -193,6 +193,18 @@ class WeeklyXlsxTests(IngestionCase):
         self.assertEqual({r["uf"] for r in self.observations(entry)}, {"SP", "RJ"})
         self.assertEqual(entry["ingestion"]["rows_out_of_scope"], 0)
 
+    def test_normalization_version_change_reprocesses_once(self):
+        self.make_weekly()
+        self.run_ingestion()
+        manifest = self.manifest()
+        manifest["files"][0]["ingestion"]["normalization_version"] = 1  # saída feita com a regra antiga
+        (self.out / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        before = self.raw_hashes()
+        self.assertEqual(len(self.run_ingestion()["ingested"]), 1)
+        self.assertEqual(self.run_ingestion()["ingested"], [])
+        self.assertEqual(self.manifest()["files"][0]["revision"], 1)
+        self.assertEqual(self.raw_hashes(), before)
+
     def test_raw_is_never_modified(self):
         self.make_weekly()
         write_csv(self.raw / "historico.csv", HISTORICAL_HEADER, [historical_row()])
@@ -231,7 +243,8 @@ class HistoricalCsvTests(IngestionCase):
         self.assertEqual(rows[0]["product"], "GASOLINA_COMUM")
         self.assertEqual(rows[0]["product_original"], "GASOLINA")
         self.assertEqual(rows[0]["region"], "SE")
-        self.assertEqual(rows[2]["product"], "DIESEL_NAO_ESPECIFICADO")
+        self.assertEqual(rows[2]["product"], "DIESEL_COMUM")
+        self.assertEqual(rows[2]["product_original"], "DIESEL")
         self.assertEqual(rows[0]["row_key"], rows[1]["row_key"])
         self.assertEqual(rows[0]["source_row_hash"], rows[1]["source_row_hash"])
         self.assertEqual(entry["reference_start"], "2026-01-05")

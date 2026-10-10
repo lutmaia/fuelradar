@@ -22,10 +22,9 @@ PRODUCTS = {
     "GASOLINA": "GASOLINA_COMUM", "GASOLINA COMUM": "GASOLINA_COMUM",
     "GASOLINA ADITIVADA": "GASOLINA_ADITIVADA",
     "ETANOL": "ETANOL_HIDRATADO", "ETANOL HIDRATADO": "ETANOL_HIDRATADO",
-    "DIESEL S500": "DIESEL_S500", "OLEO DIESEL": "DIESEL_S500",
+    # Diesel comum (B S500): mesmo produto com três rótulos; S10 permanece separado (docs/decisions/0002).
+    "DIESEL S500": "DIESEL_COMUM", "OLEO DIESEL": "DIESEL_COMUM", "DIESEL": "DIESEL_COMUM",
     "DIESEL S10": "DIESEL_S10", "OLEO DIESEL S10": "DIESEL_S10",
-    # A fonte histórica não especifica S500 neste rótulo: não fundir por suposição.
-    "DIESEL": "DIESEL_NAO_ESPECIFICADO",
     "GNV": "GNV", "GLP": "GLP",
 }
 MISSING = {"", "-", "NA", "N/A", "NULL"}

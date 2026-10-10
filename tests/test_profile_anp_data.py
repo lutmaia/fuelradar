@@ -68,8 +68,9 @@ class HistoricalTests(unittest.TestCase):
         self.assertEqual(result["ambiguous_identifier_row_numbers"]["postal_code"], [2])
 
     def test_unspecified_diesel_not_silently_s500(self):
-        self.assertEqual(normalize_product("DIESEL"), "DIESEL_NAO_ESPECIFICADO")
-        self.assertNotEqual(normalize_product("DIESEL"), normalize_product("DIESEL S500"))
+        self.assertEqual(normalize_product("DIESEL"), "DIESEL_COMUM")
+        self.assertEqual(normalize_product("DIESEL"), normalize_product("DIESEL S500"))
+        self.assertNotEqual(normalize_product("DIESEL"), normalize_product("DIESEL S10"))
 
     def test_bom_crcrlf_and_historical_csv_in_zip(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -152,7 +153,7 @@ class NormalizationTests(unittest.TestCase):
         for text in ["GASOLINA", "gasolina comum"]:
             self.assertEqual(normalize_product(text), "GASOLINA_COMUM")
         self.assertEqual(normalize_product("ETANOL"), normalize_product("ETANOL HIDRATADO"))
-        self.assertEqual(normalize_product("ÓLEO DIESEL"), "DIESEL_S500")
+        self.assertEqual(normalize_product("ÓLEO DIESEL"), "DIESEL_COMUM")
         self.assertEqual(normalize_product("OLEO DIESEL S10"), "DIESEL_S10")
         self.assertNotEqual(normalize_product("GASOLINA ADITIVADA"), normalize_product("GASOLINA"))
         self.assertIsNone(normalize_product("novo combustível"))
