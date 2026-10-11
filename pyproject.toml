@@ -4,6 +4,16 @@ version = "0.0.1"
 description = "Radar de Combustíveis SP — fundação do projeto"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["openpyxl==3.1.5", "psycopg[binary]==3.3.6"]
+dependencies = [
+    "openpyxl==3.1.5",
+    "psycopg[binary]==3.3.6",
+    "psycopg-pool==3.3.3",
+    "fastapi==0.143.0",
+    "uvicorn==0.54.0",
+]
+
+[project.optional-dependencies]
+# Só para os testes da API (cliente HTTP usado pelo TestClient do FastAPI).
+test = ["httpx==0.28.1"]
 
 # Backend de build e ferramentas serão definidos quando necessários.

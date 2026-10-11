@@ -1,8 +1,14 @@
 """Banco PostgreSQL (Marco 4): migrações, carga, revisão, precedência, integridade e agregações.
 
 Exige um servidor real. Defina RADAR_TEST_DATABASE_URL com uma URL de superusuário/criador de
-bancos (ex.: `python scripts/local_postgres.py url`); cada teste cria e remove o próprio banco.
-Sem a variável, os testes são ignorados e a suíte continua válida.
+bancos; cada teste cria e remove o próprio banco (`radar_test_*`), sem tocar no banco `radar`.
+Com o contêiner do docker-compose.yml no ar (PowerShell):
+
+    $pw = (Get-Content .env | Where-Object { $_ -like 'POSTGRES_PASSWORD=*' }).Split('=', 2)[1]
+    $env:RADAR_TEST_DATABASE_URL = "postgresql://radar:$pw@127.0.0.1:54329/postgres"
+
+Use 127.0.0.1, não localhost (IPv6 primeiro, ~30 s por conexão). Sem a variável, os testes são
+ignorados e a suíte continua válida.
 """
 
 from datetime import date, datetime, timedelta
@@ -110,7 +116,7 @@ class MigrationTests(DatabaseCase):
         with connect(self.url) as conn:
             self.assertEqual(apply_migrations(conn), [])
         versions = [r[0] for r in self.query("SELECT version FROM schema_migration ORDER BY version")]
-        self.assertEqual(versions, ["0001_schema.sql", "0002_marts.sql"])
+        self.assertEqual(versions, ["0001_schema.sql", "0002_marts.sql", "0003_api_reader.sql"])
 
     def test_changed_applied_migration_is_rejected(self):
         copy = Path(tempfile.mkdtemp())

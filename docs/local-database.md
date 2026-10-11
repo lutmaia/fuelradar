@@ -1,8 +1,8 @@
 # Banco de dados local
 
-Runbook do PostgreSQL de desenvolvimento e teste (decisões em [ADR 0003](decisions/0003-banco-postgresql.md)). Comandos no PowerShell, a partir da raiz do projeto. Há dois caminhos para o mesmo banco; use um por vez, pois ambos escutam na porta 54329.
+Runbook do PostgreSQL de desenvolvimento e teste (decisões em [ADR 0003](decisions/0003-banco-postgresql.md)). Comandos no PowerShell, a partir da raiz do projeto. O banco roda somente em Docker Compose, na porta 54329 de `127.0.0.1`.
 
-## Opção A — Docker Compose (recomendada)
+## Docker Compose
 
 Requisito: Docker Desktop com WSL2. Instalação (uma vez, com permissão de administrador; depois saia e entre na sessão do Windows para o grupo `docker-users` valer):
 
@@ -22,14 +22,7 @@ $env:DATABASE_URL = "postgresql://radar:$pw@127.0.0.1:54329/radar"
 
 Use `127.0.0.1` e não `localhost` na URL: no Windows o `localhost` tenta IPv6 primeiro e cada conexão espera cerca de 30 s antes de cair no IPv4.
 
-Dados em um volume do Docker (`radar-combustiveis_pgdata`): `docker compose down` mantém os dados; `docker compose down -v` apaga. Para trocar do banco portátil, basta pará-lo (`scripts/local_postgres.py stop`) e recarregar com `load_db.py`: o banco é reconstruído a partir dos arquivos já processados, sem `pg_dump`.
-
-## Opção B — binários portáteis (sem Docker)
-
-1. Baixe o zip de binários do PostgreSQL 16 (EDB), indicado em <https://www.postgresql.org/download/windows/>, e extraia em `%LOCALAPPDATA%\radar-combustiveis\pg16`, de modo que exista `...\pg16\pgsql\bin\postgres.exe`. Não use a pasta do projeto se ela estiver no OneDrive.
-2. Crie o cluster e o banco: `.\.venv\Scripts\python.exe scripts/local_postgres.py init`. A senha é gerada em `%LOCALAPPDATA%\radar-combustiveis\pg_password`, fora do Git.
-3. Uso: `scripts/local_postgres.py start|stop|status|url`; `$env:DATABASE_URL = (.\.venv\Scripts\python.exe scripts/local_postgres.py url)`.
-4. Limpeza: `stop` e apague `%LOCALAPPDATA%\radar-combustiveis`. Nada é instalado no sistema.
+Dados em um volume do Docker (`radar-combustiveis_pgdata`): `docker compose down` mantém os dados; `docker compose down -v` apaga. Depois de um `down -v`, recarregar com `load_db.py` reconstrói o banco a partir dos arquivos já processados, sem `pg_dump`.
 
 ## Pipeline
 
@@ -45,12 +38,17 @@ A carga é idempotente: repetir não insere nem altera nada. Se a qualidade deci
 ## Testes com banco real
 
 ```powershell
-# mesma URL, apontando para o banco "postgres" (cada teste cria e remove um banco radar_test_*)
-$env:RADAR_TEST_DATABASE_URL = $env:DATABASE_URL.Replace("/radar", "/postgres")
+# mesmo servidor, apontando para o banco "postgres" (cada teste cria e remove um banco radar_test_*)
+$pw = (Get-Content .env | Where-Object { $_ -like 'POSTGRES_PASSWORD=*' }).Split('=', 2)[1]
+$env:RADAR_TEST_DATABASE_URL = "postgresql://radar:$pw@127.0.0.1:54329/postgres"
 .\.venv\Scripts\python.exe -m unittest discover -s tests -t .
 ```
 
-Sem a variável, os 16 testes do banco são ignorados.
+Sem a variável, os 16 testes do banco e os 41 da API são ignorados (a API também exige `httpx`).
+
+## Usuário somente leitura da API
+
+A migração `0003` (aplicada por `load_db.py`) cria o papel `radar_reader`. O login `radar_api` que a API usa é criado por `scripts/create_api_role.py`, com a senha em `RADAR_API_PASSWORD`; o passo a passo está em [api.md](api.md). Como `CREATE ROLE` vale para o servidor inteiro, o papel `radar_reader` também existe depois dos testes, sem privilégios em bancos que não tenham a migração.
 
 ## Consultas úteis
 

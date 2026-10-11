@@ -2,7 +2,7 @@
 
 Projeto em construção para consultar, comparar e acompanhar os preços de combustíveis pesquisados pela ANP em São Paulo. A arquitetura permite expansão futura por UF.
 
-**Estado atual: Marco 4 concluído — banco PostgreSQL.** Os arquivos da ANP são baixados e ingeridos (Marco 2), passam por regras de qualidade e quarentena (Marco 3) e são carregados no PostgreSQL com dimensões, fato e agregações semanais (Marco 4). Ainda não há API, dashboard, modelos ou infraestrutura. Resultados e limitações em [PLAN.md](PLAN.md).
+**Estado atual: Marco 5 concluído — API de leitura.** Os arquivos da ANP são baixados e ingeridos (Marco 2), passam por regras de qualidade e quarentena (Marco 3), são carregados no PostgreSQL com dimensões, fato e agregações semanais (Marco 4) e consultados por uma API REST somente leitura (Marco 5, [guia](docs/api.md)). Ainda não há dashboard, modelos ou infraestrutura de produção. Resultados e limitações em [PLAN.md](PLAN.md).
 
 ## Começar
 
@@ -12,7 +12,7 @@ Projeto em construção para consultar, comparar e acompanhar os preços de comb
 4. Consulte [a descoberta real](docs/data-discovery.md), [o contrato](docs/data-contract.md) e [o resumo gerado](reports/data-profile/summary.md).
 5. Preserve os originais conforme [data/README.md](data/README.md).
 
-Python 3.12+ é o requisito. O `pyproject.toml` registra metadados, `openpyxl==3.1.5` (ler XLSX) e `psycopg[binary]==3.3.6` (cliente PostgreSQL). O código do produto está em `src/radar_combustiveis/` e os pontos de entrada em `scripts/`. Empacotamento, uv e lockfile serão configurados quando necessários, conforme a arquitetura.
+Python 3.12+ é o requisito. O `pyproject.toml` registra metadados e as dependências: `openpyxl` (ler XLSX), `psycopg[binary]` e `psycopg-pool` (cliente PostgreSQL), `fastapi` e `uvicorn` (API); `httpx` só para os testes da API. O código do produto está em `src/radar_combustiveis/` e os pontos de entrada em `scripts/`. Empacotamento, uv e lockfile serão configurados quando necessários, conforme a arquitetura.
 
 Para reproduzir o perfil no PowerShell, a partir da raiz (reutilize `.venv` se já existir):
 
@@ -25,7 +25,7 @@ python -m venv .venv
 
 São necessários os arquivos locais: dados brutos não acompanham o Git. O script produz `reports/data-profile/profile.json` e `summary.md`, sem modificar os originais. Veja limitações e resultados em [data-discovery.md](docs/data-discovery.md).
 
-A `.env.example` documenta `TARGET_UFS=["SP"]` e `DATABASE_URL`, lidas do ambiente. Não contém segredos; um `.env` local fica fora do Git.
+A `.env.example` documenta `TARGET_UFS=["SP"]`, `DATABASE_URL` (pipeline) e `API_DATABASE_URL` (API, usuário somente leitura), lidas do ambiente. Não contém segredos; um `.env` local fica fora do Git.
 
 Pipeline completo, a partir da raiz (banco local: [docs/local-database.md](docs/local-database.md)):
 
@@ -34,17 +34,20 @@ Pipeline completo, a partir da raiz (banco local: [docs/local-database.md](docs/
 .\.venv\Scripts\python.exe scripts/ingest_local.py              # ingestão local do que estiver em data/raw
 .\.venv\Scripts\python.exe scripts/check_quality.py             # qualidade, quarentena e cobertura
 .\.venv\Scripts\python.exe scripts/load_db.py                   # migra e carrega no PostgreSQL (DATABASE_URL)
+.\.venv\Scripts\python.exe scripts/run_api.py                   # sobe a API em http://127.0.0.1:8000/docs (API_DATABASE_URL)
 ```
+
+O usuário somente leitura da API é criado uma vez por `scripts/create_api_role.py`; os passos estão em [docs/api.md](docs/api.md).
 
 ## Organização
 
-- `src/radar_combustiveis/`: ingestão, qualidade e acesso ao banco.
-- `scripts/`: perfil exploratório, download, ingestão, qualidade, carga e servidor local de teste.
+- `src/radar_combustiveis/`: ingestão, qualidade, acesso ao banco e API (`api/`).
+- `scripts/`: perfil exploratório, download, ingestão, qualidade, carga, API e criação do usuário da API.
 - `migrations/`: esquema do PostgreSQL em SQL versionado.
-- `tests/`: testes com dados sintéticos; os do banco exigem `RADAR_TEST_DATABASE_URL`.
+- `tests/`: testes com dados sintéticos; os do banco e da API exigem `RADAR_TEST_DATABASE_URL` (a API, também `httpx`).
 - `reports/data-profile/`: estatísticas e metadados da análise, sem cópias de linhas brutas.
 - `data/`: originais, derivados e quarentena locais, excluídos do Git.
-- `docs/`: arquitetura, contrato pendente e futuras decisões.
+- `docs/`: arquitetura, contratos de dados e da API, runbook do banco e decisões (ADRs).
 
 Os arquivos `.gitkeep` são marcadores vazios para preservar pastas no Git. O `.gitignore` exclui dados locais, segredos e artefatos de execução; não use `git add -f` para contornar essa proteção.
 
@@ -60,4 +63,4 @@ Para reproduzir a validação histórica (sem sobrescrever o relatório do Marco
 .\.venv\Scripts\python.exe scripts/profile_anp_data.py "data/raw/historicos/*.csv" "data/raw/revendas*.xlsx" --output-dir reports/data-profile/historical-validation
 ```
 
-Próximo passo: Marco 5, API de leitura sobre o banco. Agregados municipais e regionais não entram na tabela de observações individuais; `DIESEL` e `DIESEL S500` são o mesmo produto (`DIESEL_COMUM`) e `DIESEL S10` fica separado, conforme o contrato.
+Próximo passo: Marco 6, dashboard sobre a API. `/forecasts` e `/anomalies` ficam para o Marco 7. Agregados municipais e regionais não entram na tabela de observações individuais; `DIESEL` e `DIESEL S500` são o mesmo produto (`DIESEL_COMUM`) e `DIESEL S10` fica separado, conforme o contrato.

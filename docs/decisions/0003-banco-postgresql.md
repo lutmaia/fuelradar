@@ -1,6 +1,6 @@
 # 0003 — Banco PostgreSQL, migrações em SQL e carga por instantâneo
 
-- **Status:** aceita (Marco 4, 2026-10-10)
+- **Status:** aceita (Marco 4, 2026-10-10); a decisão 1 (binários portáteis) foi substituída por Docker Compose no último adendo, de 2026-10-10
 - **Contexto:** a seção 11 da [arquitetura](../architecture.md) define as tabelas, e a seção 9.2 manda substituir o período derivado numa transação quando a fonte revisa um arquivo. O Marco 3 entrega um conjunto publicado único em CSV ([ADR 0002](0002-qualidade-quarentena-e-precedencia.md)). A máquina de desenvolvimento não tinha PostgreSQL nem Docker.
 
 ## Decisão
@@ -43,3 +43,9 @@
 A pedido do projeto (portfólio), o banco também sobe por `docker-compose.yml`, com `postgres:16.15-bookworm`, mesma versão dos binários portáteis, porta somente em loopback, senha vinda do `.env` e dados em volume do Docker. O caminho portátil permanece como alternativa para quem não tem Docker. Verificado em 2026-10-10 com Docker Desktop 4.94.0 (engine 29.8.2, Compose v5.5.1): `docker compose config` válido; contêiner `healthy` com a porta só em `127.0.0.1`; carga real de 179.699 observações e recarga com 0 alterações; os 100 testes aprovados contra ele; os dados sobrevivem a `docker compose down` e `up` (volume `radar-combustiveis_pgdata`); a conferência independente CSV × banco repetida sem divergência. Conteinerizar o pipeline e a futura API segue no Marco 8.
 
 **Lição: use `127.0.0.1`, não `localhost`, na URL.** No Windows, `localhost` resolve primeiro para `::1`; o Docker publica a porta só em IPv4, e cada conexão esperava ~30 s pelo timeout do IPv6 antes de cair no IPv4 (a primeira carga levou minutos; com `127.0.0.1` a recarga leva ~4,5 s). Consultas e `COPY` não eram o gargalo.
+
+## Adendo — somente Docker (2026-10-10)
+
+Decisão do projeto: o banco de desenvolvimento e teste passa a rodar **somente em Docker Compose**. O caminho de binários portáteis da EDB foi descontinuado: `scripts/local_postgres.py` e a "Opção B" do runbook foram removidos, e a pasta `%LOCALAPPDATA%/radar-combustiveis` já não existia na máquina. Isso substitui a decisão 1 deste ADR e dispensa a consequência sobre binários sem assinatura digital (e o SHA-256 do zip da EDB), que só valiam para aquele caminho. O restante permanece: `postgres:16.15-bookworm`, porta só em `127.0.0.1:54329`, `scram-sha-256` pela imagem oficial e senha no `.env` ignorado pelo Git.
+
+Consequência: quem não tem Docker Desktop não consegue rodar o banco por este repositório. Os testes com banco continuam opcionais (`RADAR_TEST_DATABASE_URL`), e o histórico em `PLAN.md` e nas seções acima descreve o que foi feito no Marco 4 com os binários, sem reescrita.

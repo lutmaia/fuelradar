@@ -199,3 +199,5 @@ Uma mudança de regra de normalização aumenta `NORMALIZATION_VERSION` (em `ing
 | `mart_weekly_state_price` | as mesmas estatísticas de preço por semana, UF e produto |
 
 Regras: a carga só aceita saída com decisão `publicar` ou `publicar_com_aviso` e contagens iguais às do relatório; linhas que deixam de pertencer ao conjunto publicado (revisão nova da fonte, precedência, regra de qualidade) ficam com `is_current_source_revision = false` e nunca são apagadas; consultas de produto devem filtrar `is_current_source_revision` (as agregações já filtram). As estatísticas de preço são arredondadas a 4 casas.
+
+**Leitura pela API (Marco 5).** A migração `0003_api_reader.sql` cria o papel `radar_reader` (sem login), com `SELECT` só nas tabelas e colunas que a API usa: ficam de fora `source_file.storage_uri`, `ingestion_run.error_summary`, `ingestion_run.code_sha`, `quarantine_observation.original` e `schema_migration`. Também cria os índices `ix_mart_city_series` e `ix_fact_current_collection_date`. A API conecta como `radar_api` (membro de `radar_reader`) e não escreve. Contrato das respostas em [api.md](api.md) e no OpenAPI.

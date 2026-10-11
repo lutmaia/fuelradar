@@ -4,7 +4,7 @@ name: radar-combustiveis
 
 services:
   postgres:
-    # Mesma versão do banco portátil (scripts/local_postgres.py), para paridade.
+    # Versão fixada, para o banco de desenvolvimento e teste ser reproduzível.
     image: postgres:16.15-bookworm
     environment:
       POSTGRES_USER: radar
