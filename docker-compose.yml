@@ -1,0 +1,28 @@
+# Serviços de desenvolvimento. Hoje só o banco; API e painel entram nos Marcos 5 e 6.
+# Uso: docker compose up -d --wait   (exige POSTGRES_PASSWORD no .env, que o Git ignora)
+name: radar-combustiveis
+
+services:
+  postgres:
+    # Mesma versão do banco portátil (scripts/local_postgres.py), para paridade.
+    image: postgres:16.15-bookworm
+    environment:
+      POSTGRES_USER: radar
+      POSTGRES_DB: radar
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no arquivo .env}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      # Somente loopback: o banco não fica exposto na rede.
+      - "127.0.0.1:${POSTGRES_PORT:-54329}:5432"
+    volumes:
+      # Volume gerenciado pelo Docker: fora do projeto, do OneDrive e das permissões do Windows.
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U radar -d radar"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+volumes:
+  pgdata:

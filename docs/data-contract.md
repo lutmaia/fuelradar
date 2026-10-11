@@ -1,6 +1,6 @@
-# Contrato de dados proposto — versão 0.4
+# Contrato de dados proposto — versão 0.5
 
-Validado exploratoriamente nos nove XLSX do Marco 1 e no CSV histórico por revenda recebido em 2026-10-01, descritos em [data-discovery.md](data-discovery.md). Este é um contrato dos formatos observados. A versão 0.3 acrescentou a [saída da ingestão local](#saída-da-ingestão-local-marco-2-etapa-2) e a 0.4, as [regras de qualidade e a saída publicada](#qualidade-e-saída-publicada-marco-3), que ainda não são a carga definitiva em banco. O [perfil do Marco 1](../reports/data-profile/profile.json) preserva o diagnóstico inicial; a [validação histórica atual](../reports/data-profile/historical-validation/profile.json) contém o CSV e a nova comparação com as três semanas. A [arquitetura](architecture.md) permanece a especificação principal.
+Validado exploratoriamente nos nove XLSX do Marco 1 e no CSV histórico por revenda recebido em 2026-10-01, descritos em [data-discovery.md](data-discovery.md). Este é um contrato dos formatos observados. A versão 0.3 acrescentou a [saída da ingestão local](#saída-da-ingestão-local-marco-2-etapa-2) a 0.4, as [regras de qualidade e a saída publicada](#qualidade-e-saída-publicada-marco-3) e a 0.5, o [modelo no PostgreSQL](#banco-de-dados-marco-4). O [perfil do Marco 1](../reports/data-profile/profile.json) preserva o diagnóstico inicial; a [validação histórica atual](../reports/data-profile/historical-validation/profile.json) contém o CSV e a nova comparação com as três semanas. A [arquitetura](architecture.md) permanece a especificação principal.
 
 ## Granularidades e limites
 
@@ -181,3 +181,21 @@ Comandos, contagens e testes estão em [data-discovery.md](data-discovery.md). J
 - **Relatório** (`data/processed/quality/runs/<run_id>.json` e `latest.json`): falhas críticas por arquivo, contagens por regra, reconciliação (`rows_ingested = rows_published + rows_quarantined + rows_duplicate_removed + rows_out_of_scope_product`), cobertura, comparação com a execução anterior, amostras sem CNPJ, razão social ou endereço, avisos e decisão (`publicar`, `publicar_com_aviso`, `bloquear`). Com `bloquear`, nenhuma saída é substituída.
 
 Uma mudança de regra de normalização aumenta `NORMALIZATION_VERSION` (em `ingestion/observations.py`); a ingestão refaz uma vez as observações registradas com versão anterior, lendo o raw sem alterá-lo, e grava `normalization_version` no manifesto. A versão 2 trouxe `DIESEL_COMUM`.
+
+## Banco de dados (Marco 4)
+
+`scripts/load_db.py` aplica `migrations/*.sql` e carrega a saída publicada no esquema `radar`. Decisões em [ADR 0003](decisions/0003-banco-postgresql.md) e operação em [local-database.md](local-database.md).
+
+| Tabela | Conteúdo e chave |
+|---|---|
+| `ingestion_run` | uma linha por carga: status (`success`, `warning`, `failed`), commit, contagens, execução e decisão da qualidade, resumo do erro sem valores de linha |
+| `source_file` | todo arquivo do manifesto (inclusive agregados, que nunca viram observações): SHA-256 único, `period_key` + `revision`, `is_current`, URL, `retrieved_at`, `storage_uri` |
+| `dim_location` | `(uf, municipality_name_normalized)` único; `region` quando a fonte traz; `ibge_code` nulo |
+| `dim_product` | 7 produtos canônicos com unidade; GLP presente e `active = false` |
+| `dim_station` | CNPJ único; atributos do registro mais recente; `first_seen_date`/`last_seen_date` |
+| `fact_price_observation` | uma linha por observação publicada; `sale_price` numérico exato; `row_key` único entre as vigentes; `quality_status`, `quality_flags`, `duplicate_sources`; `is_current_source_revision` |
+| `quarantine_observation` | linhas em quarentena com `reasons` e `original` (jsonb) |
+| `mart_weekly_city_price` | por semana, município e produto: observações, postos, mínimo, p25, mediana, média, p75, máximo, desvio, mediana-base de postos, `coverage_ratio` e `quality_flag` (`ok`, `cobertura_baixa`, `sem_historico`) |
+| `mart_weekly_state_price` | as mesmas estatísticas de preço por semana, UF e produto |
+
+Regras: a carga só aceita saída com decisão `publicar` ou `publicar_com_aviso` e contagens iguais às do relatório; linhas que deixam de pertencer ao conjunto publicado (revisão nova da fonte, precedência, regra de qualidade) ficam com `is_current_source_revision = false` e nunca são apagadas; consultas de produto devem filtrar `is_current_source_revision` (as agregações já filtram). As estatísticas de preço são arredondadas a 4 casas.

@@ -2,7 +2,7 @@
 
 Projeto em construção para consultar, comparar e acompanhar os preços de combustíveis pesquisados pela ANP em São Paulo. A arquitetura permite expansão futura por UF.
 
-**Estado atual: Marco 2, etapa 1 — fonte histórica validada.** Após a descoberta dos nove XLSX, um CSV histórico individual por revenda foi validado e comparado às semanas. Há perfil exploratório e 29 testes; o Marco 2 completo permanece pendente, sem ingestão definitiva, banco, API, dashboard, modelos ou infraestrutura.
+**Estado atual: Marco 4 concluído — banco PostgreSQL.** Os arquivos da ANP são baixados e ingeridos (Marco 2), passam por regras de qualidade e quarentena (Marco 3) e são carregados no PostgreSQL com dimensões, fato e agregações semanais (Marco 4). Ainda não há API, dashboard, modelos ou infraestrutura. Resultados e limitações em [PLAN.md](PLAN.md).
 
 ## Começar
 
@@ -12,7 +12,7 @@ Projeto em construção para consultar, comparar e acompanhar os preços de comb
 4. Consulte [a descoberta real](docs/data-discovery.md), [o contrato](docs/data-contract.md) e [o resumo gerado](reports/data-profile/summary.md).
 5. Preserve os originais conforme [data/README.md](data/README.md).
 
-Python 3.12+ é o requisito. O `pyproject.toml` registra metadados e `openpyxl==3.1.5`, necessário para ler XLSX. O código exploratório está em `scripts/`; `src/radar_combustiveis/` continua reservado para o código do produto. Empacotamento, uv e lockfile serão configurados quando necessários, conforme a arquitetura.
+Python 3.12+ é o requisito. O `pyproject.toml` registra metadados, `openpyxl==3.1.5` (ler XLSX) e `psycopg[binary]==3.3.6` (cliente PostgreSQL). O código do produto está em `src/radar_combustiveis/` e os pontos de entrada em `scripts/`. Empacotamento, uv e lockfile serão configurados quando necessários, conforme a arquitetura.
 
 Para reproduzir o perfil no PowerShell, a partir da raiz (reutilize `.venv` se já existir):
 
@@ -25,13 +25,23 @@ python -m venv .venv
 
 São necessários os arquivos locais: dados brutos não acompanham o Git. O script produz `reports/data-profile/profile.json` e `summary.md`, sem modificar os originais. Veja limitações e resultados em [data-discovery.md](docs/data-discovery.md).
 
-A `.env.example` documenta a futura configuração central `TARGET_UFS=["SP"]`. Não contém segredos e ainda não é carregada por código. Um eventual `.env` local fica fora do Git.
+A `.env.example` documenta `TARGET_UFS=["SP"]` e `DATABASE_URL`, lidas do ambiente. Não contém segredos; um `.env` local fica fora do Git.
+
+Pipeline completo, a partir da raiz (banco local: [docs/local-database.md](docs/local-database.md)):
+
+```powershell
+.\.venv\Scripts\python.exe scripts/fetch_anp.py --ingest      # baixa as semanas novas da ANP e ingere
+.\.venv\Scripts\python.exe scripts/ingest_local.py              # ingestão local do que estiver em data/raw
+.\.venv\Scripts\python.exe scripts/check_quality.py             # qualidade, quarentena e cobertura
+.\.venv\Scripts\python.exe scripts/load_db.py                   # migra e carrega no PostgreSQL (DATABASE_URL)
+```
 
 ## Organização
 
-- `src/`: futuro código Python.
-- `scripts/`: perfil exploratório reproduzível, sem ingestão definitiva.
-- `tests/`: testes do perfil com amostras sintéticas pequenas.
+- `src/radar_combustiveis/`: ingestão, qualidade e acesso ao banco.
+- `scripts/`: perfil exploratório, download, ingestão, qualidade, carga e servidor local de teste.
+- `migrations/`: esquema do PostgreSQL em SQL versionado.
+- `tests/`: testes com dados sintéticos; os do banco exigem `RADAR_TEST_DATABASE_URL`.
 - `reports/data-profile/`: estatísticas e metadados da análise, sem cópias de linhas brutas.
 - `data/`: originais, derivados e quarentena locais, excluídos do Git.
 - `docs/`: arquitetura, contrato pendente e futuras decisões.
@@ -50,4 +60,4 @@ Para reproduzir a validação histórica (sem sobrescrever o relatório do Marco
 .\.venv\Scripts\python.exe scripts/profile_anp_data.py "data/raw/historicos/*.csv" "data/raw/revendas*.xlsx" --output-dir reports/data-profile/historical-validation
 ```
 
-Próximo passo: implementar ingestão histórica e semanal em nova tarefa. Já há histórico individual de jan–jun/2026 e três semanas de setembro; isso não constitui cobertura contínua. Agregados não entrarão na tabela de observações individuais. Consulte as restrições de identificadores e de normalização de DIESEL no contrato.
+Próximo passo: Marco 5, API de leitura sobre o banco. Agregados municipais e regionais não entram na tabela de observações individuais; `DIESEL` e `DIESEL S500` são o mesmo produto (`DIESEL_COMUM`) e `DIESEL S10` fica separado, conforme o contrato.
