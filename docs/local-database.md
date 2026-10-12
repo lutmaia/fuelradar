@@ -44,7 +44,7 @@ $env:RADAR_TEST_DATABASE_URL = "postgresql://radar:$pw@127.0.0.1:54329/postgres"
 .\.venv\Scripts\python.exe -m unittest discover -s tests -t .
 ```
 
-Sem a variável, os 16 testes do banco e os 41 da API são ignorados (a API também exige `httpx`).
+Sem a variável, os 16 testes do banco, os 41 da API e os 4 de integração do painel são ignorados.
 
 ## Usuário somente leitura da API
 

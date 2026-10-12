@@ -1,0 +1,673 @@
+"""Painel (Marco 6): formatação, cliente, gráficos, exportação e páginas.
+
+As páginas rodam com o `AppTest` do Streamlit, sem navegador: primeiro contra uma API falsa (casos de
+borda, erros e textos), depois contra a API real sobre um PostgreSQL de teste (mesmos dados sintéticos
+de tests/test_api.py), conferindo que o que aparece é o que a API e o cálculo independente dizem.
+Sem banco ou sem httpx, só a parte sem banco roda.
+"""
+
+from datetime import date, timedelta
+import json
+import os
+from pathlib import Path
+import sys
+import unittest
+from unittest import mock
+
+import logging
+
+import httpx
+import pandas as pd
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+# Sem servidor, o Streamlit avisa a cada AppTest que não há runtime; o aviso é esperado.
+os.environ.setdefault("STREAMLIT_LOGGER_LEVEL", "error")
+
+from streamlit.testing.v1 import AppTest  # noqa: E402
+import streamlit as st  # noqa: E402
+
+from radar_combustiveis.dashboard import charts, exports, formatting as fmt, tables, views  # noqa: E402
+from radar_combustiveis.dashboard.client import (ApiClient, ApiError, ApiUnavailable,  # noqa: E402
+                                                 EXPORT_ROW_LIMIT, PAGE_SIZE)
+from tests.test_api import ApiCase, LAST, LAST_COLLECTION, week  # noqa: E402
+
+# O Streamlit avisa a cada AppTest que não há runtime; é esperado fora do servidor.
+logging.getLogger("streamlit").setLevel(logging.ERROR)
+
+
+def tearDownModule():
+    # O AppTest cria um diretório temporário no import e só o descarta na saída do interpretador,
+    # com ResourceWarning. Descartá-lo aqui mantém `-W error::ResourceWarning` limpo.
+    from streamlit.testing.v1 import app_test
+    app_test.TMP_DIR.cleanup()
+
+
+EXPLORE = "from radar_combustiveis.dashboard import views\nviews.guarded(views.explore)()"
+HOME = "from radar_combustiveis.dashboard import views\nviews.guarded(views.home)()"
+COMPARE = "from radar_combustiveis.dashboard import views\nviews.guarded(views.compare)()"
+QUALITY = "from radar_combustiveis.dashboard import views\nviews.guarded(views.quality)()"
+RANKING = "from radar_combustiveis.dashboard import views\nviews.guarded(views.stations_ranking)()"
+
+
+# -- Formatação -----------------------------------------------------------------------------
+
+
+class FormattingTests(unittest.TestCase):
+    def test_brazilian_numbers(self):
+        self.assertEqual(fmt.brl(6.289), "R$ 6,29")
+        self.assertEqual(fmt.brl(6.289, 3), "R$ 6,289")
+        self.assertEqual(fmt.brl(1234.5), "R$ 1.234,50")
+        self.assertEqual(fmt.number_br(179699), "179.699")
+        self.assertEqual(fmt.decimal_br(0.3103, 4), "0,3103")
+        self.assertEqual(fmt.brl(None), "N/D")
+        self.assertEqual(fmt.number_br(None), "N/D")
+
+    def test_signed_values_and_percent(self):
+        self.assertEqual(fmt.percent(0.0123), "+1,2%")
+        self.assertEqual(fmt.percent(-0.0156), "−1,6%")
+        self.assertEqual(fmt.percent(0.0), "0,0%")
+        self.assertEqual(fmt.percent(0.00001), "0,0%")  # sem sinal quando arredonda para zero
+        self.assertEqual(fmt.percent(0.5, 0, signed=False), "50%")
+        self.assertEqual(fmt.percent(None), "N/D")
+        self.assertEqual(fmt.signed_brl(0.1), "+R$ 0,10")
+        self.assertEqual(fmt.signed_brl(-0.1), "−R$ 0,10")
+        self.assertEqual(fmt.signed_brl(None), "N/D")
+
+    def test_dates_and_instants(self):
+        self.assertEqual(fmt.date_br("2026-09-27"), "27/09/2026")
+        self.assertEqual(fmt.date_br(date(2026, 1, 5)), "05/01/2026")
+        self.assertEqual(fmt.date_br(None), "N/D")
+        self.assertEqual(fmt.datetime_br("2026-10-08T19:25:21Z"), "08/10/2026 19:25 UTC")
+        self.assertEqual(fmt.week_range_br("2026-09-27"), "27/09/2026 a 03/10/2026")
+        self.assertEqual(fmt.retrieved_text(None), "sem registro de download")
+        self.assertEqual(fmt.retrieved_short(None), "sem registro")
+        self.assertEqual(fmt.retrieved_short("2026-10-08T19:25:21Z"), "08/10/2026")
+        self.assertIn("UTC", fmt.retrieved_text("2026-10-08T19:25:21Z"))
+
+    def test_weekly_change_text_explains_the_missing_value(self):
+        self.assertEqual(fmt.change_text({"value": -0.0156, "reason": None}), "−1,6%")
+        self.assertEqual(fmt.change_text({"value": None, "reason": "LOW_COVERAGE"}), "N/D (cobertura insuficiente)")
+        self.assertEqual(fmt.change_text({"value": None, "reason": "NO_PREVIOUS_WEEK"}), "N/D (sem semana anterior)")
+        self.assertEqual(fmt.coverage_label("low"), "Cobertura baixa")
+        self.assertEqual(fmt.unit_label("BRL/M3"), "R$/m³")
+
+
+# -- Cliente --------------------------------------------------------------------------------
+
+
+def mock_client(handler):
+    return ApiClient(httpx.Client(base_url="http://api.test", transport=httpx.MockTransport(handler)))
+
+
+class ClientTests(unittest.TestCase):
+    def test_none_params_are_dropped_and_lists_repeat(self):
+        seen = []
+
+        def handler(request):
+            seen.append(request.url)
+            return httpx.Response(200, json={"items": [], "total": 0, "page": 1, "page_size": 200,
+                                             "location": {}, "product": "X", "start": "", "end": ""})
+        client = mock_client(handler)
+        client.compare("GASOLINA_COMUM", ["A", "B"], None)
+        client.history("GASOLINA_COMUM", None, "2026-01-04")
+        self.assertEqual(seen[0].params.get_list("municipality"), ["A", "B"])
+        self.assertNotIn("week_start", seen[0].params)
+        self.assertNotIn("municipality", seen[1].params)
+        self.assertEqual(seen[1].params["start"], "2026-01-04")
+
+    def test_pagination_collects_every_page(self):
+        pages = {1: list(range(200)), 2: list(range(200, 250))}
+
+        def handler(request):
+            page = int(request.url.params["page"])
+            return httpx.Response(200, json={"items": pages[page], "total": 250, "page": page, "page_size": 200})
+        items = mock_client(handler).locations()
+        self.assertEqual(len(items), 250)
+
+    def test_export_limit_truncates_and_reports_it(self):
+        def handler(request):
+            return httpx.Response(200, json={"items": list(range(PAGE_SIZE)), "total": 99_999, "page": 1,
+                                             "page_size": PAGE_SIZE})
+        body = mock_client(handler).stations("CAMPINAS", "GASOLINA_COMUM")
+        self.assertTrue(body["truncated"])
+        self.assertEqual(len(body["items"]), EXPORT_ROW_LIMIT)
+        self.assertEqual(body["total"], 99_999)
+
+    def test_station_ranking_asks_the_api_for_five_current_stations_in_order(self):
+        seen = []
+
+        def handler(request):
+            seen.append(dict(request.url.params))
+            return httpx.Response(200, json={"items": [], "total": 0, "page": 1, "page_size": 5})
+        client = mock_client(handler)
+        client.station_ranking("CAMPINAS", "GASOLINA_COMUM", True)
+        client.station_ranking("CAMPINAS", "GASOLINA_COMUM", False)
+        self.assertEqual([p["order"] for p in seen], ["price_asc", "price_desc"])
+        for params in seen:
+            self.assertEqual((params["only_latest_week"], params["page"], params["page_size"], params["municipality"]),
+                             ("true", "1", "5", "CAMPINAS"))
+
+    def test_api_error_keeps_code_message_and_request_id(self):
+        def handler(request):
+            return httpx.Response(404, json={"error": {"code": "LOCATION_NOT_FOUND", "message": "Município não encontrado.",
+                                                       "request_id": "abc"}})
+        with self.assertRaises(ApiError) as caught:
+            mock_client(handler).latest("GASOLINA_COMUM", "ATLANTIDA")
+        self.assertEqual((caught.exception.status, caught.exception.code, caught.exception.request_id),
+                         (404, "LOCATION_NOT_FOUND", "abc"))
+
+    def test_unexpected_responses_become_api_errors(self):
+        with self.assertRaises(ApiError) as caught:
+            mock_client(lambda r: httpx.Response(502, text="<html>bad gateway</html>")).freshness()
+        self.assertEqual((caught.exception.status, caught.exception.code), (502, "HTTP_ERROR"))
+        with self.assertRaises(ApiError) as caught:
+            mock_client(lambda r: httpx.Response(200, text="não é json")).freshness()
+        self.assertEqual(caught.exception.code, "INVALID_RESPONSE")
+
+    def test_network_failure_is_api_unavailable(self):
+        def handler(request):
+            raise httpx.ConnectError("recusada")
+        with self.assertRaises(ApiUnavailable):
+            mock_client(handler).freshness()
+
+    def test_from_env(self):
+        self.assertEqual(ApiClient.from_env({}).base_url, "http://127.0.0.1:8000")
+        self.assertEqual(ApiClient.from_env({"RADAR_API_URL": "http://api.local:9000/"}).base_url, "http://api.local:9000")
+
+
+# -- Gráficos e exportação -----------------------------------------------------------------
+
+
+def point(week_start, median, status="ok", stations=8, obs=8, p25=None, p75=None):
+    return {"week_start": week_start,
+            "week_end": (date.fromisoformat(week_start) + timedelta(days=6)).isoformat(),
+            "statistics": {"min": median - 0.2, "p25": p25 or median - 0.1, "median": median, "mean": median,
+                           "p75": p75 or median + 0.1, "max": median + 0.2, "stddev": 0.1},
+            "sample": {"observations": obs, "stations": stations, "coverage_status": status},
+            "weekly_change": {"value": 0.01, "previous_week_start": None, "reason": None}}
+
+
+class ChartAndExportTests(unittest.TestCase):
+    def test_missing_weeks_become_gaps_not_interpolated_values(self):
+        points = [point("2026-09-06", 6.0), point("2026-09-20", 6.2)]  # falta 13/09
+        by_week, weeks = charts.weekly_axis(points)
+        self.assertEqual(weeks, ["2026-09-06", "2026-09-13", "2026-09-20"])
+        fig = charts.history_figure(points, "CAMPINAS", "R$/litro")
+        median = next(t for t in fig.data if t.name == "Mediana — CAMPINAS")
+        self.assertEqual(list(median.y), [6.0, None, 6.2])
+        self.assertFalse(median.connectgaps)
+
+    def test_low_coverage_is_marked_and_state_reference_is_drawn(self):
+        points = [point("2026-09-06", 6.0), point("2026-09-13", 6.1, status="low", stations=2)]
+        state = [point("2026-09-06", 6.05), point("2026-09-13", 6.08)]
+        fig = charts.history_figure(points, "JUNDIAI", "R$/litro", state)
+        names = [t.name for t in fig.data]
+        self.assertIn("Cobertura baixa", names)
+        self.assertIn("Mediana — estado de SP", names)
+        low = next(t for t in fig.data if t.name == "Cobertura baixa")
+        self.assertEqual(list(low.x), ["2026-09-13"])
+        self.assertEqual(low.marker.symbol, "x")  # não depende só da cor
+        self.assertLess(fig.layout.legend.y, 0)  # legenda abaixo do gráfico, não sobre o título
+
+    def test_normalized_index_starts_at_100_on_the_first_common_week(self):
+        a = [point("2026-09-06", 5.0), point("2026-09-13", 5.5)]
+        b = [point("2026-09-13", 6.0), point("2026-09-20", 6.3)]
+        absolute, normalized, base = charts.comparison_figures({"A": a, "B": b}, "R$/litro")
+        self.assertEqual(base, "2026-09-13")
+        by_name = {t.name: t for t in normalized.data}
+        self.assertEqual(list(by_name["A"].y)[1], 100.0)
+        self.assertEqual(list(by_name["B"].y)[0], 100.0)
+        self.assertAlmostEqual(list(by_name["B"].y)[1], 105.0)
+        self.assertEqual(len(absolute.data), 2)
+
+    def test_no_common_week_yields_no_index(self):
+        a, b = [point("2026-08-02", 5.0)], [point("2026-09-13", 6.0)]
+        _, normalized, base = charts.comparison_figures({"A": a, "B": b}, "R$/litro")
+        self.assertIsNone(base)
+        self.assertEqual(len(normalized.data), 0)
+
+    def test_history_csv_is_excel_friendly_and_keeps_missing_values_empty(self):
+        history = {"location": {"uf": "SP", "municipality": "CAMPINAS"}, "product": "GASOLINA_COMUM",
+                   "items": [{**point("2026-09-27", 6.289), "weekly_change": {"value": None, "reason": "LOW_COVERAGE"}}]}
+        raw = exports.history_csv(history)
+        self.assertTrue(raw.startswith(b"\xef\xbb\xbf"))
+        lines = raw.decode("utf-8-sig").split("\r\n")
+        header, row = lines[0].split(";"), lines[1].split(";")
+        record = dict(zip(header, row))
+        self.assertEqual(record["mediana"], "6,2890")
+        self.assertEqual(record["municipio"], "CAMPINAS")
+        self.assertEqual(record["variacao_semanal"], "")
+        self.assertEqual(record["motivo_sem_variacao"], "LOW_COVERAGE")
+
+    def test_stations_csv_keeps_flags_and_blank_names(self):
+        stations = [{"cnpj": "00000000000191", "name": None, "legal_name": "POSTO X LTDA", "brand": None,
+                     "address": "RUA A", "neighborhood": None, "postal_code": "13000000", "municipality": "CAMPINAS",
+                     "uf": "SP", "latest_price": 6.299, "latest_price_date": "2026-09-28",
+                     "latest_price_flags": ["preco_extremo"]}]
+        record = dict(zip(*[r.split(";") for r in exports.stations_csv(stations, "GASOLINA_COMUM")
+                            .decode("utf-8-sig").split("\r\n")[:2]]))
+        self.assertEqual(record["ultimo_preco"], "6,299")
+        self.assertEqual(record["avisos"], "preco_extremo")
+        self.assertEqual(record["nome"], "")
+
+
+class TypedTableTests(unittest.TestCase):
+    """Regressão: ordenar a coluna de datas por texto `dd/mm/aaaa` colocava 31/08 antes de 30/09."""
+
+    DATES = ["2026-08-31", "2026-08-31", "2026-03-31", "2026-09-30", "2026-07-15"]
+
+    def rows(self):
+        return [{"Posto": f"POSTO {i}", "Data do preço": tables.to_date(d), "Último preço": 5.9 + i / 100}
+                for i, d in enumerate(self.DATES, 1)]
+
+    def test_text_dates_sort_by_day_first_which_is_the_bug(self):
+        shown = [fmt.date_br(d) for d in self.DATES]
+        # Por texto, o dia vem antes do mês: em ordem decrescente aparece 31/08, 31/03, 30/09, como na tela.
+        self.assertEqual(sorted(shown, reverse=True),
+                         ["31/08/2026", "31/08/2026", "31/03/2026", "30/09/2026", "15/07/2026"])
+        self.assertNotEqual(sorted(shown), [fmt.date_br(d) for d in sorted(self.DATES)])
+
+    def test_typed_dates_sort_by_the_calendar_and_display_in_brazilian_format(self):
+        styler = tables.styled(self.rows(), {"Data do preço": tables.day, "Último preço": tables.money3})
+        frame = styler.data
+        ordered = frame.sort_values("Data do preço")["Data do preço"].tolist()
+        self.assertEqual(ordered, [date(2026, 3, 31), date(2026, 7, 15), date(2026, 8, 31), date(2026, 8, 31),
+                                   date(2026, 9, 30)])
+        html = styler.to_html()
+        self.assertIn("31/03/2026", html)
+        self.assertIn("R$ 5,910", html)  # exibição brasileira, valor continua numérico
+        self.assertNotIn("2026-03-31", html)
+        self.assertTrue(pd.api.types.is_numeric_dtype(frame["Último preço"]))
+
+    def test_missing_values_show_a_dash_or_nd_and_stay_missing_in_the_data(self):
+        rows = [{"Posição": 1, "Variação semanal": 0.0123}, {"Posição": None, "Variação semanal": None}]
+        styler = tables.styled(rows, {"Posição": tables.rank, "Variação semanal": fmt.percent},
+                               {"Posição": "—"})
+        html = styler.to_html()
+        self.assertIn("+1,2%", html)
+        self.assertIn("—", html)
+        self.assertIn("N/D", html)
+        self.assertTrue(styler.data["Posição"].isna().iloc[1])
+
+    def test_to_date_handles_iso_and_missing(self):
+        self.assertEqual(tables.to_date("2026-09-30"), date(2026, 9, 30))
+        self.assertEqual(tables.to_date("2026-09-30T00:00:00Z"), date(2026, 9, 30))
+        self.assertIsNone(tables.to_date(None))
+
+
+# -- Páginas com API falsa ------------------------------------------------------------------
+
+
+STAT = {"min": 5.87, "p25": 5.99, "median": 6.29, "mean": 6.274, "p75": 6.49, "max": 6.95, "stddev": 0.31}
+
+
+def sample(status="ok", stations=25, obs=25, ratio=1.0, base=25.0, **extra):
+    return {"observations": obs, "stations": stations, "coverage_status": status, "coverage_ratio": ratio,
+            "baseline_median_stations": base, "municipalities": None, "low_coverage_municipalities": None, **extra}
+
+
+class FakeApi:
+    base_url = "http://api.test"
+
+    def __init__(self, **over):
+        self.over = over
+        self.calls = []
+
+    def freshness(self):
+        return {"data_as_of": "2026-10-01", "source_retrieved_at": "2026-10-08T19:25:21Z", "published_ufs": ["SP"],
+                "latest_week_start": "2026-09-27", "age_days": 9, "last_successful_load_at": "2026-10-11T00:54:26Z",
+                "last_load": {"run_id": "r", "started_at": "2026-10-11T00:54:00Z", "finished_at": "2026-10-11T00:54:26Z",
+                              "status": "warning", "quality_decision": "publicar_com_aviso", "rows_accepted": 179699,
+                              "rows_quarantined": 0},
+                "source": "ANP — Levantamento de Preços de Combustíveis", **self.over.get("fresh", {})}
+
+    def products(self):
+        return [{"code": "GASOLINA_COMUM", "label": "Gasolina comum", "category": "automotivo", "unit": "BRL/L"},
+                {"code": "GNV", "label": "GNV", "category": "automotivo", "unit": "BRL/M3"}]
+
+    def locations(self):
+        return [{"uf": "SP", "municipality": n, "products": 2, "first_week_start": "2026-01-04",
+                 "last_week_start": "2026-09-27"} for n in ("CAMPINAS", "JUNDIAI", "SANTOS", "SAO PAULO")]
+
+    def latest(self, product, municipality=None):
+        self.calls.append(("latest", product, municipality))
+        if "latest_raises" in self.over:
+            raise self.over["latest_raises"]
+        state = municipality is None
+        body = {"data_as_of": "2026-10-01", "source_retrieved_at": "2026-10-08T19:25:21Z",
+                "location": {"uf": "SP", "municipality": municipality}, "product": product, "week_start": "2026-09-27",
+                "week_end": "2026-10-03", "is_dataset_latest_week": True, "statistics": dict(STAT),
+                "sample": (sample("not_applicable", 1251, 1251, None, None, municipalities=95,
+                                  low_coverage_municipalities=3) if state else sample()),
+                "weekly_change": {"value": -0.0156, "previous_week_start": "2026-09-20", "reason": None}}
+        body.update(self.over.get("latest", {}))
+        return body
+
+    def history(self, product, municipality=None, start=None, end=None):
+        weeks = [(date(2026, 9, 27) - timedelta(weeks=n)).isoformat() for n in range(11, -1, -1)]
+        status = self.over.get("history_last_status", "ok")
+        items = [point(w, 6.0 + i * 0.02 + (0 if municipality else 0.05), status=status if i == 11 else "ok")
+                 for i, w in enumerate(weeks)]
+        return {"data_as_of": "2026-10-01", "source_retrieved_at": None, "location": {"uf": "SP", "municipality": municipality},
+                "product": product, "start": weeks[0], "end": weeks[-1], "page": 1, "page_size": 200,
+                "total": len(items), "items": items}
+
+    def compare(self, product, municipalities, week_start=None):
+        items = []
+        for i, name in enumerate(municipalities):
+            low = self.over.get("low_city") == name
+            items.append({"location": {"uf": "SP", "municipality": name}, "statistics": {**STAT, "median": 6.0 + i / 10},
+                          "sample": sample("low" if low else "ok", 2 if low else 8, 2 if low else 8, 0.25 if low else 1.0, 8.0),
+                          "rank": None if low else i + 1, "difference_to_state": 0.1 * i - 0.05})
+        return {"data_as_of": "2026-10-01", "source_retrieved_at": "2026-10-08T19:25:21Z", "product": product,
+                "week_start": week_start or "2026-09-27", "week_end": "2026-10-03",
+                "reference": {"location": {"uf": "SP", "municipality": None}, "statistics": {**STAT, "median": 6.05},
+                              "sample": sample("not_applicable", 1251, 1251, None, None, municipalities=95,
+                                               low_coverage_municipalities=3)},
+                "items": items}
+
+    def stations(self, municipality, product, limit=EXPORT_ROW_LIMIT):
+        dates = self.over.get("station_dates", ["2026-09-28"] * 3)
+        items = [{"cnpj": f"0000000000{i:04d}", "name": f"POSTO {i}", "legal_name": f"POSTO {i} LTDA", "brand": "BRANCA",
+                  "address": "RUA A", "neighborhood": "CENTRO", "postal_code": "13000000", "municipality": municipality,
+                  "uf": "SP", "first_seen_date": "2026-01-06", "last_seen_date": "2026-09-29",
+                  "latest_price": 6.0 + i / 100, "latest_price_date": when,
+                  "latest_price_flags": ["preco_extremo"] if i == 1 else []} for i, when in enumerate(dates, 1)]
+        return {"product": product, "total": len(items), "items": items, "truncated": False, "data_as_of": "2026-10-01",
+                "source_retrieved_at": None}
+
+    def station_ranking(self, municipality, product, cheapest=True, size=5):
+        total = self.over.get("ranking_total", 12)
+        prices = [5.89, 5.95, 5.99, 6.05, 6.09, 6.39, 6.49, 6.55, 6.59, 6.65, 6.79, 6.99][:total]
+        chosen = (prices if cheapest else prices[::-1])[:size]
+        items = [{"cnpj": f"0000000000{i:04d}", "name": f"POSTO {price}", "legal_name": None, "brand": "BRANCA",
+                  "address": "RUA A", "neighborhood": "CENTRO", "postal_code": None, "municipality": municipality,
+                  "uf": "SP", "first_seen_date": "2026-01-06", "last_seen_date": "2026-09-30",
+                  "latest_price": price, "latest_price_date": "2026-09-30",
+                  "latest_price_flags": ["preco_extremo"] if price == 5.89 else []} for i, price in enumerate(chosen)]
+        return {"data_as_of": "2026-10-01", "source_retrieved_at": None, "product": product, "total": total,
+                "latest_week_start": "2026-09-27", "page": 1, "page_size": size, "items": items}
+
+    def data_quality(self, week_start=None):
+        return {"data_as_of": "2026-10-01", "source_retrieved_at": None,
+                "last_load": self.freshness()["last_load"],
+                "observations": {"observations_published": 179699, "observations_with_warning": 1021,
+                                 "warning_counts": {"preco_extremo": 1021}, "observations_quarantined": 0,
+                                 "quarantine_reasons": {}},
+                "coverage": {"week_start": "2026-09-27", "series": 520, "ok": 480, "low": 3, "no_history": 37},
+                "low_coverage": {"page": 1, "page_size": 200, "total": 3, "items": [
+                    {"location": {"uf": "SP", "municipality": "IBITINGA"}, "product": "GASOLINA_COMUM", "stations": 2,
+                     "baseline_median_stations": 7.5, "coverage_ratio": 0.267}]}}
+
+
+class PageCase(unittest.TestCase):
+    def setUp(self):
+        st.cache_data.clear()
+        st.cache_resource.clear()
+
+    def run_page(self, script, api, query=None):
+        with mock.patch.object(views, "make_client", return_value=api):
+            at = AppTest.from_string(script, default_timeout=30)
+            for key, value in (query or {}).items():
+                at.query_params[key] = value
+            at.run()
+        return at
+
+    @staticmethod
+    def text_of(at):
+        parts = []
+        for kind in ("markdown", "caption", "warning", "info", "error", "success", "title", "subheader"):
+            parts += [e.value for e in getattr(at, kind)]
+        for metric in at.metric:
+            parts += [metric.label, str(metric.value), str(metric.delta or "")]
+        return "\n".join(str(p) for p in parts)
+
+
+class HomePageTests(PageCase):
+    def test_home_shows_dates_state_table_coverage_and_the_survey_notice(self):
+        at = self.run_page(HOME, FakeApi())
+        self.assertFalse(at.exception)
+        text = self.text_of(at)
+        self.assertIn("pesquisa semanal da ANP", text)
+        self.assertIn("27/09/2026 a 03/10/2026", text)
+        self.assertIn("01/10/2026", text)
+        row = at.dataframe[0].value.iloc[0]
+        # As células guardam o valor tipado; o texto brasileiro é só exibição (ver TypedTableTests).
+        self.assertAlmostEqual(row["Mediana"], 6.29)
+        self.assertAlmostEqual(row["Variação semanal"], -0.0156)
+        self.assertEqual(row["Municípios com cobertura baixa"], 3)
+        self.assertEqual(len(at.dataframe[0].value), 2)  # dois produtos
+        values = {m.label: m.value for m in at.metric}
+        self.assertEqual((values["Cobertura baixa"], values["Séries (município × produto)"]), ("3", "520"))
+        # Cartões estreitos mostram só a data; o instante completo fica na ajuda do cartão.
+        self.assertEqual(values["Arquivo baixado em"], "08/10/2026")
+        self.assertEqual(values["Semana mais recente (início)"], "27/09/2026")
+        self.assertEqual(len(at.warning), 0)
+
+    def test_home_warns_about_stale_data_and_failed_load(self):
+        fresh = {"age_days": 30, "last_load": {**FakeApi().freshness()["last_load"], "status": "failed"}}
+        at = self.run_page(HOME, FakeApi(fresh=fresh))
+        warnings = " ".join(w.value for w in at.warning)
+        self.assertIn("30 dias", warnings)
+        self.assertIn("falhou", warnings)
+
+    def test_missing_download_record_is_stated_not_hidden(self):
+        at = self.run_page(HOME, FakeApi(fresh={"source_retrieved_at": None}))
+        values = {m.label: m.value for m in at.metric}
+        self.assertEqual(values["Arquivo baixado em"], "sem registro")
+        helps = " ".join(m.help or "" for m in at.metric)
+        self.assertIn("sem registro de download", helps)
+
+
+class ExplorePageTests(PageCase):
+    def test_explore_cards_caption_tables_and_downloads(self):
+        at = self.run_page(EXPLORE, FakeApi(), {"municipio": "CAMPINAS", "produto": "GASOLINA_COMUM"})
+        self.assertFalse(at.exception)
+        metrics = {m.label: m for m in at.metric}
+        self.assertEqual(metrics["Mediana"].value, "R$ 6,29")
+        self.assertEqual(metrics["Mediana"].delta, "−1,6%")
+        self.assertEqual(metrics["Média"].value, "R$ 6,27")
+        self.assertEqual(metrics["Faixa (R$)"].value, "5,87 a 6,95")  # sem `$` no valor: o Streamlit leria LaTeX
+        self.assertTrue(metrics["Mediana frente ao estado"].value.startswith(("+R$", "−R$", "R$")))
+        text = self.text_of(at)
+        self.assertIn("27/09/2026 a 03/10/2026", text)
+        self.assertIn("25** observações em **25** postos", text)
+        self.assertIn("R$/litro", text)
+        self.assertEqual(len(at.get("plotly_chart")), 1)
+        stations = at.dataframe[-1].value
+        self.assertAlmostEqual(list(stations["Último preço"])[0], 6.01)
+        self.assertEqual(pd.Timestamp(list(stations["Data do preço"])[0]).date(), date(2026, 9, 28))
+        self.assertEqual(list(stations["Aviso"])[0], "preço extremo")
+        self.assertEqual(len(at.get("download_button")), 2)
+        self.assertEqual(at.query_params["municipio"], "CAMPINAS")
+
+    def test_station_dates_reach_the_table_as_real_dates(self):
+        dates = ["2026-08-31", "2026-08-31", "2026-03-31", "2026-09-30", "2026-09-30"]
+        at = self.run_page(EXPLORE, FakeApi(station_dates=dates), {"municipio": "CAMPINAS"})
+        self.assertFalse(at.exception)
+        column = at.dataframe[-1].value["Data do preço"]
+        shown = [pd.Timestamp(v).date() for v in column]
+        self.assertEqual(sorted(shown), [date(2026, 3, 31), date(2026, 8, 31), date(2026, 8, 31),
+                                         date(2026, 9, 30), date(2026, 9, 30)])
+        self.assertNotIn(str, {type(v) for v in column})  # nada de texto "31/08/2026" para ordenar
+
+    def test_low_coverage_week_is_flagged_and_change_is_not_shown(self):
+        api = FakeApi(latest={"sample": sample("low", 2, 2, 0.25, 8.0),
+                              "weekly_change": {"value": None, "previous_week_start": "2026-09-20", "reason": "LOW_COVERAGE"}})
+        at = self.run_page(EXPLORE, api, {"municipio": "JUNDIAI"})
+        warnings = " ".join(w.value for w in at.warning)
+        self.assertIn("Cobertura baixa", warnings)
+        self.assertIn("25%", warnings)
+        mediana = next(m for m in at.metric if m.label == "Mediana")
+        self.assertFalse(mediana.delta)
+        self.assertIn("N/D (cobertura insuficiente)", self.text_of(at))
+
+    def test_series_that_stopped_is_warned(self):
+        at = self.run_page(EXPLORE, FakeApi(latest={"is_dataset_latest_week": False, "week_start": "2026-08-09",
+                                                    "week_end": "2026-08-15"}), {"municipio": "SANTOS"})
+        self.assertIn("não tem dados na semana mais recente", " ".join(w.value for w in at.warning))
+
+    def test_api_error_is_shown_with_code_and_request_id(self):
+        error = ApiError(404, "NO_DATA", "Não há preços publicados para este recorte.", "req-9")
+        at = self.run_page(EXPLORE, FakeApi(latest_raises=error))
+        self.assertFalse(at.exception)
+        self.assertIn("Não há preços publicados", at.error[0].value)
+        self.assertIn("NO_DATA", " ".join(c.value for c in at.caption))
+        self.assertIn("req-9", " ".join(c.value for c in at.caption))
+
+    def test_unavailable_api_is_a_friendly_message(self):
+        at = self.run_page(EXPLORE, FakeApi(latest_raises=ApiUnavailable("A API não respondeu em http://x.")))
+        self.assertFalse(at.exception)
+        self.assertIn("Não foi possível consultar a API", at.error[0].value)
+        self.assertIn("RADAR_API_URL", at.error[0].value)
+
+
+class RankingPageTests(PageCase):
+    def test_lists_five_cheapest_and_five_priciest_with_dates_and_week_rule(self):
+        at = self.run_page(RANKING, FakeApi(), {"municipio": "CAMPINAS", "produto": "GASOLINA_COMUM"})
+        self.assertFalse(at.exception)
+        cheapest, priciest = at.dataframe[0].value, at.dataframe[1].value
+        self.assertEqual(list(cheapest["Preço"]), [5.89, 5.95, 5.99, 6.05, 6.09])
+        self.assertEqual(list(priciest["Preço"]), [6.99, 6.79, 6.65, 6.59, 6.55])
+        self.assertEqual(list(cheapest["Posição"]), [1, 2, 3, 4, 5])
+        self.assertEqual(pd.Timestamp(list(cheapest["Data do preço"])[0]).date(), date(2026, 9, 30))
+        self.assertEqual(list(cheapest["Aviso"])[0], "preço extremo")
+        text = self.text_of(at)
+        self.assertIn("27/09/2026 a 03/10/2026", text)
+        self.assertIn("semana mais recente", text)
+        self.assertIn("12** posto(s)", text)
+        self.assertIn("Preço extremo", text)
+
+    def test_city_without_current_prices_says_so_instead_of_listing_old_ones(self):
+        at = self.run_page(RANKING, FakeApi(ranking_total=0), {"municipio": "JUNDIAI"})
+        self.assertFalse(at.exception)
+        self.assertEqual(len(at.dataframe), 0)
+        self.assertIn("Nenhum posto de Jundiai", " ".join(w.value for w in at.warning))
+
+    def test_tiny_sample_is_flagged(self):
+        at = self.run_page(RANKING, FakeApi(ranking_total=2), {"municipio": "SANTOS"})
+        self.assertIn("menos de 3 postos", " ".join(i.value for i in at.info))
+
+    def test_overlap_between_the_two_lists_is_explained(self):
+        at = self.run_page(RANKING, FakeApi(ranking_total=7), {"municipio": "SANTOS"})
+        self.assertIn("em comum", self.text_of(at))
+
+
+class ComparePageTests(PageCase):
+    def test_compare_table_ranks_and_reference_row(self):
+        at = self.run_page(COMPARE, FakeApi(), {"produto": "GASOLINA_COMUM"})
+        self.assertFalse(at.exception)
+        table = at.dataframe[0].value
+        self.assertEqual(list(table["Município"])[-1], "ESTADO DE SP (referência)")
+        self.assertEqual([int(v) for v in list(table["Posição"])[:3]], [1, 2, 3])
+        self.assertEqual(len(at.get("plotly_chart")), 2)  # absoluto e índice
+        self.assertIn("vale 100", " ".join(c.value for c in at.caption))
+
+    def test_low_coverage_city_has_no_rank_and_a_warning(self):
+        at = self.run_page(COMPARE, FakeApi(low_city="CAMPINAS"), {"produto": "GASOLINA_COMUM"})
+        table = at.dataframe[0].value
+        row = table[table["Município"] == "CAMPINAS"].iloc[0]
+        self.assertTrue(pd.isna(row["Posição"]))  # sem posição; a tela mostra "—"
+        self.assertEqual(row["Cobertura"], "Cobertura baixa")
+        self.assertIn("cobertura baixa", " ".join(w.value for w in at.warning).lower())
+
+    def test_fewer_than_two_municipalities_asks_for_more(self):
+        at = self.run_page(COMPARE, FakeApi())
+        at.multiselect[0].set_value(["CAMPINAS"]).run()
+        self.assertFalse(at.exception)
+        self.assertIn("pelo menos dois", " ".join(i.value for i in at.info))
+        self.assertEqual(len(at.get("plotly_chart")), 0)
+
+
+class QualityPageTests(PageCase):
+    def test_quality_page_lists_coverage_and_limitations_without_forecast_claims(self):
+        at = self.run_page(QUALITY, FakeApi())
+        self.assertFalse(at.exception)
+        text = self.text_of(at)
+        self.assertIn("Levantamento de Preços de Combustíveis", text)
+        self.assertIn("179.699", text)
+        self.assertIn("IBITINGA", [str(v) for v in at.dataframe[-1].value["Município"]])
+        self.assertIn("pesquisa por amostragem", text)
+        self.assertIn("Não há previsões", text)  # sem prometer o que não existe
+        self.assertNotIn("http://api.test/docs", "")  # (link é caption; conferido abaixo)
+        self.assertIn("http://api.test/docs", " ".join(c.value for c in at.caption))
+
+
+# -- Integração: painel sobre a API real ----------------------------------------------------
+
+
+class DashboardIntegrationTests(ApiCase):
+    """Mesmos dados sintéticos de tests/test_api.py, lidos pelo painel através da API de verdade."""
+
+    def setUp(self):
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        self.api = ApiClient(self.client)
+
+    def run_page(self, script, query=None):
+        with mock.patch.object(views, "make_client", return_value=self.api):
+            at = AppTest.from_string(script, default_timeout=60)
+            for key, value in (query or {}).items():
+                at.query_params[key] = value
+            at.run()
+        self.assertFalse(at.exception, [e.value for e in at.exception])
+        return at
+
+    def municipality_name(self, wanted):
+        from radar_combustiveis.ingestion.normalize import normalize_text
+        names = [loc["municipality"] for loc in self.api.locations()]
+        return next(n for n in names if normalize_text(n) == normalize_text(wanted))
+
+    def test_explore_shows_what_the_api_and_the_data_say(self):
+        name = self.municipality_name("Campinas")
+        at = self.run_page(EXPLORE, {"municipio": name, "produto": "GASOLINA_COMUM"})
+        prices = list(self.expected[("Campinas", "GASOLINA_COMUM", 11)].values())
+        metrics = {m.label: m.value for m in at.metric}
+        import statistics
+        self.assertEqual(metrics["Mediana"], fmt.brl(float(statistics.median(prices))))
+        self.assertEqual(metrics["Faixa (R$)"], f"{fmt.decimal_br(float(min(prices)))} a {fmt.decimal_br(float(max(prices)))}")
+        captions = " ".join(c.value for c in at.caption)
+        self.assertIn(fmt.week_range_br(LAST.isoformat()), captions)
+        self.assertIn(fmt.date_br(LAST_COLLECTION), captions)
+        self.assertIn("**8** observações em **8** postos", captions)
+        table = at.dataframe[-1].value
+        self.assertEqual(len(table), 8)
+        latest_prices = sorted(self.expected[("Campinas", "GASOLINA_COMUM", 11)].values())
+        shown = sorted(float(v) for v in table["Último preço"])
+        self.assertEqual(shown, [float(p) for p in latest_prices])
+        self.assertEqual(len(at.get("download_button")), 2)
+
+    def test_explore_warns_about_low_coverage_and_a_stopped_series(self):
+        low = self.run_page(EXPLORE, {"municipio": self.municipality_name("Jundiaí"), "produto": "GASOLINA_COMUM"})
+        self.assertIn("Cobertura baixa", " ".join(w.value for w in low.warning))
+        stopped = self.run_page(EXPLORE, {"municipio": self.municipality_name("Itu"), "produto": "GASOLINA_COMUM"})
+        self.assertIn("não tem dados na semana mais recente", " ".join(w.value for w in stopped.warning))
+
+    def test_compare_ranks_exclude_low_coverage(self):
+        names = [self.municipality_name(n) for n in ("Campinas", "Jundiaí", "São Carlos")]
+        with mock.patch.object(views, "make_client", return_value=self.api):
+            at = AppTest.from_string(COMPARE, default_timeout=60)
+            at.query_params["produto"] = "GASOLINA_COMUM"
+            at.run()
+            at.multiselect[0].set_value(names).run()
+        self.assertFalse(at.exception)
+        table = at.dataframe[0].value
+        by_name = {r["Município"]: r for _, r in table.iterrows()}
+        self.assertTrue(pd.isna(by_name[names[1]]["Posição"]))
+        self.assertEqual(sorted(int(by_name[n]["Posição"]) for n in (names[0], names[2])), [1, 2])
+
+    def test_home_and_quality_pages_render_against_the_real_api(self):
+        home = self.run_page(HOME)
+        values = {m.label: m.value for m in home.metric}
+        self.assertEqual(values["Última coleta"], fmt.date_br(LAST_COLLECTION))
+        self.assertGreaterEqual(len(home.dataframe[0].value), 3)  # gasolina, etanol e diesel S10 têm dados
+        quality = self.run_page(QUALITY)
+        from radar_combustiveis.ingestion.normalize import normalize_text
+        low = [normalize_text(v) for v in quality.dataframe[-1].value["Município"]]
+        self.assertIn("JUNDIAI", low)
+
+
+if __name__ == "__main__":
+    unittest.main()

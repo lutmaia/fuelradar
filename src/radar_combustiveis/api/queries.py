@@ -145,8 +145,11 @@ def compare_rows(conn, location_ids, product_id, week_start):
 # -- Postos ---------------------------------------------------------------------------------
 
 
-def list_stations(conn, uf, location_id, product_id, limit, offset):
-    """Postos do recorte; com `product_id`, só os que têm preço do produto e o último preço de cada um."""
+def list_stations(conn, uf, location_id, product_id, limit, offset, since=None, order="name"):
+    """Postos do recorte; com `product_id`, só os que têm preço do produto e o último preço de cada um.
+
+    `since` mantém só os postos cujo último preço foi coletado nessa data ou depois. `order` é
+    `name`, `price_asc` ou `price_desc` (comparado por parâmetro, sem texto de SQL montado)."""
     return conn.execute("""
         SELECT s.cnpj, s.trade_name, s.legal_name, s.brand, s.address, s.neighborhood, s.postal_code,
                l.municipality_name, l.uf, s.first_seen_date, s.last_seen_date,
@@ -163,9 +166,13 @@ def list_stations(conn, uf, location_id, product_id, limit, offset):
         WHERE l.uf = %(uf)s
           AND (%(location)s::int IS NULL OR s.location_id = %(location)s)
           AND (%(product)s::int IS NULL OR p.sale_price IS NOT NULL)
-        ORDER BY coalesce(s.trade_name, s.legal_name), s.station_id
+          AND (%(since)s::date IS NULL OR p.collection_date >= %(since)s)
+        ORDER BY CASE WHEN %(order)s = 'price_asc' THEN p.sale_price END ASC,
+                 CASE WHEN %(order)s = 'price_desc' THEN p.sale_price END DESC,
+                 coalesce(s.trade_name, s.legal_name), s.station_id
         LIMIT %(limit)s OFFSET %(offset)s""",
-        {"uf": uf, "location": location_id, "product": product_id, "limit": limit, "offset": offset}).fetchall()
+        {"uf": uf, "location": location_id, "product": product_id, "limit": limit, "offset": offset,
+         "since": since, "order": order}).fetchall()
 
 
 # -- Qualidade e cobertura ------------------------------------------------------------------

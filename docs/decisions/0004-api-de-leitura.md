@@ -23,7 +23,7 @@
    - **Nomes:** os municípios saem como a ANP publica (caixa alta, sem acento); a entrada é aceita sem distinção de caixa, acento ou espaços repetidos.
    - **Postos:** `/stations` lista a amostra pesquisada, não o cadastro de revendedores; com `product`, só os postos com preço desse produto e o último preço de cada um, com a data.
 10. **Não publicados:** `/api/v1/forecasts` e `/api/v1/anomalies` (Marco 7). Não há rota que devolva lista vazia fingindo cobertura; elas respondem `404 NOT_FOUND`.
-11. **Dependências novas:** `fastapi==0.143.0`, `uvicorn==0.54.0` e `psycopg-pool==3.3.3` em produção; `httpx==0.28.1` só para testes (cliente do `TestClient`). Transitivas: starlette, pydantic, anyio, h11, click, entre outras.
+11. **Dependências novas:** `fastapi==0.143.0`, `uvicorn==0.54.0` e `psycopg-pool==3.3.3` em produção; `httpx==0.28.1` só para testes (cliente do `TestClient`); no Marco 6 ele passou a dependência de produção, como cliente do painel ([ADR 0005](0005-painel-streamlit.md)). Transitivas: starlette, pydantic, anyio, h11, click, entre outras.
 
 ## Alternativas consideradas
 

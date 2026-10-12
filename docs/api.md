@@ -17,7 +17,7 @@ $env:API_DATABASE_URL = "postgresql://radar_api:$($env:RADAR_API_PASSWORD)@127.0
 .\.venv\Scripts\python.exe scripts/run_api.py                          # http://127.0.0.1:8000/docs
 ```
 
-`create_api_role.py` é idempotente: repetir troca a senha. Dependências novas: `pip install fastapi==0.143.0 uvicorn==0.54.0 psycopg-pool==3.3.3` (e `httpx==0.28.1` para os testes).
+`create_api_role.py` é idempotente: repetir troca a senha. Dependências: `pip install fastapi==0.143.0 uvicorn==0.54.0 psycopg-pool==3.3.3 httpx==0.28.1` (o `httpx` serve aos testes e ao [painel](dashboard.md)).
 
 ## Endpoints
 
@@ -31,11 +31,12 @@ $env:API_DATABASE_URL = "postgresql://radar_api:$($env:RADAR_API_PASSWORD)@127.0
 | GET | `/api/v1/prices/latest` | estatística semanal mais recente (`product`; `municipality` opcional) |
 | GET | `/api/v1/prices/history` | série semanal (`start`, `end`, paginação) |
 | GET | `/api/v1/prices/compare` | municípios lado a lado numa semana, com o estado como referência |
-| GET | `/api/v1/stations` | postos pesquisados, com o último preço do produto |
+| GET | `/api/v1/stations` | postos pesquisados, com o último preço do produto (`order=price_asc\|price_desc` e `only_latest_week=true`, ambos exigem `product`) |
 | GET | `/api/v1/data-quality` | cobertura da semana, avisos e quarentena |
 
 `/api/v1/forecasts` e `/api/v1/anomalies` (seção 15.2 da arquitetura) **não existem ainda**: entram no Marco 7.
 
+**Postos mais baratos e mais caros.** `GET /api/v1/stations?municipality=…&product=…&only_latest_week=true&order=price_asc&page_size=5` devolve os 5 postos de menor último preço entre os que têm preço na **semana mais recente do estado para o produto** (`latest_week_start` na resposta; domingo a sábado). Postos cujo último preço é de semanas anteriores ficam fora, e `total` conta só os que entraram. Com `order=price_desc` a lista vem do mais caro. Empates de preço desempatam pelo nome, então as páginas não repetem postos. Sem `product`, `order` por preço e `only_latest_week` respondem 422 `PRODUCT_REQUIRED`.
 Sem `municipality`, `latest` e `history` devolvem o **agregado estadual**. `uf` é opcional e só aceita `SP` enquanto `TARGET_UFS` for `["SP"]`.
 
 ## Exemplo

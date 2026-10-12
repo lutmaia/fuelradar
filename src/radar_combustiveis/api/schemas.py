@@ -193,6 +193,8 @@ class Station(BaseModel):
 
 class StationsResponse(Freshness, PageInfo):
     product: str | None
+    latest_week_start: date | None = Field(
+        None, description="Semana usada por `only_latest_week` (domingo); nulo sem o filtro.")
     items: list[Station]
 
 

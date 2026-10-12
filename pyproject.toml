@@ -10,10 +10,13 @@ dependencies = [
     "psycopg-pool==3.3.3",
     "fastapi==0.143.0",
     "uvicorn==0.54.0",
+    # Painel (Marco 6): Streamlit monta as páginas, Plotly desenha os gráficos e o httpx
+    # (também usado nos testes da API) faz as chamadas do painel à API.
+    "streamlit==1.65.0",
+    "plotly==7.1.0",
+    # Já vem com o Streamlit; usado direto para tabelas tipadas (ordenação por data e número).
+    "pandas==3.0.6",
+    "httpx==0.28.1",
 ]
-
-[project.optional-dependencies]
-# Só para os testes da API (cliente HTTP usado pelo TestClient do FastAPI).
-test = ["httpx==0.28.1"]
 
 # Backend de build e ferramentas serão definidos quando necessários.

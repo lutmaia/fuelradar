@@ -531,6 +531,42 @@ class StationsTests(ApiCase):
         self.assertError(self.get("/api/v1/stations", municipality="Atlântida"), 404, "LOCATION_NOT_FOUND")
         self.assertError(self.get("/api/v1/stations", product="QUEROSENE"), 404, "PRODUCT_NOT_FOUND")
 
+    def test_only_latest_week_drops_stations_whose_last_price_is_older(self):
+        # Em Jundiaí só os postos 1 e 2 têm preço na última semana; os outros seis pararam antes.
+        recent = self.ok("/api/v1/stations", municipality="Jundiaí", product="GASOLINA_COMUM", only_latest_week="true")
+        self.assertEqual(recent["total"], 2)
+        self.assertEqual(recent["latest_week_start"], LAST.isoformat())
+        self.assertEqual(sorted(i["name"] for i in recent["items"]), ["POSTO 1", "POSTO 2"])
+        self.assertTrue(all(i["latest_price_date"] >= LAST.isoformat() for i in recent["items"]))
+        everything = self.ok("/api/v1/stations", municipality="Jundiaí", product="GASOLINA_COMUM")
+        self.assertEqual((everything["total"], everything["latest_week_start"]), (8, None))
+        stale = [i for i in everything["items"] if i["latest_price_date"] < LAST.isoformat()]
+        self.assertEqual(len(stale), 6)
+
+    def test_series_that_stopped_before_the_latest_week_lists_nothing(self):
+        body = self.ok("/api/v1/stations", municipality="Itu", product="GASOLINA_COMUM", only_latest_week="true")
+        self.assertEqual((body["total"], body["items"]), (0, []))
+        self.assertEqual(body["latest_week_start"], LAST.isoformat())
+        self.assertEqual(self.ok("/api/v1/stations", municipality="Itu", product="GASOLINA_COMUM")["total"], 3)
+
+    def test_price_ordering_with_stable_tiebreak_and_pagination(self):
+        base = {"municipality": "Campinas", "product": "GASOLINA_COMUM", "only_latest_week": "true"}
+        cheapest = self.ok("/api/v1/stations", order="price_asc", **base)
+        priciest = self.ok("/api/v1/stations", order="price_desc", **base)
+        expected = sorted(float(v) for v in self.expected[("Campinas", "GASOLINA_COMUM", N_WEEKS - 1)].values())
+        self.assertEqual([i["latest_price"] for i in cheapest["items"]], expected)
+        self.assertEqual([i["latest_price"] for i in priciest["items"]], expected[::-1])
+        # Empates de preço desempatam pelo nome, então as páginas não repetem nem perdem postos.
+        first = self.ok("/api/v1/stations", order="price_asc", page_size=3, page=1, **base)["items"]
+        second = self.ok("/api/v1/stations", order="price_asc", page_size=3, page=2, **base)["items"]
+        self.assertEqual([i["cnpj"] for i in first + second], [i["cnpj"] for i in cheapest["items"][:6]])
+
+    def test_ranking_options_need_a_product_and_a_known_order(self):
+        for params in ({"order": "price_asc"}, {"only_latest_week": "true"}):
+            self.assertError(self.get("/api/v1/stations", municipality="Campinas", **params), 422, "PRODUCT_REQUIRED")
+        self.assertError(self.get("/api/v1/stations", product="GASOLINA_COMUM", order="aleatorio"),
+                         422, "VALIDATION_ERROR")
+
 
 class DataQualityTests(ApiCase):
     def test_summary_matches_the_database(self):

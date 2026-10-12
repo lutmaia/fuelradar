@@ -1,7 +1,7 @@
 """Endpoints de leitura (arquitetura 15.2). `/forecasts` e `/anomalies` ficam para o Marco 7."""
 
 from datetime import date, datetime, timedelta, timezone
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query, Request
 from psycopg import Connection
@@ -348,15 +348,25 @@ def prices_compare(conn: Conn, uf: Uf, product: ProductParam,
 @router.get("/stations", response_model=StationsResponse, responses=ERRORS, tags=["Postos"],
             summary="Postos pesquisados no recorte, com o último preço do produto")
 def stations(conn: Conn, uf: Uf, page: Page, municipality: MunicipalityParam | None = None,
-             product: ProductParam | None = None):
+             product: ProductParam | None = None,
+             order: Annotated[Literal["name", "price_asc", "price_desc"], Query(
+                 description="`name` (padrão), `price_asc` (mais barato primeiro) ou `price_desc`. "
+                             "Os dois últimos exigem `product`.")] = "name",
+             only_latest_week: Annotated[bool, Query(
+                 description="Só postos cujo último preço do produto é da semana mais recente do estado "
+                             "(`latest_week_start`). Exige `product`.")] = False):
     """Postos da amostra da ANP, não o cadastro completo de revendedores. Com `product`, só os
     postos com preço desse produto e o último preço de cada um (a data vai junto)."""
+    if (order != "name" or only_latest_week) and not product:
+        raise ApiError(422, "PRODUCT_REQUIRED", "`order` por preço e `only_latest_week` exigem `product`.")
     prod = require_product(conn, product) if product else None
     loc = one_location(conn, uf, municipality)
-    rows = queries.list_stations(conn, uf, loc["location_id"] if loc else None,
-                                 prod["product_id"] if prod else None, page.page_size, page.offset)
-    total = (rows or queries.list_stations(conn, uf, loc["location_id"] if loc else None,
-                                           prod["product_id"] if prod else None, 1, 0) or [{"total": 0}])[0]["total"]
+    location_id, product_id = (loc["location_id"] if loc else None), (prod["product_id"] if prod else None)
+    latest_week = queries.state_latest_week(conn, uf, product_id) if only_latest_week else None
+    since = (latest_week or date.max) if only_latest_week else None  # sem dados: lista vazia
+    rows = queries.list_stations(conn, uf, location_id, product_id, page.page_size, page.offset, since, order)
+    total = (rows or queries.list_stations(conn, uf, location_id, product_id, 1, 0, since, order)
+             or [{"total": 0}])[0]["total"]
     fresh = queries.dataset_freshness(conn)
     items = [Station(cnpj=r["cnpj"], name=r["trade_name"] or r["legal_name"], legal_name=r["legal_name"],
                      brand=r["brand"], address=r["address"], neighborhood=r["neighborhood"],
@@ -366,7 +376,8 @@ def stations(conn: Conn, uf: Uf, page: Page, municipality: MunicipalityParam | N
                      latest_price_flags=r["latest_price_flags"]) for r in rows]
     return StationsResponse(data_as_of=fresh["data_as_of"], source_retrieved_at=fresh["source_retrieved_at"],
                             page=page.page, page_size=page.page_size, total=total,
-                            product=prod["canonical_name"] if prod else None, items=items)
+                            product=prod["canonical_name"] if prod else None,
+                            latest_week_start=latest_week, items=items)
 
 
 # -- Qualidade ------------------------------------------------------------------------------
