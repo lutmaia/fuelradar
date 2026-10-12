@@ -287,6 +287,24 @@ class FailureAndScopeTests(IngestionCase):
         self.assertEqual([(e["path"], e["stage"]) for e in report["errors"]], [("estranho.csv", "detect")])
         self.assertEqual([f["paths"] for f in self.manifest()["files"]], [["bom.csv"]])
 
+    def test_workbook_the_reader_cannot_parse_is_an_error_not_a_crash(self):
+        # Planilhas antigas da ANP trazem uma referência externa sem `id`; o openpyxl levanta TypeError.
+        broken = self.raw / "quebrada.xlsx"
+        write_xlsx(broken, WEEKLY_HEADER, [weekly_row()])
+        with ZipFile(broken) as source:
+            members = {name: source.read(name) for name in source.namelist()}
+        workbook = members["xl/workbook.xml"].decode("utf-8")
+        members["xl/workbook.xml"] = workbook.replace(
+            "</sheets>", "</sheets><externalReferences><externalReference/></externalReferences>").encode("utf-8")
+        with ZipFile(broken, "w") as target:
+            for name, content in members.items():
+                target.writestr(name, content)
+        write_csv(self.raw / "bom.csv", HISTORICAL_HEADER, [historical_row()])
+        report = self.run_ingestion()
+        self.assertEqual([(e["path"], e["stage"]) for e in report["errors"]], [("quebrada.xlsx", "detect")])
+        self.assertIn("ilegível", report["errors"][0]["error"])
+        self.assertEqual([f["paths"] for f in self.manifest()["files"]], [["bom.csv"]])
+
     def test_critical_failure_mid_file_publishes_nothing(self):
         write_csv(self.raw / "h.csv", HISTORICAL_HEADER, [
             historical_row(), historical_row() + ["valor fora das colunas"]])
@@ -311,6 +329,30 @@ class ConfigAndNamingTests(unittest.TestCase):
         for bad in ["SP", "[]", '["XX"]', '["SP","SP"]', "[1]", '"SP"', "{}"]:
             with self.subTest(bad=bad), self.assertRaises(ValueError):
                 parse_target_ufs(bad)
+
+    def test_excluded_sources_file_is_validated(self):
+        from radar_combustiveis.config import load_excluded_sources
+        folder = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, folder, True)
+        good = {"sha256": "a" * 64, "file": "x.xlsx", "reason": "defeito"}
+        path = folder / "excluded.json"
+        self.assertEqual(load_excluded_sources(folder / "ausente.json"), {})
+        path.write_text(json.dumps([good]), encoding="utf-8")
+        self.assertEqual(load_excluded_sources(path), {"a" * 64: good})
+        for bad in ([{**good, "sha256": "curto"}], [{**good, "reason": " "}], [good, good], {"a": 1}, "texto"):
+            with self.subTest(bad=bad):
+                path.write_text(json.dumps(bad), encoding="utf-8")
+                with self.assertRaises(ValueError):
+                    load_excluded_sources(path)
+        path.write_text("{", encoding="utf-8")
+        with self.assertRaises(ValueError):
+            load_excluded_sources(path)
+
+    def test_shipped_exclusion_list_is_valid(self):
+        from radar_combustiveis.config import load_excluded_sources
+        excluded = load_excluded_sources(Path(__file__).resolve().parents[1] / "config" / "excluded_sources.json")
+        self.assertTrue(excluded)
+        self.assertTrue(all(item["reason"] for item in excluded.values()))
 
     def test_csv_delimiter_comes_from_header(self):
         import io

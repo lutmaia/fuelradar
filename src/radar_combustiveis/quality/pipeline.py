@@ -301,13 +301,20 @@ def _compare(previous, counts):
                       if counts.get(k, 0) != previous["counts"].get(k, 0)}}
 
 
-def run_quality(out_dir, quarantine_dir, as_of=None):
+def run_quality(out_dir, quarantine_dir, as_of=None, excluded=None):
+    """`excluded` é {sha256: {"file", "reason"}}: arquivos da fonte com defeito conhecido, ignorados
+    por inteiro (nem linhas, nem regras críticas) e listados no relatório (ADR 0006)."""
     out_dir, quarantine_dir = Path(out_dir).resolve(), Path(quarantine_dir).resolve()
+    excluded = excluded or {}
     as_of = as_of or datetime.now(timezone.utc).date()
     run_id = str(uuid.uuid4())
     report = {"run_id": run_id, "started_at": _now(), "as_of": as_of.isoformat(), "files": [],
               "critical_failures": [], "errors": []}
     sources = _current_sources(load_manifest(out_dir / "manifest.json"))
+    report["excluded_sources"] = [
+        {"source_file_id": e["source_file_id"], "period_key": e["period_key"], "sha256": e["sha256"],
+         "reason": excluded[e["sha256"]]["reason"]} for e in sources if e["sha256"] in excluded]
+    sources = [e for e in sources if e["sha256"] not in excluded]
     if not sources:
         report["critical_failures"].append({"source_file_id": None, "rule": "nenhuma_fonte_ingerida"})
 
@@ -374,7 +381,8 @@ def run_quality(out_dir, quarantine_dir, as_of=None):
     report["comparison"] = _compare(previous, report["counts"])
 
     share = counts["rows_quarantine"] / rows_read if rows_read else 0
-    warnings = []
+    warnings = [f"arquivo da fonte excluído por defeito conhecido: {item['period_key']} ({item['reason']})"
+                for item in report["excluded_sources"]]
     if share > WARN_QUARANTINE_SHARE:
         warnings.append(f"quarentena acima de {WARN_QUARANTINE_SHARE:.0%}: {share:.2%}")
     if status["low_coverage_latest_week"]:

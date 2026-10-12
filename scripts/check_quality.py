@@ -1,6 +1,7 @@
 """Qualidade e normalização das observações já ingeridas; não lê nem altera data/raw.
 
 Uso: python scripts/check_quality.py [--out data/processed] [--quarantine data/quarantine] [--as-of AAAA-MM-DD]
+     [--excluded config/excluded_sources.json]
 Retorno 0 para publicar ou publicar com aviso; 1 quando uma falha crítica bloqueia a publicação.
 """
 
@@ -13,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # Sem instalação do pacote, o script enxerga `src` por este caminho (docs/decisions/0001).
 sys.path.insert(0, str(ROOT / "src"))
 
+from radar_combustiveis.config import load_excluded_sources  # noqa: E402
 from radar_combustiveis.quality.pipeline import run_quality  # noqa: E402
 
 
@@ -22,9 +24,11 @@ def main(argv=None):
     parser.add_argument("--quarantine", type=Path, default=ROOT / "data" / "quarantine")
     parser.add_argument("--as-of", type=date.fromisoformat, default=None,
                         help="data de referência para datas futuras e atraso (padrão: hoje, UTC)")
+    parser.add_argument("--excluded", type=Path, default=ROOT / "config" / "excluded_sources.json",
+                        help="arquivos da fonte com defeito conhecido, ignorados pela qualidade (por SHA-256)")
     args = parser.parse_args(argv)
     try:
-        report = run_quality(args.out, args.quarantine, args.as_of)
+        report = run_quality(args.out, args.quarantine, args.as_of, load_excluded_sources(args.excluded))
     except ValueError as exc:
         print(f"ERRO: {exc}", file=sys.stderr)
         return 2

@@ -1,0 +1,8 @@
+[
+  {
+    "file": "revendas_lpc_2025-06-29_2025-07-05.xlsx",
+    "sha256": "36eeb715d70b7c90e6bc22ba12651ea1457a459c2f531239d8eceaa335888eee",
+    "reason": "planilha da ANP com 2.101 linhas de resumo (média e desvio por produto, sem posto nem UF) sob o cabeçalho de postos; todas as linhas são rejeitadas por UF ausente e nenhuma é observação individual",
+    "registered_on": "2026-10-12"
+  }
+]

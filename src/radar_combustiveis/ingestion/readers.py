@@ -7,9 +7,10 @@ import io
 from pathlib import Path
 import tempfile
 from typing import Iterator
-from zipfile import ZipFile
+from zipfile import BadZipFile, ZipFile
 
 from openpyxl import load_workbook
+from openpyxl.utils.exceptions import InvalidFileException
 
 from .normalize import normalize_text
 
@@ -144,7 +145,12 @@ def _table(rows, member, sheet):
 
 
 def _xlsx_tables(source, member):
-    workbook = load_workbook(source, read_only=True, data_only=True)
+    try:
+        workbook = load_workbook(source, read_only=True, data_only=True)
+    except (TypeError, KeyError, BadZipFile, InvalidFileException) as exc:
+        # O openpyxl não interpreta algumas planilhas antigas da ANP (referência externa sem `id`)
+        # e levanta TypeError. É um arquivo ilegível: vira erro registrado, não uma falha geral.
+        raise SourceFormatError(f"Planilha ilegível pelo leitor XLSX ({type(exc).__name__}: {exc})") from exc
     try:
         for sheet in workbook:
             # Não confiar em dimensões Excel, que podem conter somente formatação.

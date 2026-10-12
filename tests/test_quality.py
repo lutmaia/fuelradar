@@ -311,6 +311,35 @@ class CriticalTest(QualityCase):
             self.assertEqual(check_quality.main(args), 0)
 
 
+class ExcludedSourcesTest(QualityCase):
+    """Arquivo da fonte com defeito conhecido: ignorado por inteiro, declarado no relatório (ADR 0006)."""
+
+    def test_known_defective_file_is_skipped_reported_and_does_not_block(self):
+        self.add_file("good", [obs()], "2026-09-20", "2026-09-26")
+        self.add_file("broken", [], "2026-09-27", "2026-10-03")
+        blocked = self.run_quality()
+        self.assertEqual(blocked["decision"], "bloquear")
+        self.assertEqual(blocked["excluded_sources"], [])
+
+        (self.out / "manifest.json").write_text(json.dumps(self.manifest), encoding="utf-8")
+        report = run_quality(self.out, self.quarantine, AS_OF,
+                             {"broken" * 4: {"file": "broken.csv", "reason": "resumo sob cabeçalho de postos"}})
+        self.assertNotEqual(report["decision"], "bloquear")
+        self.assertEqual(report["critical_failures"], [])
+        self.assertEqual([(e["source_file_id"], e["reason"]) for e in report["excluded_sources"]],
+                         [("broken", "resumo sob cabeçalho de postos")])
+        self.assertTrue(any("excluído por defeito conhecido" in w for w in report["warnings"]))
+        self.assertEqual(report["reconciliation"]["rows_ingested"], 1)
+        self.assertEqual([f["source_file_id"] for f in report["files"]], ["good"])
+
+    def test_a_corrected_file_has_another_hash_and_is_not_excluded(self):
+        self.add_file("fixed", [], "2026-09-27", "2026-10-03")  # sha256 diferente do excluído
+        (self.out / "manifest.json").write_text(json.dumps(self.manifest), encoding="utf-8")
+        report = run_quality(self.out, self.quarantine, AS_OF, {"x" * 64: {"file": "x", "reason": "y"}})
+        self.assertEqual(report["excluded_sources"], [])
+        self.assertEqual(report["decision"], "bloquear")
+
+
 class CoverageTest(QualityCase):
     def test_low_coverage_recurring_absence_and_missing_weekdays(self):
         start = date(2026, 7, 26)
