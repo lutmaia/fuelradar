@@ -175,6 +175,66 @@ def list_stations(conn, uf, location_id, product_id, limit, offset, since=None, 
          "since": since, "order": order}).fetchall()
 
 
+def brand_prices(conn, uf, location_id, product_id, week_start):
+    """Estatísticas da semana por bandeira (a bandeira cadastrada do posto), direto do fato."""
+    return conn.execute("""
+        SELECT coalesce(s.brand, 'NAO INFORMADA') AS brand,
+               count(DISTINCT f.station_id) AS stations, count(*) AS observations,
+               round(percentile_cont(0.5) WITHIN GROUP (ORDER BY f.sale_price::double precision)::numeric, 4) AS median,
+               round(avg(f.sale_price), 4) AS mean, min(f.sale_price) AS min, max(f.sale_price) AS max
+        FROM fact_price_observation f
+        JOIN dim_station s USING (station_id)
+        JOIN dim_location l ON l.location_id = f.location_id
+        WHERE f.is_current_source_revision AND f.product_id = %(product)s AND f.week_start = %(week)s
+          AND l.uf = %(uf)s AND (%(location)s::int IS NULL OR f.location_id = %(location)s)
+        GROUP BY 1 ORDER BY median, brand""",
+        {"product": product_id, "week": week_start, "uf": uf, "location": location_id}).fetchall()
+
+
+# -- Previsões e variações incomuns (Marco 7) -----------------------------------------------
+
+
+def published_model(conn, uf):
+    """O modelo em uso: no máximo um por vez (índice único parcial). Só colunas liberadas ao papel."""
+    return conn.execute("""
+        SELECT model_version_id, name, version, kind, status, origin_week, created_at, metrics
+        FROM model_version WHERE is_published AND uf = %s""", (uf,)).fetchone()
+
+
+def forecast_items(conn, model_id, uf, location_id, product_id):
+    return conn.execute("""
+        SELECT horizon, target_week, point, lower, upper, interval_level, history_weeks, station_count,
+               origin_week, generated_on
+        FROM forecast
+        WHERE model_version_id = %(model)s AND uf = %(uf)s AND product_id = %(product)s
+          AND location_id IS NOT DISTINCT FROM %(location)s
+        ORDER BY horizon""", {"model": model_id, "uf": uf, "product": product_id, "location": location_id}).fetchall()
+
+
+def forecast_eligibility(conn, model_id, uf, location_id, product_id):
+    return conn.execute("""
+        SELECT eligible, reasons, history_weeks, last_week FROM forecast_eligibility
+        WHERE model_version_id = %(model)s AND uf = %(uf)s AND product_id = %(product)s
+          AND location_id IS NOT DISTINCT FROM %(location)s""",
+        {"model": model_id, "uf": uf, "product": product_id, "location": location_id}).fetchone()
+
+
+def list_anomalies(conn, model_id, uf, location_id, product_id, since, limit, offset):
+    return conn.execute("""
+        SELECT l.municipality_name, p.canonical_name AS product, a.week_start, a.observed, a.expected, a.lower,
+               a.upper, a.residual, a.direction, a.station_count, a.interval_level, count(*) OVER () AS total
+        FROM anomaly a
+        LEFT JOIN dim_location l USING (location_id)
+        JOIN dim_product p USING (product_id)
+        WHERE a.model_version_id = %(model)s AND a.uf = %(uf)s AND a.week_start >= %(since)s
+          AND (%(product)s::int IS NULL OR a.product_id = %(product)s)
+          AND (%(location)s::int IS NULL OR a.location_id = %(location)s)
+        ORDER BY a.week_start DESC, abs(a.residual) DESC, l.municipality_name NULLS FIRST, p.canonical_name
+        LIMIT %(limit)s OFFSET %(offset)s""",
+        {"model": model_id, "uf": uf, "since": since, "product": product_id, "location": location_id,
+         "limit": limit, "offset": offset}).fetchall()
+
+
 # -- Qualidade e cobertura ------------------------------------------------------------------
 
 

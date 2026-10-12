@@ -17,6 +17,8 @@ dependencies = [
     # Já vem com o Streamlit; usado direto para tabelas tipadas (ordenação por data e número).
     "pandas==3.0.6",
     "httpx==0.28.1",
+    # Previsão (Marco 7): candidato LightGBM da arquitetura (traz scipy). Sem scikit-learn: a API nativa basta.
+    "lightgbm==4.7.0",
 ]
 
 # Backend de build e ferramentas serão definidos quando necessários.

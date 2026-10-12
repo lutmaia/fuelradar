@@ -604,19 +604,194 @@ class DataQualityTests(ApiCase):
                          422, "INVALID_WEEK")
 
 
+class ForecastApiTests(ApiCase):
+    """`/forecasts` e `/anomalies` sobre um modelo publicado inserido direto no banco de teste."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        with psycopg.connect(cls.admin_url) as conn:
+            product = dict(conn.execute("SELECT canonical_name, product_id FROM dim_product").fetchall())
+            place = dict(conn.execute("SELECT municipality_name_normalized, location_id FROM dim_location").fetchall())
+            metrics = {
+                "overall": {"n": 900, "mae": 0.1064, "wmae": 0.0812, "bias": -0.0173, "coverage": 0.753,
+                            "interval_width": 0.284},
+                "evaluated_points": 900, "evaluated_origins": 27,
+                "decision": {"approved": False, "best_baseline": "ultimo_valor", "improvement": -0.0788,
+                             "checks": {"melhora_minima_de_5pct_no_mae_ponderado": False, "reprodutivel": True}},
+                "reference": {"best_baseline": "ultimo_valor",
+                              "candidate_overall": {"n": 900, "mae": 0.112, "wmae": 0.0876, "bias": -0.011,
+                                                    "coverage": 0.766, "interval_width": 0.309}}}
+            model_id = conn.execute("""
+                INSERT INTO model_version (name, version, kind, status, is_published, uf, origin_week, code_sha,
+                                           data_hash, metrics)
+                VALUES ('ultimo_valor', '2026-09-27-abcd1234', 'baseline', 'approved', true, 'SP', %s, 'sha',
+                        'abcd1234', %s::jsonb) RETURNING model_version_id""",
+                                    (LAST, json.dumps(metrics))).fetchone()[0]
+            cls.model_id = model_id
+            gasoline = product["GASOLINA_COMUM"]
+            for location, rows in ((place[normalize_text("Campinas")], 6.30), (None, 6.40)):
+                for h in (1, 2, 3, 4):
+                    conn.execute("""
+                        INSERT INTO forecast (model_version_id, uf, location_id, product_id, origin_week, target_week,
+                                              horizon, point, lower, upper, interval_level, history_weeks,
+                                              station_count, generated_on)
+                        VALUES (%s, 'SP', %s, %s, %s, %s, %s, %s, %s, %s, 0.8, 120, 8, %s)""",
+                                 (model_id, location, gasoline, LAST, LAST + timedelta(weeks=h), h,
+                                  rows, rows - 0.1 * h, rows + 0.1 * h, TODAY))
+            itu = place[normalize_text("Itu")]
+            conn.execute("""
+                INSERT INTO forecast_eligibility (model_version_id, uf, location_id, product_id, eligible, reasons,
+                                                  history_weeks, last_week)
+                VALUES (%s, 'SP', %s, %s, false, ARRAY['menos_de_52_semanas_de_historico'], 5, %s)""",
+                         (model_id, itu, gasoline, LAST))
+            for location, prod, week, observed, expected, product_name in (
+                    (place[normalize_text("Campinas")], gasoline, LAST, 6.90, 6.30, "GASOLINA_COMUM"),
+                    (place[normalize_text("Jundiaí")], gasoline, LAST, 5.60, 6.00, "GASOLINA_COMUM"),
+                    (place[normalize_text("Campinas")], gasoline, LAST - timedelta(weeks=1), 6.60, 6.30, "GASOLINA_COMUM"),
+                    (None, product["DIESEL_S10"], LAST - timedelta(weeks=9), 6.80, 6.30, "DIESEL_S10")):
+                conn.execute("""
+                    INSERT INTO anomaly (model_version_id, uf, location_id, product_id, week_start, observed, expected,
+                                         lower, upper, residual, direction, station_count, interval_level)
+                    VALUES (%s, 'SP', %s, %s, %s, %s, %s, %s, %s, %s, %s, 8, 0.95)""",
+                             (model_id, location, prod, week, observed, expected, expected - 0.2, expected + 0.2,
+                              round(observed - expected, 4), "acima" if observed > expected else "abaixo"))
+            conn.commit()
+
+    def test_forecast_for_a_city_has_four_ordered_horizons_with_model_and_backtest(self):
+        body = self.ok("/api/v1/forecasts", municipality="Campinas", product="GASOLINA_COMUM")
+        self.assertTrue(body["eligible"])
+        self.assertEqual(body["reasons"], [])
+        self.assertEqual((body["location"]["municipality"].upper(), body["unit"]), ("CAMPINAS", "BRL/L"))
+        self.assertEqual([i["horizon"] for i in body["items"]], [1, 2, 3, 4])
+        first = body["items"][0]
+        self.assertEqual(first["target_week_start"], (LAST + timedelta(weeks=1)).isoformat())
+        self.assertEqual(first["target_week_end"], (LAST + timedelta(weeks=1, days=6)).isoformat())
+        self.assertAlmostEqual(first["point"], 6.30)
+        self.assertTrue(first["lower"] < first["point"] < first["upper"])
+        self.assertEqual((body["interval_level"], body["history_weeks"], body["origin_week_start"]),
+                         (0.8, 120, LAST.isoformat()))
+        model = body["model"]
+        self.assertEqual((model["name"], model["kind"], model["status"], model["label"]),
+                         ("ultimo_valor", "baseline", "approved", "Último valor observado"))
+        backtest = model["backtest"]
+        self.assertFalse(backtest["candidate_approved"])
+        self.assertEqual(backtest["best_baseline_label"], "Último valor observado")
+        self.assertAlmostEqual(backtest["candidate_change"], 0.0788)
+        self.assertAlmostEqual(backtest["candidate"]["weighted_mae"], 0.0876)
+        self.assertAlmostEqual(backtest["published"]["interval_coverage"], 0.753)
+        self.assertEqual((backtest["points"], backtest["origins"]), (900, 27))
+        self.assertIn("data_as_of", body)
+
+    def test_state_forecast_when_municipality_is_omitted(self):
+        body = self.ok("/api/v1/forecasts", product="GASOLINA_COMUM")
+        self.assertIsNone(body["location"]["municipality"])
+        self.assertAlmostEqual(body["items"][0]["point"], 6.40)
+
+    def test_ineligible_or_unforecast_series_get_reasons_and_no_numbers(self):
+        itu = self.ok("/api/v1/forecasts", municipality="Itu", product="GASOLINA_COMUM")
+        self.assertEqual((itu["eligible"], itu["items"], itu["reasons"]),
+                         (False, [], ["menos_de_52_semanas_de_historico"]))
+        self.assertEqual(itu["history_weeks"], 5)
+        unknown_series = self.ok("/api/v1/forecasts", municipality="Jundiaí", product="ETANOL_HIDRATADO")
+        self.assertEqual((unknown_series["eligible"], unknown_series["reasons"]), (False, ["sem_previsao_na_origem"]))
+
+    def test_forecast_errors(self):
+        self.assertError(self.get("/api/v1/forecasts", product="QUEROSENE"), 404, "PRODUCT_NOT_FOUND")
+        self.assertError(self.get("/api/v1/forecasts", product="GASOLINA_COMUM", municipality="Atlântida"),
+                         404, "LOCATION_NOT_FOUND")
+        self.assertError(self.get("/api/v1/forecasts"), 422, "VALIDATION_ERROR")
+
+    def test_anomalies_are_filtered_by_window_product_and_place(self):
+        body = self.ok("/api/v1/anomalies")  # padrão: 4 semanas; a variação de 9 semanas atrás fica fora
+        self.assertEqual(body["total"], 3)
+        self.assertEqual(body["model_version"], "ultimo_valor 2026-09-27-abcd1234")
+        self.assertEqual(body["since_week_start"], (LAST - timedelta(weeks=3)).isoformat())
+        weeks = [i["week_start"] for i in body["items"]]
+        self.assertEqual(weeks, sorted(weeks, reverse=True))
+        first = body["items"][0]  # a maior diferença absoluta da semana mais recente
+        self.assertEqual(first["direction"], "acima")
+        self.assertAlmostEqual(first["difference"], 0.6)
+        self.assertEqual((first["observed"], first["expected"], first["interval_level"]), (6.9, 6.3, 0.95))
+        self.assertTrue(first["lower"] < first["expected"] < first["upper"])
+        self.assertEqual(self.ok("/api/v1/anomalies", weeks=12)["total"], 4)
+        campinas = self.ok("/api/v1/anomalies", municipality="Campinas", weeks=12)
+        self.assertEqual({i["location"]["municipality"].upper() for i in campinas["items"]}, {"CAMPINAS"})
+        diesel = self.ok("/api/v1/anomalies", product="DIESEL_S10", weeks=12)
+        self.assertEqual((diesel["total"], diesel["items"][0]["location"]["municipality"]), (1, None))
+        self.assertEqual(self.ok("/api/v1/anomalies", page_size=1, page=2)["items"][0]["week_start"], LAST.isoformat())
+        self.assertError(self.get("/api/v1/anomalies", weeks=13), 422, "VALIDATION_ERROR")
+
+    def test_reader_role_cannot_see_code_commit_or_artifact_path(self):
+        with psycopg.connect(self.api_url) as conn:
+            self.assertEqual(conn.execute("SELECT count(*) FROM radar.model_version").fetchone()[0], 1)
+            for column in ("code_sha", "artifact_uri"):
+                with self.assertRaises(psycopg.errors.InsufficientPrivilege):
+                    conn.execute(f"SELECT {column} FROM radar.model_version")  # noqa: S608
+                conn.rollback()
+
+    def test_only_one_model_can_be_published_at_a_time(self):
+        with psycopg.connect(self.admin_url) as conn:
+            with self.assertRaises(psycopg.errors.UniqueViolation):
+                conn.execute("""INSERT INTO model_version (name, version, kind, status, is_published, uf, origin_week,
+                                                           data_hash)
+                                VALUES ('media_movel_4', 'x', 'baseline', 'approved', true, 'SP', %s, 'h')""", (LAST,))
+
+
+class BrandApiTests(ApiCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        with psycopg.connect(cls.admin_url) as conn:
+            for station, brand in ((30, "RAIZEN"), (31, "RAIZEN"), (32, "RAIZEN"),
+                                   (33, "IPIRANGA"), (34, "IPIRANGA"), (35, "IPIRANGA")):
+                conn.execute("UPDATE dim_station SET brand = %s WHERE cnpj = %s", (brand, make_cnpj(station)))
+            conn.commit()
+
+    def test_brands_are_compared_in_the_same_week_and_small_ones_are_hidden(self):
+        body = self.ok("/api/v1/prices/by-brand", municipality="Campinas", product="GASOLINA_COMUM")
+        prices = self.expected[("Campinas", "GASOLINA_COMUM", 11)]
+        self.assertEqual(body["week_start"], LAST.isoformat())
+        self.assertEqual((body["reference_stations"], body["min_stations"]), (8, 3))
+        self.assertAlmostEqual(body["reference_median"], float(summary(prices.values())["median"]), places=4)
+        by_brand = {i["brand"]: i for i in body["items"]}
+        self.assertEqual(set(by_brand), {"RAIZEN", "IPIRANGA"})  # BRANCA tem 2 postos: fica oculta
+        for brand, stations in (("RAIZEN", (30, 31, 32)), ("IPIRANGA", (33, 34, 35))):
+            want = summary([prices[s] for s in stations])
+            self.assertAlmostEqual(by_brand[brand]["median"], float(want["median"]), places=4)
+            self.assertEqual(by_brand[brand]["stations"], 3)
+            self.assertAlmostEqual(by_brand[brand]["difference_to_reference"],
+                                   float(want["median"]) - body["reference_median"], places=4)
+        self.assertEqual((body["hidden_brands"], body["hidden_stations"]), (1, 2))
+        medians = [i["median"] for i in body["items"]]
+        self.assertEqual(medians, sorted(medians))
+
+    def test_state_level_and_errors(self):
+        body = self.ok("/api/v1/prices/by-brand", product="GASOLINA_COMUM")
+        self.assertIsNone(body["location"]["municipality"])
+        self.assertTrue(body["reference_stations"] >= 8)
+        self.assertError(self.get("/api/v1/prices/by-brand", product="QUEROSENE"), 404, "PRODUCT_NOT_FOUND")
+        self.assertError(self.get("/api/v1/prices/by-brand"), 422, "VALIDATION_ERROR")
+        self.assertError(self.get("/api/v1/prices/by-brand", product="GASOLINA_COMUM",
+                                  week_start=(LAST + timedelta(days=1)).isoformat()), 422, "INVALID_WEEK")
+
+
 class InfrastructureTests(ApiCase):
     def test_unknown_route_and_method_use_the_error_format(self):
         self.assertError(self.get("/api/v1/nao-existe"), 404, "NOT_FOUND")
         self.assertError(self.client.post("/api/v1/products"), 405, "METHOD_NOT_ALLOWED")
 
-    def test_forecasts_and_anomalies_are_not_published_yet(self):
+    def test_documented_paths_are_exactly_the_published_ones(self):
         paths = set(self.client.get("/openapi.json").json()["paths"])
         self.assertEqual(paths, {
             "/health/live", "/health/ready", "/api/v1/metadata/freshness", "/api/v1/products", "/api/v1/locations",
-            "/api/v1/prices/latest", "/api/v1/prices/history", "/api/v1/prices/compare", "/api/v1/stations",
-            "/api/v1/data-quality"})
-        self.assertError(self.get("/api/v1/forecasts"), 404, "NOT_FOUND")
+            "/api/v1/prices/latest", "/api/v1/prices/history", "/api/v1/prices/compare", "/api/v1/prices/by-brand",
+            "/api/v1/stations", "/api/v1/forecasts", "/api/v1/anomalies", "/api/v1/data-quality"})
         self.assertEqual(self.client.get("/docs").status_code, 200)
+
+    def test_forecasts_and_anomalies_say_so_when_no_model_is_published(self):
+        self.assertError(self.get("/api/v1/forecasts", product="GASOLINA_COMUM"), 404, "NO_PUBLISHED_MODEL")
+        self.assertError(self.get("/api/v1/anomalies"), 404, "NO_PUBLISHED_MODEL")
 
     def test_openapi_documents_error_responses(self):
         spec = self.client.get("/openapi.json").json()

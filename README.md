@@ -2,7 +2,7 @@
 
 Projeto em construção para consultar, comparar e acompanhar os preços de combustíveis pesquisados pela ANP em São Paulo. A arquitetura permite expansão futura por UF.
 
-**Estado atual: Marco 6 concluído — painel.** Os arquivos da ANP são baixados e ingeridos (Marco 2), passam por regras de qualidade e quarentena (Marco 3), são carregados no PostgreSQL (Marco 4), consultados por uma API REST somente leitura (Marco 5, [guia](docs/api.md)) e exploradas em um painel Streamlit (Marco 6, [guia](docs/dashboard.md)). Ainda não há previsões, modelos nem infraestrutura de produção. Resultados e limitações em [PLAN.md](PLAN.md).
+**Estado atual: Marco 7 concluído — previsões e variações incomuns.** Os arquivos da ANP são baixados e ingeridos (Marco 2), passam por regras de qualidade e quarentena (Marco 3), são carregados no PostgreSQL (Marco 4), consultados por uma API REST somente leitura (Marco 5, [guia](docs/api.md)) e exploradas em um painel Streamlit (Marco 6, [guia](docs/dashboard.md)). O Marco 7 adiciona previsões de 1 a 4 semanas com intervalo e variações incomuns (API e painel); o modelo de machine learning testado não superou o baseline e o baseline permanece publicado ([cartão do modelo](docs/model-card.md)). Ainda não há agendamento nem infraestrutura de produção. Resultados e limitações em [PLAN.md](PLAN.md).
 
 ## Começar
 
@@ -34,6 +34,7 @@ Pipeline completo, a partir da raiz (banco local: [docs/local-database.md](docs/
 .\.venv\Scripts\python.exe scripts/ingest_local.py              # ingestão local do que estiver em data/raw
 .\.venv\Scripts\python.exe scripts/check_quality.py             # qualidade, quarentena e cobertura
 .\.venv\Scripts\python.exe scripts/load_db.py                   # migra e carrega no PostgreSQL (DATABASE_URL)
+.\.venv\Scripts\python.exe scripts/run_forecasts.py              # backtest, decisão e previsões (DATABASE_URL); relatório em reports/forecasting/
 .\.venv\Scripts\python.exe scripts/run_api.py                   # sobe a API em http://127.0.0.1:8000/docs (API_DATABASE_URL)
 .\.venv\Scripts\python.exe scripts/run_dashboard.py             # sobe o painel em http://127.0.0.1:8501 (RADAR_API_URL)
 ```
@@ -66,4 +67,4 @@ Para reproduzir a validação histórica (sem sobrescrever o relatório do Marco
 .\.venv\Scripts\python.exe scripts/profile_anp_data.py "data/raw/historicos/*.csv" "data/raw/revendas*.xlsx" --output-dir reports/data-profile/historical-validation
 ```
 
-Próximo passo: Marco 7, modelos de referência e previsão (`/forecasts` e `/anomalies`). Agregados municipais e regionais não entram na tabela de observações individuais; `DIESEL` e `DIESEL S500` são o mesmo produto (`DIESEL_COMUM`) e `DIESEL S10` fica separado, conforme o contrato.
+Próximo passo: Marco 8, automação, monitoramento e implantação. Agregados municipais e regionais não entram na tabela de observações individuais; `DIESEL` e `DIESEL S500` são o mesmo produto (`DIESEL_COMUM`) e `DIESEL S10` fica separado, conforme o contrato.

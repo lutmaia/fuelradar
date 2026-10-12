@@ -49,6 +49,9 @@ HOME = "from radar_combustiveis.dashboard import views\nviews.guarded(views.home
 COMPARE = "from radar_combustiveis.dashboard import views\nviews.guarded(views.compare)()"
 QUALITY = "from radar_combustiveis.dashboard import views\nviews.guarded(views.quality)()"
 RANKING = "from radar_combustiveis.dashboard import views\nviews.guarded(views.stations_ranking)()"
+FORECAST = "from radar_combustiveis.dashboard import views\nviews.guarded(views.forecasts_page)()"
+ANOMALIES = "from radar_combustiveis.dashboard import views\nviews.guarded(views.anomalies_page)()"
+BRANDS = "from radar_combustiveis.dashboard import views\nviews.guarded(views.brands_page)()"
 
 
 # -- Formatação -----------------------------------------------------------------------------
@@ -390,6 +393,55 @@ class FakeApi:
         return {"data_as_of": "2026-10-01", "source_retrieved_at": None, "product": product, "total": total,
                 "latest_week_start": "2026-09-27", "page": 1, "page_size": size, "items": items}
 
+    def brands(self, product, municipality=None):
+        items = [] if self.over.get("no_brands") else [
+            {"brand": "BRANCA", "stations": 12, "observations": 12, "median": 6.19, "mean": 6.2, "min": 5.89,
+             "max": 6.49, "difference_to_reference": -0.2},
+            {"brand": "IPIRANGA", "stations": 9, "observations": 9, "median": 6.49, "mean": 6.5, "min": 6.29,
+             "max": 6.79, "difference_to_reference": 0.1}]
+        return {"data_as_of": "2026-10-09", "source_retrieved_at": None,
+                "location": {"uf": "SP", "municipality": municipality}, "product": product, "unit": "BRL/L",
+                "week_start": "2026-10-04", "week_end": "2026-10-10", "reference_median": 6.39,
+                "reference_stations": 30, "min_stations": 3, "hidden_brands": 2, "hidden_stations": 4, "items": items}
+
+    def forecasts(self, product, municipality=None):
+        if "forecast_raises" in self.over:
+            raise self.over["forecast_raises"]
+        model = {"name": "ultimo_valor", "label": "Último valor observado", "kind": "baseline",
+                 "version": "2026-10-04-1a3225c5", "status": "approved", "origin_week_start": "2026-10-04",
+                 "created_at": "2026-10-12T01:00:00Z",
+                 "backtest": {"points": 24481, "origins": 27,
+                              "published": {"mae": 0.1064, "weighted_mae": 0.0812, "bias": -0.0173,
+                                            "interval_coverage": 0.753, "interval_width": 0.284},
+                              "best_baseline": "ultimo_valor", "best_baseline_label": "Último valor observado",
+                              "candidate": {"mae": 0.112, "weighted_mae": 0.0876, "bias": -0.0112,
+                                            "interval_coverage": 0.766, "interval_width": 0.309},
+                              "candidate_approved": False, "candidate_change": 0.0788,
+                              "checks": {"melhora_minima_de_5pct_no_mae_ponderado": False,
+                                         "cobertura_do_intervalo_na_faixa": True}}}
+        base = {"data_as_of": "2026-10-09", "source_retrieved_at": "2026-10-12T00:06:34Z",
+                "location": {"uf": "SP", "municipality": municipality}, "product": product, "unit": "BRL/L",
+                "model": model, "origin_week_start": "2026-10-04", "interval_level": 0.8}
+        if "forecast_reasons" in self.over:
+            return {**base, "eligible": False, "reasons": self.over["forecast_reasons"], "history_weeks": 20,
+                    "items": []}
+        items = [{"horizon": h, "target_week_start": f"2026-10-{4 + 7 * h:02d}" if h < 4 else "2026-11-01",
+                  "target_week_end": "2026-10-17", "point": 6.39, "lower": 6.39 - 0.1 * h, "upper": 6.39 + 0.1 * h}
+                 for h in (1, 2, 3, 4)]
+        items[0]["target_week_start"], items[1]["target_week_start"] = "2026-10-11", "2026-10-18"
+        items[2]["target_week_start"] = "2026-10-25"
+        return {**base, "eligible": True, "reasons": [], "history_weeks": 160, "items": items}
+
+    def anomalies(self, product=None, municipality=None, weeks=4):
+        rows = [{"location": {"uf": "SP", "municipality": place}, "product": "GASOLINA_COMUM",
+                 "week_start": "2026-10-04", "week_end": "2026-10-10", "observed": 6.89, "expected": 6.29,
+                 "lower": 6.09, "upper": 6.49, "difference": 0.6, "direction": "acima", "stations": 8,
+                 "interval_level": 0.99} for place in ("CAMPINAS", None)]
+        if "anomaly_rows" in self.over:
+            rows = self.over["anomaly_rows"]
+        return {"data_as_of": "2026-10-09", "source_retrieved_at": None, "model_version": "ultimo_valor 2026-10-04-x",
+                "since_week_start": "2026-09-13", "page": 1, "page_size": 200, "total": len(rows), "items": rows}
+
     def data_quality(self, week_start=None):
         return {"data_as_of": "2026-10-01", "source_retrieved_at": None,
                 "last_load": self.freshness()["last_load"],
@@ -555,6 +607,106 @@ class RankingPageTests(PageCase):
         self.assertIn("em comum", self.text_of(at))
 
 
+class BrandsPageTests(PageCase):
+    def test_brand_table_chart_and_the_price_is_not_quality_notice(self):
+        at = self.run_page(BRANDS, FakeApi(), {"municipio": "CAMPINAS"})
+        self.assertFalse(at.exception)
+        table = at.dataframe[0].value
+        self.assertEqual(list(table["Bandeira"]), ["BRANCA", "IPIRANGA"])
+        self.assertAlmostEqual(list(table["Diferença p/ todos"])[0], -0.2)
+        self.assertEqual(len(at.get("plotly_chart")), 1)
+        text = self.text_of(at) + " ".join(i.value for i in at.info)
+        self.assertIn("Preço não é qualidade", text)
+        self.assertIn("2 bandeira(s) com menos de 3 postos", text)
+        self.assertNotIn("adulter", text.lower())
+
+    def test_no_reliable_brand_says_so(self):
+        at = self.run_page(BRANDS, FakeApi(no_brands=True), {"municipio": "SANTOS"})
+        self.assertFalse(at.exception)
+        self.assertEqual(len(at.get("plotly_chart")), 0)
+        self.assertIn("não há comparação confiável", " ".join(i.value for i in at.info))
+
+
+class ForecastPageTests(PageCase):
+    def test_forecast_shows_numbers_interval_chart_and_the_honest_model_notice(self):
+        at = self.run_page(FORECAST, FakeApi(), {"municipio": "CAMPINAS", "produto": "GASOLINA_COMUM"})
+        self.assertFalse(at.exception)
+        table = at.dataframe[0].value
+        self.assertEqual(list(table["Horizonte"]), ["1 semana(s)", "2 semana(s)", "3 semana(s)", "4 semana(s)"])
+        self.assertTrue(all(table["Mínimo"] <= table["Previsão"]) and all(table["Previsão"] <= table["Máximo"]))
+        self.assertEqual(len(at.get("plotly_chart")), 1)
+        text = self.text_of(at) + " ".join(i.value for i in at.info)
+        self.assertIn("Último valor observado", text)
+        self.assertIn("não foi aprovado", text)          # o candidato foi rejeitado e a página diz isso
+        self.assertIn("24.481", text)                    # amostra do backtest
+        self.assertIn("75%", text)                       # cobertura real do intervalo
+        self.assertNotIn("garantia de", text)
+        labels = {m.label for m in at.metric}
+        self.assertTrue(any(label.startswith("Em 1 semana") for label in labels))
+
+    def test_ineligible_series_shows_reasons_and_no_numbers(self):
+        api = FakeApi(forecast_reasons=["menos_de_52_semanas_de_historico", "mediana_de_postos_abaixo_de_3"])
+        at = self.run_page(FORECAST, api, {"municipio": "SANTOS"})
+        self.assertFalse(at.exception)
+        self.assertEqual(len(at.dataframe), 0)
+        self.assertEqual(len(at.get("plotly_chart")), 0)
+        warning = " ".join(w.value for w in at.warning)
+        self.assertIn("menos de 52 semanas de histórico", warning)
+        self.assertIn("menos de 3 postos", warning)
+
+    def test_state_is_the_default_place(self):
+        at = self.run_page(FORECAST, FakeApi(), {})
+        self.assertFalse(at.exception)
+        self.assertEqual(at.query_params["municipio"], "ESTADO DE SÃO PAULO")
+
+    def test_missing_model_is_a_readable_message(self):
+        from radar_combustiveis.dashboard.client import ApiError
+        api = FakeApi(forecast_raises=ApiError(404, "NO_PUBLISHED_MODEL", "Ainda não há modelo.", "rid"))
+        at = self.run_page(FORECAST, api, {})
+        self.assertFalse(at.exception)
+        self.assertIn("Ainda não há modelo", " ".join(e.value for e in at.error))
+
+
+class AnomaliesPageTests(PageCase):
+    def test_lists_unusual_variations_with_statistical_wording(self):
+        at = self.run_page(ANOMALIES, FakeApi())
+        self.assertFalse(at.exception)
+        table = at.dataframe[0].value
+        self.assertEqual(len(table), 2)
+        self.assertAlmostEqual(list(table["Diferença"])[0], 0.6)
+        self.assertEqual(list(table["Local"]), ["CAMPINAS", "Estado de São Paulo"])
+        self.assertEqual(list(table["Sentido"]), ["acima", "acima"])
+        text = self.text_of(at)
+        self.assertIn("sinal estatístico", text)
+        self.assertIn("não uma conclusão sobre os postos", text)
+        self.assertNotIn("fraude", text.lower())
+        self.assertNotIn("adulter", text.lower())
+
+    def test_empty_period_says_so(self):
+        at = self.run_page(ANOMALIES, FakeApi(anomaly_rows=[]))
+        self.assertFalse(at.exception)
+        self.assertIn("Nenhuma variação incomum", " ".join(i.value for i in at.info))
+        self.assertEqual(len(at.dataframe), 0)
+
+
+class ModelSectionTests(PageCase):
+    def test_quality_page_reports_the_validation_and_the_rejected_candidate(self):
+        at = self.run_page(QUALITY, FakeApi())
+        self.assertFalse(at.exception)
+        text = self.text_of(at)
+        self.assertIn("Modelo de previsão e validação", text)
+        self.assertIn("não foi aprovado", text)
+        self.assertIn("❌", text)
+        self.assertIn("✅", text)
+
+    def test_quality_page_without_a_published_model_still_renders(self):
+        from radar_combustiveis.dashboard.client import ApiError
+        api = FakeApi(forecast_raises=ApiError(404, "NO_PUBLISHED_MODEL", "Ainda não há modelo.", "rid"))
+        at = self.run_page(QUALITY, api)
+        self.assertFalse(at.exception)
+        self.assertIn("Ainda não há modelo de previsão publicado", " ".join(i.value for i in at.info))
+
+
 class ComparePageTests(PageCase):
     def test_compare_table_ranks_and_reference_row(self):
         at = self.run_page(COMPARE, FakeApi(), {"produto": "GASOLINA_COMUM"})
@@ -582,15 +734,17 @@ class ComparePageTests(PageCase):
 
 
 class QualityPageTests(PageCase):
-    def test_quality_page_lists_coverage_and_limitations_without_forecast_claims(self):
+    def test_quality_page_lists_coverage_and_limitations_honestly(self):
         at = self.run_page(QUALITY, FakeApi())
         self.assertFalse(at.exception)
         text = self.text_of(at)
         self.assertIn("Levantamento de Preços de Combustíveis", text)
         self.assertIn("179.699", text)
-        self.assertIn("IBITINGA", [str(v) for v in at.dataframe[-1].value["Município"]])
+        coverage = next(f.value for f in at.dataframe if "Município" in f.value.columns)
+        self.assertIn("IBITINGA", [str(v) for v in coverage["Município"]])
         self.assertIn("pesquisa por amostragem", text)
-        self.assertIn("Não há previsões", text)  # sem prometer o que não existe
+        self.assertIn("não indica irregularidade de postos", text)  # variação incomum não acusa ninguém
+        self.assertNotIn("Não há previsões", text)                   # agora existem; a página não mente o contrário
         self.assertNotIn("http://api.test/docs", "")  # (link é caption; conferido abaixo)
         self.assertIn("http://api.test/docs", " ".join(c.value for c in at.caption))
 

@@ -198,6 +198,107 @@ class StationsResponse(Freshness, PageInfo):
     items: list[Station]
 
 
+class BrandItem(BaseModel):
+    brand: str
+    stations: int
+    observations: int
+    median: float
+    mean: float
+    min: float
+    max: float
+    difference_to_reference: float = Field(description="Mediana da bandeira menos a mediana de todos os postos.")
+
+
+class BrandsResponse(Freshness):
+    location: Location
+    product: str
+    unit: str
+    week_start: date
+    week_end: date
+    reference_median: float | None = Field(description="Mediana de todos os postos do recorte na semana.")
+    reference_stations: int
+    min_stations: int = Field(description="Bandeiras com menos postos que isso não são detalhadas.")
+    hidden_brands: int
+    hidden_stations: int
+    items: list[BrandItem]
+
+
+class ForecastPoint(BaseModel):
+    horizon: int = Field(description="Semanas à frente da semana de origem (1 a 4).")
+    target_week_start: date
+    target_week_end: date
+    point: float = Field(description="Previsão central da mediana semanal, em R$ por unidade.")
+    lower: float = Field(description="Limite inferior do intervalo (`interval_level`).")
+    upper: float
+
+
+class BacktestMetrics(BaseModel):
+    mae: float | None = Field(None, description="Erro absoluto médio no backtest, em R$ por unidade.")
+    weighted_mae: float | None = Field(None, description="MAE ponderado pelo número de postos da semana prevista.")
+    bias: float | None = Field(None, description="Previsão menos observado (negativo: subestima).")
+    interval_coverage: float | None = Field(None, description="Fração de observados dentro do intervalo.")
+    interval_width: float | None = None
+
+
+class ModelBacktest(BaseModel):
+    points: int
+    origins: int
+    published: BacktestMetrics
+    best_baseline: str
+    best_baseline_label: str
+    candidate: BacktestMetrics | None
+    candidate_approved: bool
+    candidate_change: float | None = Field(
+        None, description="Variação do MAE ponderado do candidato contra o melhor baseline "
+                          "(negativo = candidato melhor).")
+    checks: dict[str, bool]
+
+
+class ModelInfo(BaseModel):
+    name: str
+    label: str
+    kind: Literal["baseline", "candidate"]
+    version: str
+    status: str
+    origin_week_start: date
+    created_at: datetime
+    backtest: ModelBacktest | None
+
+
+class ForecastResponse(Freshness):
+    location: Location
+    product: str
+    unit: str
+    model: ModelInfo
+    eligible: bool
+    reasons: list[str] = Field(description="Por que a série não tem previsão, quando não tem.")
+    history_weeks: int | None
+    origin_week_start: date | None
+    interval_level: float | None
+    items: list[ForecastPoint]
+
+
+class AnomalyItem(BaseModel):
+    location: Location
+    product: str
+    week_start: date
+    week_end: date
+    observed: float = Field(description="Mediana observada na semana.")
+    expected: float = Field(description="Valor esperado pelo baseline de uma semana (último valor).")
+    lower: float
+    upper: float
+    difference: float = Field(description="Observado menos esperado.")
+    direction: Literal["acima", "abaixo"]
+    stations: int
+    interval_level: float
+
+
+class AnomaliesResponse(Freshness, PageInfo):
+    model_version: str
+    since_week_start: date
+    items: list[AnomalyItem]
+
+
 class QualityLoad(BaseModel):
     observations_published: int
     observations_with_warning: int

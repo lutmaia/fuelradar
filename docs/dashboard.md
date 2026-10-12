@@ -20,6 +20,9 @@ Dependências: `pip install streamlit==1.65.0 plotly==7.1.0 httpx==0.28.1`. O pa
 | **Início** | semana mais recente, última coleta, download, idade do dado; mediana estadual e variação por produto; cobertura da semana; municípios em destaque |
 | **Explorar município** | cartões (mediana, média, faixa, diferença para o estado), gráfico histórico com faixa p25–p75 e referência estadual, postos pesquisados com o último preço, download CSV |
 | **Postos: mais baratos e mais caros** | os 5 postos de menor e os 5 de maior preço do município e produto escolhidos, só entre os que têm preço na semana mais recente do conjunto; muda com o município |
+| **Preços por bandeira** | mediana por bandeira (inclusive bandeira branca) no estado ou município, com faixa do menor ao maior preço; só bandeiras com 3 postos ou mais |
+| **Previsões** | histórico recente, previsão de 1 a 4 semanas com intervalo de 80%, modelo em uso e quão confiável é; sem número quando a série não é elegível |
+| **Variações incomuns** | semanas em que a mediana saiu da faixa de 99% de variação esperada, com observado, esperado, faixa e postos |
 | **Comparar municípios** | de 2 a 5 municípios numa semana: mediana, diferença para o estado, variação, amostra, cobertura e posição; gráficos em valores absolutos e em índice (base 100) |
 | **Qualidade e metodologia** | fonte, cargas, observações publicadas, com aviso e em quarentena, séries com cobertura baixa, como ler os números e limitações |
 
@@ -41,6 +44,10 @@ Nas tabelas, clicar no cabeçalho de uma coluna ordena pelo valor real (data no 
 
 Os botões baixam CSV com `;` como separador, vírgula decimal e BOM, para abrir direto no Excel em português: histórico (uma linha por semana, com cobertura e variação) e postos (cadastro e último preço). Limite de 2.000 linhas, com aviso.
 
+## Previsões e variações incomuns
+
+A página de qualidade mostra o modelo publicado e o resultado do backtest, inclusive quando o candidato de machine learning não é aprovado (hoje o publicado é o baseline "último valor"). A previsão é da mediana semanal, não do preço de um posto, e não considera petróleo, câmbio nem política de preços. Veja o [cartão do modelo](model-card.md).
+
 ## Não existe ainda
 
-Previsões, variações incomuns, métricas de backtesting, autenticação e implantação pública. Entram nos Marcos 7 e 8.
+Autenticação, agendamento e implantação pública. Entram no Marco 8.

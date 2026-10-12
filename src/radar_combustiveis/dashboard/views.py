@@ -329,6 +329,181 @@ def stations_ranking():
                    "de digitação. Veja *Qualidade e metodologia*.")
 
 
+# -- Preços por bandeira --------------------------------------------------------------------
+
+
+def brands_page():
+    st.title("Preços por bandeira")
+    locations = fetch("locations")
+    labels, units = product_labels()
+    left, right = st.columns(2)
+    with left:
+        choice = pick("Município (SP)", _place_options(locations), "municipio", default=STATE_OPTION,
+                      help="Escolha o estado ou um município.")
+    with right:
+        product = pick("Produto", list(labels), "produto", default=DEFAULT_PRODUCT, format_func=labels.get)
+    body = fetch("brands", product, None if choice == STATE_OPTION else choice)
+    freshness_caption(body)
+    st.caption(md(f"Semana de **{fmt.week_range_br(body['week_start'])}** · {fmt.unit_label(units[product])} · "
+                  f"mediana de todos os postos do recorte: **{fmt.brl(body['reference_median'])}** "
+                  f"({fmt.number_br(body['reference_stations'])} postos)."))
+    if not body["items"]:
+        st.info(f"Nenhuma bandeira tem {body['min_stations']} postos ou mais neste recorte e semana, então não há "
+                "comparação confiável por bandeira.")
+        return
+    st.plotly_chart(charts.brand_figure(body["items"], body["reference_median"], fmt.unit_label(units[product])),
+                    width="stretch")
+    show_table([{
+        "Bandeira": i["brand"], "Postos": i["stations"], "Mediana": i["median"],
+        "Diferença p/ todos": i["difference_to_reference"], "Mínimo": i["min"], "Máximo": i["max"]}
+        for i in body["items"]],
+        {"Postos": fmt.number_br, "Mediana": fmt.brl, "Diferença p/ todos": fmt.signed_brl,
+         "Mínimo": fmt.brl, "Máximo": fmt.brl})
+    if body["hidden_brands"]:
+        st.caption(f"{body['hidden_brands']} bandeira(s) com menos de {body['min_stations']} postos "
+                   f"({fmt.number_br(body['hidden_stations'])} postos no total) não são detalhadas: a mediana de "
+                   "poucos postos diz pouco.")
+    st.info("**Preço não é qualidade.** A diferença entre bandeiras mostra quanto cada grupo cobra, não a qualidade "
+            "do combustível. *Bandeira branca* são postos sem contrato de fornecimento exclusivo com uma "
+            "distribuidora, e o preço também reflete localização, volume e margem.")
+
+
+# -- Previsões ------------------------------------------------------------------------------
+
+STATE_OPTION = "ESTADO DE SÃO PAULO"
+REASON_TEXT = {
+    "sem_dado_na_semana_de_origem": "não há preço desta série na semana mais recente",
+    "menos_de_52_semanas_de_historico": "menos de 52 semanas de histórico",
+    "dados_em_menos_de_80pct_das_semanas": "dados em menos de 80% das semanas recentes",
+    "mediana_de_postos_abaixo_de_3": "menos de 3 postos por semana, em mediana",
+    "cobertura_baixa_recente": "cobertura baixa nas últimas semanas",
+    "sem_residuos_suficientes_para_o_intervalo": "histórico de erros insuficiente para calibrar o intervalo",
+    "sem_previsao_na_origem": "a série não foi avaliada na última execução",
+}
+
+
+def md(text):
+    """Escapa `$`: dois cifrões num markdown do Streamlit viram uma fórmula (LaTeX)."""
+    return text.replace("$", "\\$")
+
+
+def _place_options(locations):
+    return [STATE_OPTION] + [loc["municipality"] for loc in locations]
+
+
+def forecasts_page():
+    st.title("Previsões")
+    locations = fetch("locations")
+    labels, units = product_labels()
+    left, right = st.columns(2)
+    with left:
+        choice = pick("Município (SP)", _place_options(locations), "municipio", default=STATE_OPTION,
+                      help="Escolha o estado para a previsão agregada, ou um município.")
+    with right:
+        product = pick("Produto", list(labels), "produto", default=DEFAULT_PRODUCT, format_func=labels.get)
+    municipality = None if choice == STATE_OPTION else choice
+
+    body = fetch("forecasts", product, municipality)
+    freshness_caption(body)
+    model, unit = body["model"], fmt.unit_label(units[product])
+    backtest = model["backtest"]
+    st.caption(f"Previsão feita a partir da semana de **{fmt.week_range_br(body['origin_week_start'])}**, "
+               f"modelo **{model['label']}** (versão {model['version']}).")
+
+    if not body["eligible"]:
+        reasons = "; ".join(REASON_TEXT.get(r, r.replace("_", " ")) for r in body["reasons"])
+        st.warning(f"**Sem previsão para esta série:** {reasons}. Prever com pouco histórico ou amostra pequena "
+                   "daria uma falsa impressão de precisão, então o painel não mostra um número.")
+        return
+
+    history_start = window_start(body["origin_week_start"], "26 semanas")
+    history = fetch("history", product, municipality, history_start, body["origin_week_start"])
+    st.plotly_chart(charts.forecast_figure(history["items"], body["items"], choice.title() if municipality else
+                                           "Estado de São Paulo", unit, body["interval_level"]), width="stretch")
+    first, last = body["items"][0], body["items"][-1]
+    cols = st.columns(3)
+    cols[0].metric(f"Em 1 semana ({fmt.date_br(first['target_week_start'])})", fmt.brl(first["point"]),
+                   help="Previsão central da mediana semanal.")
+    cols[1].metric("Faixa em 1 semana (R$)", f"{fmt.decimal_br(first['lower'])} a {fmt.decimal_br(first['upper'])}",
+                   help=f"Intervalo de {body['interval_level']:.0%} calibrado nos erros do backtest.")
+    cols[2].metric(f"Em 4 semanas ({fmt.date_br(last['target_week_start'])})", fmt.brl(last["point"]))
+    show_table([{
+        "Horizonte": f"{i['horizon']} semana(s)", "Semana (início)": tables.to_date(i["target_week_start"]),
+        "Previsão": i["point"], "Mínimo": i["lower"], "Máximo": i["upper"]} for i in body["items"]],
+        {"Semana (início)": tables.day, "Previsão": fmt.brl, "Mínimo": fmt.brl, "Máximo": fmt.brl})
+    st.caption(md(f"{body['history_weeks']} semanas de histórico · unidade: {unit} · a previsão é da **mediana "
+                  "semanal** da pesquisa da ANP, não do preço de um posto."))
+
+    st.subheader("Quão confiável é")
+    if backtest:
+        published = backtest["published"]
+        st.markdown(md(
+            f"No teste com dados passados (**{fmt.number_br(backtest['points'])}** previsões em "
+            f"**{backtest['origins']}** datas de corte), o erro médio foi de **{fmt.brl(published['mae'])}** por "
+            f"litro e **{fmt.percent(published['interval_coverage'], 0, signed=False)}** dos valores reais ficaram "
+            f"dentro do intervalo (meta de {body['interval_level']:.0%})."))
+        if model["kind"] == "baseline":
+            candidate = backtest["candidate"]
+            detail = ""
+            if candidate and backtest["candidate_change"] is not None:
+                detail = (f" Ele teve erro {fmt.percent(abs(backtest['candidate_change']), 0, signed=False)} "
+                          f"{'menor' if backtest['candidate_change'] < 0 else 'maior'} que o baseline"
+                          f" (a regra exige ao menos 5% de melhora).")
+            st.info(f"**A previsão publicada vem de um modelo simples** ({model['label']}). Um modelo de machine "
+                    f"learning (LightGBM) foi testado e **não foi aprovado**: não superou o baseline de forma "
+                    f"consistente.{detail} Mais detalhes em *Qualidade e metodologia*.")
+        else:
+            st.success("Um modelo de machine learning superou o baseline nos critérios de aprovação.")
+    st.caption("Previsões são estimativas estatísticas, não garantias. Mudanças de política, câmbio, petróleo e "
+               "impostos não entram no modelo.")
+
+
+# -- Variações incomuns ---------------------------------------------------------------------
+
+
+def anomalies_page():
+    st.title("Variações incomuns")
+    st.markdown(
+        "Semanas em que a mediana de um município ou do estado **saiu muito do que se esperava** frente à semana "
+        "anterior. É um **sinal estatístico** para olhar com atenção, não uma conclusão sobre os postos: pode "
+        "refletir reajuste real, mudança na amostra pesquisada ou erro de coleta.")
+    locations = fetch("locations")
+    labels, units = product_labels()
+    left, middle, right = st.columns(3)
+    with left:
+        product_choice = st.selectbox("Produto", ["Todos"] + list(labels), format_func=lambda c: labels.get(c, c))
+    with middle:
+        place_choice = st.selectbox("Local", ["Todos"] + _place_options(locations),
+                                    help="Todos, o estado ou um município.")
+    with right:
+        weeks = st.radio("Período", [4, 8, 12], horizontal=True, format_func=lambda n: f"{n} semanas")
+    product = None if product_choice == "Todos" else product_choice
+    municipality = None if place_choice in ("Todos", STATE_OPTION) else place_choice
+    body = fetch("anomalies", product, municipality, weeks)
+    freshness_caption(body)
+    items = body["items"]
+    if place_choice == STATE_OPTION:
+        items = [i for i in items if i["location"]["municipality"] is None]
+    st.caption(f"Desde a semana de **{fmt.week_range_br(body['since_week_start'])}** · modelo de referência: "
+               f"{body['model_version']}.")
+    if not items:
+        st.info("Nenhuma variação incomum no período e nos filtros escolhidos.")
+        return
+    st.markdown(f"**{fmt.number_br(len(items))}** variação(ões) incomum(ns).")
+    show_table([{
+        "Semana (início)": tables.to_date(i["week_start"]),
+        "Local": i["location"]["municipality"] or "Estado de São Paulo",
+        "Produto": labels.get(i["product"], i["product"]), "Observado": i["observed"], "Esperado": i["expected"],
+        "Diferença": i["difference"], "Faixa usual": f"{fmt.decimal_br(i['lower'])} a {fmt.decimal_br(i['upper'])}",
+        "Sentido": i["direction"], "Postos": i["stations"]} for i in items],
+        {"Semana (início)": tables.day, "Observado": fmt.brl, "Esperado": fmt.brl, "Diferença": fmt.signed_brl,
+         "Postos": fmt.number_br})
+    st.caption(md("**Como é definida:** a mediana da semana ficou fora da faixa usual de 99% de variação de uma "
+                  "semana para outra (calculada nos erros do teste com dados passados, por produto e nível), a "
+                  "diferença é de ao menos R$ 0,15 e a amostra tem 3 postos ou mais. Séries com cobertura baixa "
+                  "ficam de fora."))
+
+
 # -- Comparar localidades -------------------------------------------------------------------
 
 
@@ -401,6 +576,52 @@ def compare():
 # -- Qualidade e metodologia ----------------------------------------------------------------
 
 
+def model_section():
+    """Modelo publicado e resultado do backtest (a API devolve o mesmo resumo em qualquer série)."""
+    st.subheader("Modelo de previsão e validação")
+    try:
+        body = fetch("forecasts", DEFAULT_PRODUCT, None)
+    except ApiError as exc:
+        if exc.code != "NO_PUBLISHED_MODEL":
+            raise
+        st.info("Ainda não há modelo de previsão publicado.")
+        return
+    model, backtest = body["model"], body["model"]["backtest"]
+    st.markdown(f"**Modelo publicado:** {model['label']} · versão {model['version']} · "
+                f"{'baseline (modelo simples de referência)' if model['kind'] == 'baseline' else 'candidato aprovado'}.")
+    if not backtest:
+        return
+    rows = [{"Modelo": f"{model['label']} (publicado)", "Erro médio (R$/L)": backtest["published"]["mae"],
+             "Erro ponderado (R$/L)": backtest["published"]["weighted_mae"],
+             "Viés (R$/L)": backtest["published"]["bias"],
+             "Cobertura do intervalo": backtest["published"]["interval_coverage"]}]
+    if backtest["candidate"]:
+        rows.append({"Modelo": "LightGBM global (candidato)", "Erro médio (R$/L)": backtest["candidate"]["mae"],
+                     "Erro ponderado (R$/L)": backtest["candidate"]["weighted_mae"],
+                     "Viés (R$/L)": backtest["candidate"]["bias"],
+                     "Cobertura do intervalo": backtest["candidate"]["interval_coverage"]})
+    show_table(rows, {"Erro médio (R$/L)": fmt.brl, "Erro ponderado (R$/L)": fmt.brl,
+                      "Viés (R$/L)": fmt.signed_brl, "Cobertura do intervalo": tables.percent0})
+    verdict = ("foi **aprovado**" if backtest["candidate_approved"]
+               else "**não foi aprovado**, então o baseline permanece publicado")
+    st.markdown(f"O candidato de machine learning {verdict}. Critérios (arquitetura, seção 14.8):")
+    for check, ok in backtest["checks"].items():
+        st.markdown(f"- {'✅' if ok else '❌'} {CHECK_TEXT.get(check, check.replace('_', ' '))}")
+    st.caption(f"Backtest com origem deslizante: {fmt.number_br(backtest['points'])} previsões em "
+               f"{backtest['origins']} datas de corte, todas avaliadas só com dados anteriores a cada corte. "
+               "Relatório completo em `reports/forecasting/backtest.md`.")
+
+
+CHECK_TEXT = {
+    "melhora_minima_de_5pct_no_mae_ponderado": "melhora de pelo menos 5% no erro ponderado contra o melhor baseline",
+    "sem_regressao_grave_em_grupo": "sem piora grave em produto, nível ou porte de município",
+    "vies_aceitavel": "viés médio de até 25% do erro",
+    "cobertura_do_intervalo_na_faixa": "cobertura do intervalo entre 70% e 90%",
+    "reprodutivel": "mesmos dados e semente geram as mesmas previsões",
+    "candidato_avaliado": "candidato avaliado",
+}
+
+
 def quality():
     st.title("Qualidade dos dados e metodologia")
     fresh = fetch("freshness")
@@ -453,6 +674,7 @@ def quality():
         if low["total"] > len(low["items"]):
             st.caption(f"Mostrando {len(low['items'])} de {low['total']} séries.")
 
+    model_section()
     st.subheader("Como ler os números")
     st.markdown(METHODOLOGY)
     st.subheader("Limitações conhecidas")
@@ -479,7 +701,9 @@ LIMITATIONS = """
 * Hoje só **São Paulo** é publicado; a estrutura prevê outras UFs.
 * Alguns arquivos foram recebidos manualmente e não têm registro de download (aparece como
   "sem registro de download").
-* Não há previsões nem detecção de variações incomuns ainda; elas dependem de validação contra
-  modelos de referência e entram em uma etapa futura.
+* **Previsões** são da mediana semanal, de 1 a 4 semanas, com intervalo calibrado nos erros do teste com
+  dados passados; só séries com histórico e amostra suficientes têm previsão. Não incluem política de preços,
+  câmbio nem petróleo.
+* **Variação incomum** é um sinal estatístico (fora de uma faixa de 99%), não indica irregularidade de postos.
 * Nomes de municípios aparecem como a ANP os publica (caixa alta, sem acento).
 """

@@ -108,6 +108,17 @@ class ApiClient:
             "municipality": municipality, "product": product, "only_latest_week": "true",
             "order": "price_asc" if cheapest else "price_desc", "page": 1, "page_size": size})
 
+    def brands(self, product, municipality=None):
+        return self._get("/api/v1/prices/by-brand", {"product": product, "municipality": municipality})
+
+    def forecasts(self, product, municipality=None):
+        return self._get("/api/v1/forecasts", {"product": product, "municipality": municipality})
+
+    def anomalies(self, product=None, municipality=None, weeks=4):
+        items, total, _, first = self._all_pages("/api/v1/anomalies", {
+            "product": product, "municipality": municipality, "weeks": weeks}, limit=EXPORT_ROW_LIMIT)
+        return {**first, "items": items, "total": total}
+
     def data_quality(self, week_start=None):
         """Resumo de qualidade; `low_coverage.items` traz até 200 séries (o total vem em `total`)."""
         return self._get("/api/v1/data-quality", {"week_start": week_start, "page_size": PAGE_SIZE})

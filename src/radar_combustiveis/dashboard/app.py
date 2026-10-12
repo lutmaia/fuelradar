@@ -23,6 +23,9 @@ def main():
     pages = [home_page, explore_page,
              st.Page(views.guarded(views.stations_ranking), title="Postos: mais baratos e mais caros",
                      url_path="postos", icon="⛽"),
+             st.Page(views.guarded(views.brands_page), title="Preços por bandeira", url_path="bandeiras", icon="🏷️"),
+             st.Page(views.guarded(views.forecasts_page), title="Previsões", url_path="previsoes", icon="🔮"),
+             st.Page(views.guarded(views.anomalies_page), title="Variações incomuns", url_path="variacoes", icon="⚠️"),
              st.Page(views.guarded(views.compare), title="Comparar municípios", url_path="comparar", icon="📊"),
              st.Page(views.guarded(views.quality), title="Qualidade e metodologia", url_path="qualidade", icon="🧭")]
     st.navigation(pages).run()

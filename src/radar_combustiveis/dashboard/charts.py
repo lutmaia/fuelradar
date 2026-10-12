@@ -42,6 +42,55 @@ def _layout(fig, title, y_title):
     return fig
 
 
+def brand_figure(items, reference, unit):
+    """Mediana por bandeira (ponto) com a faixa do menor ao maior preço, e a mediana geral como referência.
+
+    Pontos, não barras: o eixo não começa em zero e barras cortadas exagerariam as diferenças."""
+    ordered = sorted(items, key=lambda i: i["median"], reverse=True)
+    fig = go.Figure(go.Scatter(
+        x=[i["median"] for i in ordered], y=[f"{i['brand']} ({i['stations']} postos)" for i in ordered],
+        mode="markers", marker={"size": 13, "color": [PALETTE[0] if i["median"] <= reference else PALETTE[1]
+                                                      for i in ordered]},
+        error_x={"type": "data", "symmetric": False, "color": "#888888", "thickness": 2,
+                 "array": [i["max"] - i["median"] for i in ordered],
+                 "arrayminus": [i["median"] - i["min"] for i in ordered]},
+        customdata=[[i["min"], i["max"]] for i in ordered], name="Mediana",
+        hovertemplate="%{y}<br>mediana R$ %{x:.2f} (de %{customdata[0]:.2f} a %{customdata[1]:.2f})<extra></extra>"))
+    if reference is not None:
+        fig.add_vline(x=reference, line_dash="dash", line_color=STATE_COLOR,
+                      annotation_text=f"todos: R$ {reference:.2f}".replace(".", ","), annotation_position="top")
+    fig.update_layout(title="Mediana por bandeira (a linha cinza de cada ponto vai do menor ao maior preço)",
+                      margin={"l": 10, "r": 10, "t": 60, "b": 40}, showlegend=False,
+                      xaxis={"title": unit, "tickformat": ",.2f"}, height=140 + 40 * len(ordered), separators=",.")
+    return fig
+
+
+def forecast_figure(history, forecast, label, unit, level):
+    """Histórico recente (mediana) e previsão central com a faixa do intervalo, em semanas à frente."""
+    weeks, median, _ = _series(history, "median")
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=weeks, y=median, mode="lines+markers", name=f"{label} — observado",
+                             line={"color": PALETTE[0], "width": 2}, marker={"size": 5}, connectgaps=False,
+                             hovertemplate="%{x}<br>R$ %{y:.2f}<extra>observado</extra>"))
+    if forecast and weeks:
+        last_week = next((w for w, v in zip(reversed(weeks), reversed(median)) if v is not None), None)
+        last_value = next((v for v in reversed(median) if v is not None), None)
+        xs = [p["target_week_start"] for p in forecast]
+        # A faixa parte do último valor observado: ele não tem incerteza.
+        fig.add_trace(go.Scatter(x=[last_week, *xs], y=[last_value, *[p["upper"] for p in forecast]], mode="lines",
+                                 line={"width": 0}, showlegend=False, hoverinfo="skip"))
+        fig.add_trace(go.Scatter(x=[last_week, *xs], y=[last_value, *[p["lower"] for p in forecast]], mode="lines",
+                                 line={"width": 0}, fill="tonexty", fillcolor="rgba(230,159,0,0.25)",
+                                 name=f"Intervalo de {level:.0%}", hoverinfo="skip"))
+        fig.add_trace(go.Scatter(x=[last_week, *xs], y=[last_value, *[p["point"] for p in forecast]],
+                                 mode="lines+markers", name="Previsão", line={"color": PALETTE[1], "dash": "dash"},
+                                 marker={"size": 7, "symbol": "diamond"},
+                                 customdata=[[None, None]] + [[p["lower"], p["upper"]] for p in forecast],
+                                 hovertemplate="%{x}<br>R$ %{y:.2f} (faixa %{customdata[0]:.2f} a "
+                                               "%{customdata[1]:.2f})<extra>previsão</extra>"))
+    return _layout(fig, f"{label}: observado e previsão", unit)
+
+
 def history_figure(points, label, unit, state_points=None):
     """Mediana semanal com a faixa entre p25 e p75; a mediana do estado como referência."""
     weeks, median, by_week = _series(points, "median")

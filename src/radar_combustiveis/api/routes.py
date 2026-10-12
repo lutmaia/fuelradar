@@ -9,7 +9,9 @@ from psycopg import Connection
 from ..ingestion.normalize import normalize_text
 from . import queries
 from .errors import ApiError
-from .schemas import (CompareItem, CompareReference, CompareResponse, CoverageSummary, DataQualityResponse, ErrorResponse,
+from .schemas import (AnomaliesResponse, AnomalyItem, BacktestMetrics, BrandItem, BrandsResponse, ForecastPoint,
+                      ForecastResponse,
+                      ModelBacktest, ModelInfo, CompareItem, CompareReference, CompareResponse, CoverageSummary, DataQualityResponse, ErrorResponse,
                       FreshnessResponse, Health, HistoryResponse, LatestPrice, Location, LocationItem,
                       LocationsResponse, LoadRun, LowCoverageItem, LowCoveragePage, Product, ProductsResponse, QualityLoad,
                       Sample, SeriesPoint, Station, StationsResponse, Statistics, WeeklyChange)
@@ -30,6 +32,14 @@ PRODUCT_LABELS = {
     "GNV": "GNV",
 }
 UF_LABELS = {"SP": "São Paulo"}
+MODEL_LABELS = {
+    "ultimo_valor": "Último valor observado",
+    "media_movel_4": "Média móvel de 4 semanas",
+    "mesma_semana_ano_anterior": "Mesma semana do ano anterior",
+    "lightgbm_global": "LightGBM global",
+}
+MAX_ANOMALY_WEEKS = 12
+BRAND_MIN_STATIONS = 3   # abaixo disso a mediana de uma bandeira diz pouco e expõe o posto
 COVERAGE_STATUS = {"ok": "ok", "cobertura_baixa": "low", "sem_historico": "no_history"}
 
 ERRORS = {404: {"model": ErrorResponse}, 422: {"model": ErrorResponse}, 500: {"model": ErrorResponse},
@@ -290,6 +300,41 @@ def prices_history(conn: Conn, uf: Uf, product: ProductParam, page: Page, munici
         page=page.page, page_size=page.page_size, total=len(items), items=window)
 
 
+@router.get("/prices/by-brand", response_model=BrandsResponse, responses=ERRORS, tags=["Preços"],
+            summary="Mediana semanal por bandeira de posto")
+def prices_by_brand(conn: Conn, uf: Uf, product: ProductParam, municipality: MunicipalityParam | None = None,
+                    week_start: Annotated[date | None, Query(description="Domingo da semana. Padrão: a mais recente.")] = None):
+    """Compara bandeiras (incluindo a bandeira branca) na mesma semana e recorte. Só detalha
+    bandeiras com ao menos 3 postos; as demais são contadas em `hidden_*`. É diferença de **preço**,
+    não de qualidade do combustível."""
+    require_week_start(week_start)
+    prod = require_product(conn, product)
+    loc = one_location(conn, uf, municipality)
+    week = week_start or (queries.city_latest_week(conn, loc["location_id"], prod["product_id"]) if loc
+                          else queries.state_latest_week(conn, uf, prod["product_id"]))
+    if week is None:
+        raise ApiError(404, "NO_DATA", "Não há dados deste produto no recorte pedido.")
+    rows = queries.brand_prices(conn, uf, loc["location_id"] if loc else None, prod["product_id"], week)
+    found = (queries.city_series(conn, loc["location_id"], prod["product_id"], week, week) if loc
+             else queries.state_series(conn, uf, prod["product_id"], week, week))
+    overall = found[0] if found else None
+    reference = overall["price_median"] if overall else None
+    shown = [r for r in rows if r["stations"] >= BRAND_MIN_STATIONS]
+    hidden = [r for r in rows if r["stations"] < BRAND_MIN_STATIONS]
+    fresh = queries.series_freshness(conn, uf, prod["product_id"], week, week,
+                                     [loc["location_id"]] if loc else None)
+    items = [BrandItem(brand=r["brand"], stations=r["stations"], observations=r["observations"],
+                       median=r["median"], mean=r["mean"], min=r["min"], max=r["max"],
+                       difference_to_reference=round(float(r["median"]) - float(reference), 4))
+             for r in shown] if reference is not None else []
+    return BrandsResponse(
+        data_as_of=fresh["data_as_of"], source_retrieved_at=fresh["source_retrieved_at"],
+        location=location_of(uf, loc["municipality_name"] if loc else None), product=prod["canonical_name"],
+        unit=prod["unit"], week_start=week, week_end=week + timedelta(days=6), reference_median=reference,
+        reference_stations=overall["station_count"] if overall else 0, min_stations=BRAND_MIN_STATIONS,
+        hidden_brands=len(hidden), hidden_stations=sum(r["stations"] for r in hidden), items=items)
+
+
 @router.get("/prices/compare", response_model=CompareResponse, responses=ERRORS, tags=["Preços"],
             summary="Compara municípios em uma semana, com o agregado estadual como referência")
 def prices_compare(conn: Conn, uf: Uf, product: ProductParam,
@@ -378,6 +423,99 @@ def stations(conn: Conn, uf: Uf, page: Page, municipality: MunicipalityParam | N
                             page=page.page, page_size=page.page_size, total=total,
                             product=prod["canonical_name"] if prod else None,
                             latest_week_start=latest_week, items=items)
+
+
+# -- Previsões e variações incomuns ---------------------------------------------------------
+
+
+def metrics_of(raw):
+    if not raw or not raw.get("n"):
+        return None
+    return BacktestMetrics(mae=raw.get("mae"), weighted_mae=raw.get("wmae"), bias=raw.get("bias"),
+                           interval_coverage=raw.get("coverage"), interval_width=raw.get("interval_width"))
+
+
+def model_info_of(row):
+    metrics = row["metrics"] or {}
+    decision = metrics.get("decision") or {}
+    reference = metrics.get("reference") or {}
+    best = decision.get("best_baseline") or reference.get("best_baseline")
+    backtest = None
+    if best:
+        improvement = decision.get("improvement")
+        backtest = ModelBacktest(
+            points=metrics.get("evaluated_points", 0), origins=metrics.get("evaluated_origins", 0),
+            published=metrics_of(metrics.get("overall")) or BacktestMetrics(),
+            best_baseline=best, best_baseline_label=MODEL_LABELS.get(best, best),
+            candidate=metrics_of(reference.get("candidate_overall")),
+            candidate_approved=bool(decision.get("approved")),
+            candidate_change=None if improvement is None else -improvement,
+            checks=decision.get("checks") or {})
+    return ModelInfo(name=row["name"], label=MODEL_LABELS.get(row["name"], row["name"]), kind=row["kind"],
+                     version=row["version"], status=row["status"], origin_week_start=row["origin_week"],
+                     created_at=row["created_at"], backtest=backtest)
+
+
+def require_published_model(conn, uf):
+    model = queries.published_model(conn, uf)
+    if model is None:
+        raise ApiError(404, "NO_PUBLISHED_MODEL", "Ainda não há modelo de previsão publicado para esta UF.")
+    return model
+
+
+@router.get("/forecasts", response_model=ForecastResponse, responses=ERRORS, tags=["Previsões"],
+            summary="Previsão de 1 a 4 semanas da mediana semanal, com intervalo")
+def forecasts(conn: Conn, uf: Uf, product: ProductParam, municipality: MunicipalityParam | None = None):
+    """Sem `municipality`, o agregado estadual. Séries que não cumprem a elegibilidade (52 semanas,
+    80% das semanas com dado, ao menos 3 postos, sem cobertura baixa recente) devolvem `eligible`
+    falso e os motivos, nunca uma previsão. O modelo publicado e seu desempenho no backtest vão junto."""
+    prod = require_product(conn, product)
+    loc = one_location(conn, uf, municipality)
+    model = require_published_model(conn, uf)
+    location_id = loc["location_id"] if loc else None
+    items = queries.forecast_items(conn, model["model_version_id"], uf, location_id, prod["product_id"])
+    status = queries.forecast_eligibility(conn, model["model_version_id"], uf, location_id, prod["product_id"])
+    fresh = queries.dataset_freshness(conn)
+    points = [ForecastPoint(horizon=r["horizon"], target_week_start=r["target_week"],
+                            target_week_end=r["target_week"] + timedelta(days=6), point=r["point"],
+                            lower=r["lower"], upper=r["upper"]) for r in items]
+    return ForecastResponse(
+        data_as_of=fresh["data_as_of"], source_retrieved_at=fresh["source_retrieved_at"],
+        location=location_of(uf, loc["municipality_name"] if loc else None), product=prod["canonical_name"],
+        unit=prod["unit"], model=model_info_of(model), eligible=bool(points),
+        reasons=list(status["reasons"]) if status and not points else ([] if points else ["sem_previsao_na_origem"]),
+        history_weeks=(items[0]["history_weeks"] if items else status["history_weeks"] if status else None),
+        origin_week_start=model["origin_week"], interval_level=items[0]["interval_level"] if items else None,
+        items=points)
+
+
+@router.get("/anomalies", response_model=AnomaliesResponse, responses=ERRORS, tags=["Variações incomuns"],
+            summary="Variações incomuns da mediana semanal, com a explicação estatística")
+def anomalies(conn: Conn, uf: Uf, page: Page, product: ProductParam | None = None,
+              municipality: MunicipalityParam | None = None,
+              weeks: Annotated[int, Query(ge=1, le=MAX_ANOMALY_WEEKS,
+                                          description="Quantas semanas recentes considerar.")] = 4):
+    """Uma variação é **incomum** quando a mediana observada sai do intervalo de 99% calibrado nos
+    resíduos do backtest do baseline de uma semana, a mudança é de pelo menos R$ 0,15 e a amostra
+    tem ao menos 3 postos. É um sinal estatístico, não uma conclusão sobre os postos."""
+    prod = require_product(conn, product) if product else None
+    loc = one_location(conn, uf, municipality)
+    model = require_published_model(conn, uf)
+    latest = queries.dataset_latest_week(conn, uf) or model["origin_week"]
+    since = latest - timedelta(weeks=weeks - 1)
+    args = (conn, model["model_version_id"], uf, loc["location_id"] if loc else None,
+            prod["product_id"] if prod else None, since)
+    rows = queries.list_anomalies(*args, page.page_size, page.offset)
+    total = (rows or queries.list_anomalies(*args, 1, 0) or [{"total": 0}])[0]["total"]
+    fresh = queries.dataset_freshness(conn)
+    items = [AnomalyItem(
+        location=location_of(uf, r["municipality_name"]), product=r["product"], week_start=r["week_start"],
+        week_end=r["week_start"] + timedelta(days=6), observed=r["observed"], expected=r["expected"],
+        lower=r["lower"], upper=r["upper"], difference=r["residual"], direction=r["direction"],
+        stations=r["station_count"], interval_level=r["interval_level"]) for r in rows]
+    return AnomaliesResponse(data_as_of=fresh["data_as_of"], source_retrieved_at=fresh["source_retrieved_at"],
+                             page=page.page, page_size=page.page_size, total=total,
+                             model_version=f"{model['name']} {model['version']}", since_week_start=since, items=items)
 
 
 # -- Qualidade ------------------------------------------------------------------------------

@@ -31,10 +31,13 @@ $env:API_DATABASE_URL = "postgresql://radar_api:$($env:RADAR_API_PASSWORD)@127.0
 | GET | `/api/v1/prices/latest` | estatística semanal mais recente (`product`; `municipality` opcional) |
 | GET | `/api/v1/prices/history` | série semanal (`start`, `end`, paginação) |
 | GET | `/api/v1/prices/compare` | municípios lado a lado numa semana, com o estado como referência |
+| GET | `/api/v1/prices/by-brand` | mediana semanal por bandeira no mesmo recorte (`product`; `municipality` e `week_start` opcionais) |
+| GET | `/api/v1/forecasts` | previsão de 1 a 4 semanas com intervalo, modelo publicado e desempenho no backtest (`product`; `municipality` opcional) |
+| GET | `/api/v1/anomalies` | variações incomuns recentes (`weeks` 1 a 12; `product` e `municipality` opcionais) |
 | GET | `/api/v1/stations` | postos pesquisados, com o último preço do produto (`order=price_asc\|price_desc` e `only_latest_week=true`, ambos exigem `product`) |
 | GET | `/api/v1/data-quality` | cobertura da semana, avisos e quarentena |
 
-`/api/v1/forecasts` e `/api/v1/anomalies` (seção 15.2 da arquitetura) **não existem ainda**: entram no Marco 7.
+**Previsões e variações incomuns (Marco 7).** `/forecasts` devolve, por horizonte (1 a 4), `point`, `lower` e `upper` (intervalo de `interval_level`, 80%), o modelo publicado (`name`, `kind`, `version`, `status`) e seu `backtest` (erro médio, viés, cobertura, comparação com o candidato). Série sem previsão volta com `eligible: false` e `reasons`, nunca com um número; sem modelo publicado, `404 NO_PUBLISHED_MODEL`. `/anomalies` lista semanas em que a mediana saiu do intervalo de 99% de variação semanal esperada (diferença mínima de R$ 0,15, ao menos 3 postos): é um sinal estatístico, não uma conclusão sobre os postos. `/prices/by-brand` só detalha bandeiras com 3 postos ou mais (`hidden_brands` conta o resto).
 
 **Postos mais baratos e mais caros.** `GET /api/v1/stations?municipality=…&product=…&only_latest_week=true&order=price_asc&page_size=5` devolve os 5 postos de menor último preço entre os que têm preço na **semana mais recente do estado para o produto** (`latest_week_start` na resposta; domingo a sábado). Postos cujo último preço é de semanas anteriores ficam fora, e `total` conta só os que entraram. Com `order=price_desc` a lista vem do mais caro. Empates de preço desempatam pelo nome, então as páginas não repetem postos. Sem `product`, `order` por preço e `only_latest_week` respondem 422 `PRODUCT_REQUIRED`.
 Sem `municipality`, `latest` e `history` devolvem o **agregado estadual**. `uf` é opcional e só aceita `SP` enquanto `TARGET_UFS` for `["SP"]`.
