@@ -28,7 +28,8 @@ from radar_combustiveis.forecasting.store import publish  # noqa: E402
 def code_sha():
     try:
         run = lambda *a: subprocess.run(["git", *a], capture_output=True, text=True, check=True, cwd=ROOT).stdout.strip()  # noqa: E731
-        return run("rev-parse", "HEAD") + ("-dirty" if run("status", "--porcelain") else "")
+        # Os próprios relatórios (reports/) não contam como "código alterado".
+        return run("rev-parse", "HEAD") + ("-dirty" if run("status", "--porcelain", "--", ".", ":!reports") else "")
     except (OSError, subprocess.CalledProcessError):
         return None
 
