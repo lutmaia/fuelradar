@@ -1,5 +1,6 @@
 # Orientações de trabalho
 
+- No início de cada sessão, leia `docs/proximos-passos.md` (estado atual, decisões já tomadas e pendências) e depois `PLAN.md`.
 - Antes de mudanças grandes, leia `PROJECT.md` e a parte relevante de `docs/architecture.md`, a principal especificação.
 - Limite cada tarefa ao marco solicitado em `PLAN.md`; não avance automaticamente.
 - Preserve arquivos brutos da ANP integralmente, sem editar, sobrescrever ou apagar; não os envie ao GitHub.

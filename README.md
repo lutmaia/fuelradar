@@ -14,13 +14,14 @@ Projeto em construção para consultar, comparar e acompanhar os preços de comb
 
 Python 3.12+ é o requisito. O `pyproject.toml` registra metadados e as dependências: `openpyxl` (ler XLSX), `psycopg[binary]` e `psycopg-pool` (cliente PostgreSQL), `fastapi` e `uvicorn` (API), `streamlit` e `plotly` (painel) e `httpx` (cliente HTTP do painel e dos testes). O código do produto está em `src/radar_combustiveis/` e os pontos de entrada em `scripts/`. Empacotamento, uv e lockfile serão configurados quando necessários, conforme a arquitetura.
 
-Para reproduzir o perfil no PowerShell, a partir da raiz (reutilize `.venv` se já existir):
+Instalação, no PowerShell, a partir da raiz (o passo a passo completo para uma segunda máquina está em [docs/continuar-em-outra-maquina.md](docs/continuar-em-outra-maquina.md)):
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install openpyxl==3.1.5
-.\.venv\Scripts\python.exe scripts/profile_anp_data.py "data/raw/*.xlsx"
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt   # ambiente fixado (Python 3.14)
+Copy-Item .env.example .env                                         # defina POSTGRES_PASSWORD
+docker compose up -d --wait                                         # PostgreSQL em 127.0.0.1:54329
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v       # com RADAR_TEST_DATABASE_URL, roda também os testes de banco
 ```
 
 São necessários os arquivos locais: dados brutos não acompanham o Git. O script produz `reports/data-profile/profile.json` e `summary.md`, sem modificar os originais. Veja limitações e resultados em [data-discovery.md](docs/data-discovery.md).
@@ -42,6 +43,14 @@ Pipeline completo, a partir da raiz (banco local: [docs/local-database.md](docs/
 **Atenção ao `--since`:** sem ele, `fetch_anp.py` seleciona todas as semanas publicadas pela ANP desde 2022 (cerca de 300 MB) e a ingestão leva alguns minutos. Use `--dry-run` para ver o que seria baixado. Arquivos da ANP com defeito conhecido ficam em `config/excluded_sources.json` ([ADR 0006](docs/decisions/0006-arquivos-da-fonte-excluidos.md)).
 
 O usuário somente leitura da API é criado uma vez por `scripts/create_api_role.py`; os passos estão em [docs/api.md](docs/api.md).
+
+## Fonte dos dados
+
+Os preços vêm do **Levantamento de Preços de Combustíveis da ANP** (Agência Nacional do Petróleo, Gás Natural e Biocombustíveis), publicado em dados abertos no portal gov.br/anp. Os arquivos originais **não** estão neste repositório e permanecem intactos em `data/raw`. Medianas, comparações, previsões e demais números exibidos são **derivados por este projeto** e não são divulgados pela ANP. É uma pesquisa por amostragem: não representa todos os postos nem preços em tempo real, e as previsões são estimativas estatísticas.
+
+## Licença
+
+Código sob a licença [MIT](LICENSE). Os dados de origem pertencem à ANP e seguem os termos de uso do portal de dados abertos.
 
 ## Organização
 

@@ -180,12 +180,12 @@ Agregados em diferentes níveis não devem ser somados. `None`/N/D indica dimens
 [
   {
     "left": {
-      "input_path": "C:/Users/Pichau/OneDrive/Desktop/projeto_postos_sp/data/raw/historicos/Preços semestrais - AUTOMOTIVOS_2026.01.csv",
+      "input_path": "data/raw/historicos/Preços semestrais - AUTOMOTIVOS_2026.01.csv",
       "table": "Preços semestrais - AUTOMOTIVOS_2026.01.csv",
       "sheet": null
     },
     "right": {
-      "input_path": "C:/Users/Pichau/OneDrive/Desktop/projeto_postos_sp/data/raw/revendas_lpc_2026-09-06_2026-09-12.xlsx",
+      "input_path": "data/raw/revendas_lpc_2026-09-06_2026-09-12.xlsx",
       "table": "revendas_lpc_2026-09-06_2026-09-12.xlsx",
       "sheet": "POSTOS REVENDEDORES"
     },
@@ -197,12 +197,12 @@ Agregados em diferentes níveis não devem ser somados. `None`/N/D indica dimens
   },
   {
     "left": {
-      "input_path": "C:/Users/Pichau/OneDrive/Desktop/projeto_postos_sp/data/raw/historicos/Preços semestrais - AUTOMOTIVOS_2026.01.csv",
+      "input_path": "data/raw/historicos/Preços semestrais - AUTOMOTIVOS_2026.01.csv",
       "table": "Preços semestrais - AUTOMOTIVOS_2026.01.csv",
       "sheet": null
     },
     "right": {
-      "input_path": "C:/Users/Pichau/OneDrive/Desktop/projeto_postos_sp/data/raw/revendas_lpc_2026-09-13_2026-09-19.xlsx",
+      "input_path": "data/raw/revendas_lpc_2026-09-13_2026-09-19.xlsx",
       "table": "revendas_lpc_2026-09-13_2026-09-19.xlsx",
       "sheet": "POSTOS REVENDEDORES"
     },
@@ -214,12 +214,12 @@ Agregados em diferentes níveis não devem ser somados. `None`/N/D indica dimens
   },
   {
     "left": {
-      "input_path": "C:/Users/Pichau/OneDrive/Desktop/projeto_postos_sp/data/raw/historicos/Preços semestrais - AUTOMOTIVOS_2026.01.csv",
+      "input_path": "data/raw/historicos/Preços semestrais - AUTOMOTIVOS_2026.01.csv",
       "table": "Preços semestrais - AUTOMOTIVOS_2026.01.csv",
       "sheet": null
     },
     "right": {
-      "input_path": "C:/Users/Pichau/OneDrive/Desktop/projeto_postos_sp/data/raw/revendas_lpc_2026-09-20_2026-09-26.xlsx",
+      "input_path": "data/raw/revendas_lpc_2026-09-20_2026-09-26.xlsx",
       "table": "revendas_lpc_2026-09-20_2026-09-26.xlsx",
       "sheet": "POSTOS REVENDEDORES"
     },
@@ -231,12 +231,12 @@ Agregados em diferentes níveis não devem ser somados. `None`/N/D indica dimens
   },
   {
     "left": {
-      "input_path": "C:/Users/Pichau/OneDrive/Desktop/projeto_postos_sp/data/raw/revendas_lpc_2026-09-06_2026-09-12.xlsx",
+      "input_path": "data/raw/revendas_lpc_2026-09-06_2026-09-12.xlsx",
       "table": "revendas_lpc_2026-09-06_2026-09-12.xlsx",
       "sheet": "POSTOS REVENDEDORES"
     },
     "right": {
-      "input_path": "C:/Users/Pichau/OneDrive/Desktop/projeto_postos_sp/data/raw/revendas_lpc_2026-09-13_2026-09-19.xlsx",
+      "input_path": "data/raw/revendas_lpc_2026-09-13_2026-09-19.xlsx",
       "table": "revendas_lpc_2026-09-13_2026-09-19.xlsx",
       "sheet": "POSTOS REVENDEDORES"
     },
@@ -248,12 +248,12 @@ Agregados em diferentes níveis não devem ser somados. `None`/N/D indica dimens
   },
   {
     "left": {
-      "input_path": "C:/Users/Pichau/OneDrive/Desktop/projeto_postos_sp/data/raw/revendas_lpc_2026-09-06_2026-09-12.xlsx",
+      "input_path": "data/raw/revendas_lpc_2026-09-06_2026-09-12.xlsx",
       "table": "revendas_lpc_2026-09-06_2026-09-12.xlsx",
       "sheet": "POSTOS REVENDEDORES"
     },
     "right": {
-      "input_path": "C:/Users/Pichau/OneDrive/Desktop/projeto_postos_sp/data/raw/revendas_lpc_2026-09-20_2026-09-26.xlsx",
+      "input_path": "data/raw/revendas_lpc_2026-09-20_2026-09-26.xlsx",
       "table": "revendas_lpc_2026-09-20_2026-09-26.xlsx",
       "sheet": "POSTOS REVENDEDORES"
     },
@@ -265,12 +265,12 @@ Agregados em diferentes níveis não devem ser somados. `None`/N/D indica dimens
   },
   {
     "left": {
-      "input_path": "C:/Users/Pichau/OneDrive/Desktop/projeto_postos_sp/data/raw/revendas_lpc_2026-09-13_2026-09-19.xlsx",
+      "input_path": "data/raw/revendas_lpc_2026-09-13_2026-09-19.xlsx",
       "table": "revendas_lpc_2026-09-13_2026-09-19.xlsx",
       "sheet": "POSTOS REVENDEDORES"
     },
     "right": {
-      "input_path": "C:/Users/Pichau/OneDrive/Desktop/projeto_postos_sp/data/raw/revendas_lpc_2026-09-20_2026-09-26.xlsx",
+      "input_path": "data/raw/revendas_lpc_2026-09-20_2026-09-26.xlsx",
       "table": "revendas_lpc_2026-09-20_2026-09-26.xlsx",
       "sheet": "POSTOS REVENDEDORES"
     },
