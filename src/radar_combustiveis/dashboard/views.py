@@ -21,6 +21,10 @@ SURVEY_NOTICE = (
     "Os preços vêm da **pesquisa semanal da ANP**: uma amostra de postos, não preços em tempo real "
     "nem todos os postos do município. O valor pode ter mudado depois da coleta. "
     "Municípios sem dado não indicam ausência de postos.")
+ATTRIBUTION = (
+    "Fonte dos dados: **Levantamento de Preços de Combustíveis da ANP** (Agência Nacional do Petróleo, "
+    "Gás Natural e Biocombustíveis), dados abertos em gov.br/anp. Medianas, comparações, previsões e "
+    "demais números são calculados por este projeto, não divulgados pela ANP.")
 
 
 # -- Acesso à API ---------------------------------------------------------------------------
@@ -56,8 +60,15 @@ def guarded(page):
         except ApiError as exc:
             st.error(f"**A API recusou a consulta:** {exc.message}")
             st.caption(f"Código: {exc.code} · request_id: {exc.request_id or 'n/d'}")
+        footer()
     run.__name__ = page.__name__
     return run
+
+
+def footer():
+    """Rodapé de toda página: crédito à ANP e aviso de que os números derivados são do projeto."""
+    st.divider()
+    st.caption(ATTRIBUTION)
 
 
 # -- Auxiliares de tela ---------------------------------------------------------------------

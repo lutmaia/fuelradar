@@ -295,6 +295,6 @@ Sem novas dependências no painel: gráficos continuam em Plotly.
 **Itens que decorrem de o repositório ser público** (situação em 2026-10-13):
 
 1. **Licença do código.** Resolvido: MIT, arquivo `LICENSE`.
-2. **Atribuição dos dados.** O README credita a ANP; falta o rodapé do painel e do demonstrativo, dizendo que os números derivados são do projeto.
+2. **Atribuição dos dados.** Resolvido: o README e o rodapé de todas as páginas do painel creditam a ANP e dizem que os números derivados são do projeto; o demonstrativo herda o rodapé.
 3. **Higiene antes de abrir.** A auditoria de 2026-10-12 não achou segredos nem arquivos grandes no histórico. Os caminhos locais foram retirados dos arquivos atuais; o guia de outra máquina, que trazia o e-mail pessoal, foi removido (continua no histórico do commit `e9faea4`).
-4. **Identidade nos commits.** Aberto: os commits têm nome e e-mail do usuário nos metadados, que ficam públicos.
+4. **Identidade nos commits.** Decidido em 2026-10-13: manter o e-mail pessoal, ciente de que fica público nos metadados.

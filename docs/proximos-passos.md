@@ -6,7 +6,7 @@ Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia e
 
 - **Marcos 0 a 7 concluídos e commitados**: ingestão, qualidade, banco, API, painel, previsões, variações incomuns e comparação por bandeira (239 testes aprovados contra o PostgreSQL do Docker).
 - **Resultado do Marco 7:** o candidato LightGBM **não foi aprovado** (7,9% pior que "último valor" no MAE ponderado); o baseline "último valor" está publicado. Relatório em `reports/forecasting/backtest.md`, cartão em [model-card.md](model-card.md).
-- **Desenho da versão completa** (estudo de caso, marcos 8 a 13) em [estudo-de-caso.md](estudo-de-caso.md), com as decisões do usuário já incorporadas (as de protocolo em 2026-10-13: Q1 a Q3 enxutas, partição da seção 6.2, gate G1, desfecho primário e regra de decisão mantidos, modo sombra dispensado, demonstrativo no Streamlit Community Cloud). **Desenho aprovado em 2026-10-13.** O Marco 8 **ainda não começou**.
+- **Desenho da versão completa** (estudo de caso, marcos 8 a 13) em [estudo-de-caso.md](estudo-de-caso.md), com as decisões do usuário já incorporadas (as de protocolo em 2026-10-13: Q1 a Q3 enxutas, partição da seção 6.2, gate G1, desfecho primário e regra de decisão mantidos, modo sombra dispensado, demonstrativo no Streamlit Community Cloud). **Desenho aprovado em 2026-10-13.** O Marco 8 **começou** (etapa 1 de 3 feita; ver abaixo).
 
 ## Decisões já tomadas (não reabrir sem motivo)
 
@@ -19,18 +19,16 @@ Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia e
 
 ## Pendências imediatas
 
-- [ ] **Decidir a identidade dos commits:** manter o e-mail pessoal ou passar a usar o e-mail "noreply" do GitHub (o histórico antigo não será reescrito).
-- [ ] **Atribuição à ANP também no painel** (rodapé), além do README.
+- [x] **Identidade dos commits:** decidido em 2026-10-13 manter o e-mail pessoal; o histórico não será reescrito.
+- [x] **Atribuição à ANP no painel:** rodapé em todas as páginas, inclusive quando a API falha (2026-10-13, teste novo; 240 testes aprovados contra o PostgreSQL do Docker).
 - [ ] **Regenerar o perfil dos dados** (`scripts/profile_anp_data.py`) com caminhos relativos, se for refeito: os relatórios commitados foram higienizados à mão.
-- [ ] **Conferir o que ficou público:** olhar o repositório no GitHub depois do push (README renderizado, nada de caminho local).
+- [x] **Conferir o que ficou público:** repositório conferido pelo usuário no GitHub em 2026-10-13.
 
-## Próximo marco: 8 — protocolo e estudo exploratório
+## Marco 8 em andamento — protocolo e estudo exploratório
 
-Antes de qualquer análise:
-
-1. Escrever `docs/estudo/protocolo.md` (hipóteses, métricas, janelas e regra de decisão) e **commitar antes de rodar resultados**.
-2. Fixar as datas de desenvolvimento, validação e teste final (seção 6.2 do desenho) em código.
-3. Só então implementar as análises Q1 (bandeira branca), Q2 (dinâmica) e Q3 (difusão).
+1. [x] **Protocolo (2026-10-13):** [docs/estudo/protocolo.md](estudo/protocolo.md), janelas em `forecasting/protocol.py`, [ADR 0008](decisions/0008-protocolo-do-estudo.md) e `tests/test_protocol.py`. **Precisa estar commitado antes da etapa 3**; nenhum resultado foi calculado.
+2. [ ] **Funções puras em `study/`** para Q1 a Q3, testadas com dados sintéticos de resposta conhecida; justificar e adicionar `statsmodels` se necessário.
+3. [ ] **Execução real** (`scripts/run_study.py`) só sobre 2022-11-13 a 2026-03-29, relatórios em `reports/study/`, gate G1 e limitações; então atualizar o `PLAN.md`.
 
 O Marco 9 (fontes externas) começa pela triagem de licença e cobertura; fonte que falhar é descartada com o motivo registrado.
 

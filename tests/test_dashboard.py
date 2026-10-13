@@ -512,6 +512,13 @@ class HomePageTests(PageCase):
         helps = " ".join(m.help or "" for m in at.metric)
         self.assertIn("sem registro de download", helps)
 
+    def test_every_page_credits_the_anp_even_when_the_api_fails(self):
+        for at in (self.run_page(HOME, FakeApi()),
+                   self.run_page(EXPLORE, FakeApi(latest_raises=ApiUnavailable("A API não respondeu.")))):
+            captions = " ".join(c.value for c in at.caption)
+            self.assertIn("Levantamento de Preços de Combustíveis da ANP", captions)
+            self.assertIn("calculados por este projeto", captions)
+
 
 class ExplorePageTests(PageCase):
     def test_explore_cards_caption_tables_and_downloads(self):
