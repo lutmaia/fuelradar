@@ -14,7 +14,7 @@ Projeto em construção para consultar, comparar e acompanhar os preços de comb
 
 Python 3.12+ é o requisito. O `pyproject.toml` registra metadados e as dependências: `openpyxl` (ler XLSX), `psycopg[binary]` e `psycopg-pool` (cliente PostgreSQL), `fastapi` e `uvicorn` (API), `streamlit` e `plotly` (painel) e `httpx` (cliente HTTP do painel e dos testes). O código do produto está em `src/radar_combustiveis/` e os pontos de entrada em `scripts/`. Empacotamento, uv e lockfile serão configurados quando necessários, conforme a arquitetura.
 
-Instalação, no PowerShell, a partir da raiz (o passo a passo completo para uma segunda máquina está em [docs/continuar-em-outra-maquina.md](docs/continuar-em-outra-maquina.md)):
+Instalação, no PowerShell, a partir da raiz:
 
 ```powershell
 python -m venv .venv

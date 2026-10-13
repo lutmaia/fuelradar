@@ -1,6 +1,6 @@
 # Arquitetura da versão completa — estudo de caso
 
-**Status:** proposta com as restrições do usuário incorporadas em 2026-10-12 (custo zero, só fontes de licença simples, repositório e demonstrativo públicos); aguardando a aprovação final do desenho. Não altera [architecture.md](architecture.md), que continua sendo a especificação do produto; este documento acrescenta o estudo, os dados externos, a avaliação contínua e a operação sobre o que os Marcos 0 a 7 já entregam.
+**Status:** **aprovado pelo usuário em 2026-10-13**, com as restrições do usuário incorporadas em 2026-10-12 (custo zero, só fontes de licença simples, repositório e demonstrativo públicos) e as decisões de protocolo e de hospedagem em 2026-10-13 (seção 15). Não altera [architecture.md](architecture.md), que continua sendo a especificação do produto; este documento acrescenta o estudo, os dados externos, a avaliação contínua e a operação sobre o que os Marcos 0 a 7 já entregam.
 
 ## 1. Tese
 
@@ -158,7 +158,7 @@ Uma camada ou modelo só substitui o publicado se: (a) o limite inferior do IC d
 - **Registro imutável das previsões.** Toda semana, antes de o valor real existir, as previsões são gravadas e um resumo com hash é commitado em `reports/ledger/` (o histórico do Git serve de carimbo de data).
 - **Estado fora do banco.** Sem servidor persistente (custo zero), o estado vive no repositório: o registro de previsões em `reports/ledger/` e o histórico de métricas em arquivos pequenos. A execução semanal reconstrói o banco, lê o registro, pontua o que venceu e escreve de volta.
 - **Pontuação.** Quando a carga traz a semana-alvo, `live/` preenche `forecast_evaluation` e atualiza métricas móveis (13 e 26 semanas) do modelo publicado e dos baselines.
-- **Modo sombra.** Um candidato novo roda por no mínimo 8 semanas gravando previsões sem ser publicado; só é promovido se a regra da seção 6.5 se confirmar também ao vivo.
+- **Sem modo sombra** (decisão do usuário, 2026-10-13). Um candidato aprovado pela regra da seção 6.5 (validação e teste final) é publicado sem período de espera; a partir daí, o placar e os alertas de degradação abaixo acompanham seu desempenho ao vivo.
 - **Degradação.** Alerta quando o erro móvel passa de um limiar relativo ao do backtest, ou quando a cobertura do intervalo sai da faixa.
 - **API e painel:** `GET /api/v1/models/scoreboard` e a página "Desempenho ao vivo", com a série de acertos e erros do publicado contra a persistência. Previsões ainda sem real aparecem como pendentes.
 
@@ -195,7 +195,7 @@ agendamento semanal (GitHub Actions, repositório público)
 | Execução | `scripts/weekly_refresh.py`: baixar → ingerir → qualidade → carregar → previsões → pontuação → registro → pacote; idempotente, com log estruturado e códigos de saída |
 | Agendamento | fluxo semanal do CI; o mesmo script roda na máquina local |
 | Contêineres | `Dockerfile` e `docker compose` com perfis `db`, `api`, `dashboard`, `pipeline`: tudo sobe com um comando, para quem quiser reproduzir |
-| Demonstrativo | painel em modo instantâneo, em hospedagem **gratuita** que aceite repositório público (a verificar: Streamlit Community Cloud ou Hugging Face Spaces) |
+| Demonstrativo | painel em modo instantâneo, em hospedagem **gratuita** que aceite repositório público **Streamlit Community Cloud** (decisão de 2026-10-13); limites e termos a verificar no Marco 12, com Hugging Face Spaces como alternativa se não servir |
 | Monitoramento | idade do dado e última execução no próprio pacote; falha do fluxo semanal avisa pelo CI; degradação do modelo vira aviso no painel |
 | Segredos | nenhum necessário em produção; qualquer variável fica em *secrets* do CI, nunca no repositório |
 | Backup | o banco é reconstruível a partir das fontes e do manifesto; o pacote anterior fica nas releases |
@@ -224,11 +224,11 @@ Substituem os antigos Marcos 8 e 9 do [PLAN.md](../PLAN.md); ordem de execução
 | **8 — Protocolo e estudo exploratório** | `protocolo.md` (pré-registro), `study/`, análises Q1–Q3 e figuras | resultados reproduzíveis, limitações escritas, gate G1 |
 | **9 — Fontes externas** | triagem, `external/`, migração `0005`, qualidade e alinhamento *as-of* | ao menos uma fonte utilizável e testada, ou descarte documentado (G2) |
 | **10 — Modelagem v2** | alvos, camadas, lacre, calibração, inferência, relatório | regra 6.5 aplicada e relatório reproduzível (G3) |
-| **11 — Avaliação contínua** | `live/`, registro imutável, placar, modo sombra, alertas | previsões pontuadas automaticamente e verificadas contra cálculo direto |
+| **11 — Avaliação contínua** | `live/`, registro imutável, placar, alertas | previsões pontuadas automaticamente e verificadas contra cálculo direto |
 | **12 — Automação e operação (custo zero)** | CI, `weekly_refresh`, contêineres, pacote instantâneo, modo instantâneo do painel, demonstrativo gratuito | execução semanal sem intervenção, falha injetada detectada, recuperação verificada, demonstrativo no ar sem custo (G4) |
 | **13 — Acabamento e narrativa** | README, relatório, ficha do dataset, vídeo | revisão da definição de pronto e reprodução por terceiro verificável |
 
-ADRs previstos: 0008 protocolo do estudo, 0009 fontes externas e alinhamento *as-of*, 0010 modelagem v2, 0011 avaliação contínua e modo sombra, 0012 operação e hospedagem.
+ADRs previstos: 0008 protocolo do estudo, 0009 fontes externas e alinhamento *as-of*, 0010 modelagem v2, 0011 avaliação contínua, 0012 operação e hospedagem.
 
 ## 12. Dependências novas previstas
 
@@ -275,11 +275,26 @@ Sem novas dependências no painel: gráficos continuam em Plotly.
 | 2 | Exposição | **Demonstrativo público, sim** (a plataforma) | modo instantâneo do painel e pacote público, com cuidados de privacidade (seção 8) |
 | 3 | Fontes externas | **Sem dor de cabeça de licença**; se não for simples, descartar | política da seção 4.2; etanol anidro tende a sair; Petrobras e Brent só entram com licença clara |
 | 4 | Repositório | **Público** (portfólio) | registro de previsões e relatórios commitados; auditoria de segredos e privacidade antes de abrir |
-| 5 | Profundidade de Q1 a Q3 | não respondida; **adotado o enxuto** (três análises), ampliável depois | Marco 8 com três análises e limitações |
+| 5 | Profundidade de Q1 a Q3 | **enxuto por ora** (confirmado em 2026-10-13), ampliável depois | Marco 8 com três análises e limitações |
 
-**Itens que decorrem de o repositório ser público e ainda estão abertos:**
+### Decisões de 2026-10-13
 
-1. **Licença do código.** Hoje não há arquivo `LICENSE`; sem ele, o código é "todos os direitos reservados" por padrão. A escolha comum para portfólio é MIT ou Apache-2.0.
-2. **Atribuição dos dados.** A ANP é a fonte; o README e o demonstrativo precisam creditá-la e dizer que os números derivados são do projeto.
-3. **Higiene antes de abrir.** A auditoria de 2026-10-12 não achou segredos nem arquivos grandes no histórico (só exemplos com `<senha>` em `.env.example` e mensagens de erro). Resta tirar caminhos locais com nome de usuário do Windows dos relatórios gerados e do PLAN.
-4. **Identidade nos commits.** Os 12 commits têm nome e e-mail do usuário nos metadados, o que vai ficar público.
+| # | Pergunta | Decisão do usuário | Efeito no desenho |
+|---|---|---|---|
+| 6 | Partição temporal | **manter** as datas da seção 6.2 | entram no protocolo e em `forecasting/protocol.py` antes de qualquer resultado |
+| 7 | Gate G1 | **manter** (dois achados estáveis em Q1 a Q3) | seção 5 sem mudança |
+| 8 | Desfecho primário | **aprovado** (Brier skill da classe em h = 2 contra a taxa-base) | seção 6.4 sem mudança |
+| 9 | Regra de decisão | **aprovada** | seção 6.5 sem mudança |
+| 10 | Modo sombra | **dispensado** | seção 7: candidato aprovado é publicado sem as 8 semanas de espera; placar e alertas continuam |
+| 11 | Alvos (τ = R$ 0,05; h = 1, 2 e 4) | não comentado; mantido como proposto | seção 6.1 sem mudança |
+| 12 | Hospedagem do demonstrativo | **Streamlit Community Cloud** (Vercel cogitada e descartada, ver abaixo) | seção 9; limites e termos verificados no Marco 12 |
+| 13 | Aprovação do desenho | **aprovado** | Marcos 8 a 13 seguem este documento; o Marco 8 começa quando solicitado |
+
+**Por que não a Vercel:** a Vercel serve sites estáticos e funções sem servidor de curta duração; o painel Streamlit precisa de um processo Python sempre ligado com conexão WebSocket, que ela não oferece. Usar a Vercel exigiria reescrever o painel como site estático que lê o pacote instantâneo (outra pilha, outro conjunto de testes). Por isso a escolha foi o **Streamlit Community Cloud** (gratuito para repositório público, roda o painel atual sem reescrita), com o Hugging Face Spaces como alternativa e o vídeo como último recurso (G4).
+
+**Itens que decorrem de o repositório ser público** (situação em 2026-10-13):
+
+1. **Licença do código.** Resolvido: MIT, arquivo `LICENSE`.
+2. **Atribuição dos dados.** O README credita a ANP; falta o rodapé do painel e do demonstrativo, dizendo que os números derivados são do projeto.
+3. **Higiene antes de abrir.** A auditoria de 2026-10-12 não achou segredos nem arquivos grandes no histórico. Os caminhos locais foram retirados dos arquivos atuais; o guia de outra máquina, que trazia o e-mail pessoal, foi removido (continua no histórico do commit `e9faea4`).
+4. **Identidade nos commits.** Aberto: os commits têm nome e e-mail do usuário nos metadados, que ficam públicos.
