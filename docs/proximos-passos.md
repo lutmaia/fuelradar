@@ -34,11 +34,13 @@ Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia e
 
 ## Ordem decidida (2026-10-13), pensando em portfólio
 
-1. **Páginas Regiões e Estudo** no painel (parte do Marco 9 que não depende de fonte externa).
+1. [x] **Páginas Regiões e Estudo** no painel (parte do Marco 9 que não depende de fonte externa). **Feito em 2026-10-14:** endpoints `/prices/regions` e `/prices/rankings`, regiões em `regions.py` (as mesmas listas do estudo), página Estudo lendo `reports/study/*.json` (ADR 0005, adendo). 309 testes aprovados contra o PostgreSQL do Docker (16 novos); medianas regionais, economia de Araraquara e etanol de Adamantina recalculados em SQL direto no fato e iguais; as duas páginas fotografadas no Edge headless, com três defeitos visuais corrigidos ("None" na tabela, capital e metropolitana com azuis parecidos, rótulo cortado). O Marco 9 continua aberto: faltam as fontes externas.
 2. **Demonstrativo online e README contando a história**: adianta parte dos Marcos 12 (hospedagem no Streamlit Community Cloud, pacote instantâneo) e 13 (README de estudo de caso: problema, três achados, um gráfico, link da demo).
 3. **Fontes externas** (resto do Marco 9: dólar do Banco Central e preço de produtores da ANP), depois o Marco 10.
 
-Motivo: hoje ninguém consegue ver o projeto sem instalar tudo; a demo e um README curto valem mais para quem avalia do que uma análise nova. Opcional oferecido: guia de estudo das escolhas de método (efeito fixo, erro agrupado, bootstrap em blocos, precedência temporal, lacre do teste) para entrevistas.
+Motivo: hoje ninguém consegue ver o projeto sem instalar tudo; a demo e um README curto valem mais para quem avalia do que uma análise nova. O guia de estudo das escolhas de método (para entrevistas) **fica fora do repositório**, por decisão do usuário em 2026-10-14.
+
+Defeito antigo visto na conferência de 2026-10-14, ainda não corrigido: a linha de referência de *Comparar municípios* mostra "None" onde deveria haver "—" (o `st.dataframe` ignora o `na_rep` do `Styler`).
 
 ## Próximas decisões
 

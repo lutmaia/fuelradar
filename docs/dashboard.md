@@ -24,6 +24,8 @@ Dependências: `pip install streamlit==1.65.0 plotly==7.1.0 httpx==0.28.1`. O pa
 | **Previsões** | histórico recente, previsão de 1 a 4 semanas com intervalo de 80%, modelo em uso e quão confiável é; sem número quando a série não é elegível |
 | **Variações incomuns** | semanas em que a mediana saiu da faixa de 99% de variação esperada, com observado, esperado, faixa e postos |
 | **Comparar municípios** | de 2 a 5 municípios numa semana: mediana, diferença para o estado, variação, amostra, cobertura e posição; gráficos em valores absolutos e em índice (base 100) |
+| **Regiões** | capital, região metropolitana, litoral e interior na semana mais recente (mediana e diferença para a capital), gráfico das últimas 26 semanas e os municípios de cada região; rankings de onde o etanol mais compensa e de onde escolher o posto rende mais, nas últimas 26 semanas |
+| **Estudo** | os achados do estudo (Q1 a Q3), o gate G1 e as medidas para o consumidor, **congelados** na janela do estudo (13/11/2022 a 29/03/2026) e rotulados assim; lê `reports/study/*.json`, não a API |
 | **Qualidade e metodologia** | fonte, cargas, observações publicadas, com aviso e em quarentena, séries com cobertura baixa, como ler os números e limitações |
 
 A URL guarda o município e o produto (`/municipio?municipio=CAMPINAS&produto=GASOLINA_COMUM`), então uma visão pode ser compartilhada.

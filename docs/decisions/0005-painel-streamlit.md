@@ -37,3 +37,9 @@
 - **Testes sem navegador** usam o `AppTest` do Streamlit; a renderização visual foi conferida à parte, em Edge headless (ver `PLAN.md`), e não há teste automatizado de aparência.
 - **Aviso conhecido:** o `TestClient` do Starlette 1.7 marca o uso com `httpx` como obsoleto (recomenda `httpx2`). Funciona e as versões estão fixadas; reavaliar ao atualizar o FastAPI.
 - **Não verificado:** uso em celular real, leitores de tela e contraste medido com ferramenta; só se conferiu o layout em 1.400, 1.000 e 600 px de largura (sem rolagem horizontal).
+
+## Adendo (2026-10-14): páginas Regiões e Estudo
+
+- **Regiões** consome dois endpoints novos, `/prices/regions` e `/prices/rankings` (ver [api.md](../api.md)). A ordenação dos rankings (fração de semanas em que o etanol compensou, depois a menor razão; maior economia típica) é de apresentação e fica no painel; os números vêm prontos da API. As listas de regiões saíram de `study/descriptive.py` para `src/radar_combustiveis/regions.py`, sem mudança, para a API e o estudo usarem as mesmas.
+- **Estudo lê arquivos, não a API.** Os resultados do Marco 8 são um artefato congelado, amarrado ao commit do código e ao hash dos dados, e não mudam com as semanas novas. A página lê `reports/study/resultados.json` e `descritivo.json`, versionados no repositório, e diz na tela que os números são da janela do estudo. Servir esses arquivos pela API acrescentaria um endpoint sem ganho, e o demonstrativo público (que não terá API) leria os mesmos arquivos.
+- **Célula vazia aparece como "None".** O `st.dataframe` ignora o texto de vazio (`na_rep`) do `Styler`. Na tabela de regiões, a capital tem diferença zero para ela mesma em vez de vazio. A linha de referência de *Comparar municípios* tem o mesmo defeito (aparece "None" onde deveria haver "—"); visto na conferência em navegador de 2026-10-14 e ainda não corrigido.

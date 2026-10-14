@@ -130,6 +130,38 @@ def state_coverage(conn, uf, product_id, start, end):
     return {row["week_start"]: row for row in rows}
 
 
+def city_rows(conn, uf, product_ids, start, end):
+    """Agregações semanais de todos os municípios da UF para alguns produtos (rankings)."""
+    return conn.execute("""
+        SELECT l.municipality_name, l.municipality_name_normalized, m.product_id, m.week_start,
+               m.station_count, m.price_min, m.price_median, m.quality_flag
+        FROM mart_weekly_city_price m JOIN dim_location l USING (location_id)
+        WHERE l.uf = %s AND m.product_id = ANY(%s) AND m.week_start BETWEEN %s AND %s
+        ORDER BY l.municipality_name_normalized, m.week_start""",
+        (uf, list(product_ids), start, end)).fetchall()
+
+
+def region_prices(conn, uf, product_id, start, end, capital, metro, coast):
+    """Mediana semanal de todos os preços de cada região, direto do fato (como no estudo descritivo).
+
+    A região sai das listas de `regions.py`, passadas como parâmetros; o resto do estado é interior."""
+    return conn.execute("""
+        SELECT f.week_start,
+               CASE WHEN l.municipality_name_normalized = %(capital)s THEN 'capital'
+                    WHEN l.municipality_name_normalized = ANY(%(metro)s) THEN 'metropolitana'
+                    WHEN l.municipality_name_normalized = ANY(%(coast)s) THEN 'litoral'
+                    ELSE 'interior' END AS region,
+               round(percentile_cont(0.5) WITHIN GROUP (ORDER BY f.sale_price::double precision)::numeric, 4) AS median,
+               count(*) AS observations, count(DISTINCT f.station_id) AS stations,
+               array_agg(DISTINCT l.municipality_name ORDER BY l.municipality_name) AS municipalities
+        FROM fact_price_observation f JOIN dim_location l ON l.location_id = f.location_id
+        WHERE f.is_current_source_revision AND l.uf = %(uf)s AND f.product_id = %(product)s
+          AND f.week_start BETWEEN %(start)s AND %(end)s
+        GROUP BY 1, 2 ORDER BY 1, 2""",
+        {"uf": uf, "product": product_id, "start": start, "end": end, "capital": capital,
+         "metro": sorted(metro), "coast": sorted(coast)}).fetchall()
+
+
 def compare_rows(conn, location_ids, product_id, week_start):
     return conn.execute("""
         SELECT l.location_id, l.uf, l.municipality_name,

@@ -9,7 +9,7 @@ from datetime import date, timedelta
 
 import streamlit as st
 
-from . import charts, exports, formatting as fmt, tables
+from . import charts, exports, formatting as fmt, study as study_results, tables
 from .client import ApiClient, ApiError, ApiUnavailable
 
 DEFAULT_PRODUCT = "GASOLINA_COMUM"
@@ -648,6 +648,252 @@ def compare():
                    "Ele mostra a variação relativa, não o nível do preço.")
     else:
         st.info("Os municípios escolhidos não têm nenhuma semana em comum no período; o índice não pode ser calculado.")
+
+
+# -- Regiões --------------------------------------------------------------------------------
+
+TOP = 10
+
+
+def regions_page():
+    st.title("Regiões do estado")
+    st.markdown("Capital, região metropolitana, litoral e interior na semana mais recente, e os municípios onde o "
+                "etanol mais compensa e onde escolher o posto rende mais.")
+    labels, units = product_labels()
+    product = pick("Produto", list(labels), "produto", default=DEFAULT_PRODUCT, format_func=labels.get)
+    unit = fmt.unit_label(units[product])
+
+    body = fetch("regions", product, 26)
+    freshness_caption(body)
+    st.caption(f"Semana de **{fmt.week_range_br(body['week_start'])}** · {unit}.")
+    items = {i["region"]: i for i in body["items"]}
+    cols = st.columns(4)
+    for col, region in zip(cols, REGION_LABELS):
+        item = items.get(region)
+        if item is None:
+            col.metric(REGION_LABELS[region], fmt.ND, help="Sem preços deste produto na região nesta semana.")
+            continue
+        diff = item["difference_to_capital"]
+        col.metric(item["label"], fmt.brl(item["median"]),
+                   delta=f"{fmt.signed_brl(diff)} frente à capital" if diff is not None else None,
+                   delta_color="off", delta_arrow="off",
+                   help=f"Mediana de todos os preços da região na semana: {fmt.number_br(item['stations'])} postos "
+                        f"em {fmt.number_br(item['municipalities'])} município(s).")
+    show_table([{
+        # A capital fica com diferença zero: célula vazia aparece como "None" no st.dataframe.
+        "Região": i["label"], "Mediana": i["median"],
+        "Diferença p/ capital": 0.0 if i["region"] == "capital" else i["difference_to_capital"],
+        "Municípios": i["municipalities"], "Postos": i["stations"], "Observações": i["observations"]}
+        for i in body["items"]],
+        {"Mediana": fmt.brl, "Diferença p/ capital": fmt.signed_brl, "Municípios": fmt.number_br,
+         "Postos": fmt.number_br, "Observações": fmt.number_br})
+    st.plotly_chart(charts.regions_figure(body["series"], REGION_LABELS, unit), width="stretch")
+    st.caption("A mediana regional junta todos os preços da região, então pesa mais os municípios com mais postos "
+               "pesquisados: a capital domina a própria região, e Campinas e Ribeirão Preto pesam no interior. "
+               "Lacunas são semanas sem dados.")
+    with st.expander("Quais municípios entram em cada região"):
+        for i in body["items"]:
+            st.markdown(f"**{i['label']}** ({len(i['municipality_names'])}): "
+                        + ", ".join(i["municipality_names"]))
+        st.caption("Metropolitana: os outros 38 municípios da Grande São Paulo. Litoral: Baixada Santista, Litoral "
+                   "Norte e Iguape, Ilha Comprida e Cananéia. Interior: os demais. Só aparecem os municípios com "
+                   "preço na amostra da ANP nesta semana. São as mesmas listas do estudo.")
+
+    rankings = fetch("rankings", product, 26)
+    period = f"{fmt.date_br(rankings['start'])} a {fmt.date_br(rankings['end'])}"
+    st.subheader("Onde o etanol mais compensa")
+    ethanol = sorted((i for i in rankings["items"] if i["ethanol"]["ranked"]),
+                     key=lambda i: (-i["ethanol"]["share_pays"], i["ethanol"]["median_ratio"],
+                                    i["location"]["municipality"]))
+    threshold = f"{rankings['threshold']:.0%}"
+    st.caption(f"Semanas de {period} ({rankings['weeks']} semanas). Etanol compensa quando custa até {threshold} da "
+               f"gasolina comum (medianas da semana). Só entram municípios com as duas medianas, sem cobertura "
+               f"baixa, em pelo menos {rankings['min_weeks']} semanas: {len(ethanol)} municípios.")
+    if not ethanol:
+        st.info("Nenhum município tem semanas suficientes com preços de etanol e gasolina comum no período.")
+    else:
+        ethanol_rows = [{
+            "Posição": n, "Município": i["location"]["municipality"], "Região": REGION_LABELS[i["region"]],
+            "Semanas em que compensou": i["ethanol"]["share_pays"], "Razão mediana": i["ethanol"]["median_ratio"],
+            "Razão mais recente": i["ethanol"]["latest_ratio"], "Semanas": i["ethanol"]["weeks"]}
+            for n, i in enumerate(ethanol, 1)]
+        ethanol_formats = {"Posição": tables.rank, "Semanas em que compensou": tables.percent0,
+                           "Razão mediana": tables.percent1, "Razão mais recente": tables.percent1}
+        show_table(ethanol_rows[:TOP], ethanol_formats)
+        with st.expander(f"Todos os {len(ethanol_rows)} municípios (do que mais ao que menos compensa)"):
+            show_table(ethanol_rows, ethanol_formats)
+        st.caption("A regra dos 70% é uma aproximação: o etanol rende cerca de 70% da gasolina por litro, e o ponto "
+                   "exato depende do carro. A razão é de medianas; o preço de cada posto varia.")
+
+    st.subheader(f"Onde escolher o posto rende mais ({labels[product].lower()})")
+    choice = sorted((i for i in rankings["items"] if i["station_choice"]["ranked"]),
+                    key=lambda i: (-i["station_choice"]["typical_saving"], i["location"]["municipality"]))
+    st.caption(md(f"Semanas de {period}. Economia = mediana dos preços da semana menos o menor preço pesquisado, "
+                  f"só em semanas com pelo menos {rankings['min_stations']} postos; a economia típica é a mediana "
+                  f"dessas semanas. Entram municípios com pelo menos {rankings['min_weeks']} semanas assim: "
+                  f"{len(choice)} municípios."))
+    if not choice:
+        st.info("Nenhum município tem semanas suficientes com postos pesquisados para medir a economia.")
+        return
+    per_liter = rankings["unit"] == "BRL/L"
+    choice_rows = []
+    for n, i in enumerate(choice, 1):
+        row = {"Posição": n, "Município": i["location"]["municipality"], "Região": REGION_LABELS[i["region"]],
+               "Economia típica": i["station_choice"]["typical_saving"]}
+        if per_liter:
+            row[f"Num tanque de {rankings['tank_liters']} L"] = i["station_choice"]["typical_saving"] * rankings["tank_liters"]
+        row.update({"Economia na semana mais recente": i["station_choice"]["latest_saving"],
+                    "Semanas": i["station_choice"]["weeks"]})
+        choice_rows.append(row)
+    choice_formats = {"Posição": tables.rank, "Economia típica": fmt.brl, "Economia na semana mais recente": fmt.brl,
+                      f"Num tanque de {rankings['tank_liters']} L": fmt.brl}
+    show_table(choice_rows[:TOP], choice_formats)
+    with st.expander(f"Todos os {len(choice_rows)} municípios"):
+        show_table(choice_rows, choice_formats)
+    st.caption("O menor preço é o menor da amostra da ANP, não necessariamente o menor do município, e pode incluir "
+               "um preço marcado como extremo. Municípios com mais postos pesquisados tendem a ter diferença maior.")
+
+
+REGION_LABELS = {"capital": "Capital", "metropolitana": "Metropolitana", "litoral": "Litoral",
+                 "interior": "Interior"}
+
+
+# -- Estudo ---------------------------------------------------------------------------------
+
+PRODUCT_NAMES = {"GASOLINA_COMUM": "Gasolina comum", "GASOLINA_ADITIVADA": "Gasolina aditivada",
+                 "ETANOL_HIDRATADO": "Etanol hidratado", "DIESEL_COMUM": "Diesel comum (S500)",
+                 "DIESEL_S10": "Diesel S10", "GNV": "GNV"}
+
+
+def pct_br(value, decimals=1, signed=True):
+    """Valor já em pontos percentuais (−5,59 → "−5,6%")."""
+    return fmt.percent(None if value is None else value / 100, decimals, signed)
+
+
+def ci_text(ci):
+    return f"IC 95%: {pct_br(ci[0])} a {pct_br(ci[1])}"
+
+
+def stable_text(flag):
+    return "✅ estável" if flag else "❌ não estável"
+
+
+def study_page():
+    st.title("Estudo: o que três anos de preços mostram")
+    data = study_results.load()
+    if data is None:
+        st.error("Os resultados do estudo não foram encontrados em `reports/study/`. Rode `scripts/run_study.py`.")
+        return
+    res, desc = data["results"], data["descriptive"]
+    meta, q1, q2, q3, g1 = res["meta"], res["q1"], res["q2"], res["q3"], res["g1"]
+    start, end = meta["window"]
+    st.info(f"**Números congelados.** O estudo usou as semanas de {fmt.date_br(start)} a {fmt.date_br(end)} "
+            f"({meta['weeks_with_data']} semanas com dado, {fmt.number_br(meta['observations'])} preços de postos "
+            "paulistas), definidas por escrito antes de qualquer resultado. Eles **não mudam** quando a ANP publica "
+            "semanas novas; as demais páginas do painel mostram os dados atuais.")
+    st.markdown("Três perguntas foram pré-registradas, cada uma com um critério de *achado estável* (sobreviver a "
+                "checagens de robustez e aos dois subperíodos). São **associações**, não causas.")
+
+    cols = st.columns(3)
+    cols[0].metric("Q1 · bandeira branca", pct_br(q1["primary"]["pct"]), delta=stable_text(q1["stable"]),
+                   delta_color="off", delta_arrow="off",
+                   help="Diferença de preço dos postos de bandeira branca contra os bandeirados, mesmo município e "
+                        "semana, gasolina comum.")
+    cols[1].metric("Q2 · altas × quedas", fmt.brl(q2["primary"]["estimate"]), delta=stable_text(q2["stable"]),
+                   delta_color="off", delta_arrow="off",
+                   help="Tamanho típico de uma alta menos o de uma queda, no mesmo posto, gasolina comum (R$/L).")
+    cols[2].metric("Q3 · reajustes se espalham?", pct_br(q3["primary"]["share_forward"] * 100, 0, False),
+                   delta=stable_text(q3["stable"]), delta_color="off", delta_arrow="off",
+                   help="Fração dos municípios médios em que a variação das grandes cidades ajuda a prever a deles.")
+    verdict = "passou" if g1["passed"] else "não passou"
+    st.caption(f"**Gate G1 {verdict}:** {len(g1['stable'])} de 3 achados estáveis (o protocolo exige "
+               f"{g1['required']}). O resultado é publicado como está; nada foi refeito para passar.")
+
+    st.subheader("Q1 — A bandeira branca é mais barata?")
+    lo, hi = q1["primary"]["pct_ci"]
+    st.markdown(f"**Sim, cerca de {pct_br(abs(q1['primary']['pct']), 1, False)} mais barata.** No mesmo município e "
+                f"semana, a gasolina comum dos postos sem bandeira custou {pct_br(q1['primary']['pct'])} frente aos "
+                f"bandeirados ({ci_text((lo, hi))}), em {fmt.number_br(q1['primary']['n_obs'])} preços. O resultado "
+                "se manteve comparando só postos vizinhos (mesmo prefixo de CEP), sem preços extremos e em cada metade "
+                "do período.")
+    rows = [(PRODUCT_NAMES["GASOLINA_COMUM"], q1["primary"]["pct"], *q1["primary"]["pct_ci"])]
+    rows += [(PRODUCT_NAMES.get(code, code), r["pct"], *r["pct_ci"]) for code, r in q1["secondary"].items()]
+    st.plotly_chart(charts.interval_figure(rows, "Bandeira branca contra bandeirados, por produto",
+                                           "Diferença de preço"), width="stretch")
+    st.caption("No GNV o intervalo cruza o zero: com poucos postos, não dá para afirmar diferença.")
+    show_table([{"Bandeira": fmt.brand_label(brand), "Mais cara que a branca": r["pct"] / 100,
+                 "IC 95% (inferior)": r["pct_ci"][0] / 100, "IC 95% (superior)": r["pct_ci"][1] / 100}
+                for brand, r in q1["brands"].items()],
+               {"Mais cara que a branca": fmt.percent, "IC 95% (inferior)": fmt.percent,
+                "IC 95% (superior)": fmt.percent})
+    st.caption("Preço não é qualidade. Ser bandeira branca não é sorteio (localização, porte, público), então a "
+               "diferença é associação, não efeito da bandeira. A bandeira é a do cadastro atual.")
+
+    st.subheader("Q2 — O preço sobe mais do que cai?")
+    gas = q2["descriptive"]["GASOLINA_COMUM"]
+    st.markdown(md(f"**Não dá para afirmar.** Na gasolina comum, um posto mudou o preço de uma semana para a outra "
+                   f"em {pct_br(gas['frac_change'] * 100, 0, False)} dos casos; a alta típica foi de "
+                   f"{fmt.brl(gas['size_up']['median'])} e a queda típica de {fmt.brl(gas['size_down']['median'])}. "
+                   f"A diferença ({fmt.brl(q2['primary']['estimate'])}) tem intervalo que encosta no zero e some na "
+                   "segunda metade do período."))
+    st.caption("Os preços mudam em degraus (muitas mudanças de exatamente R$ 0,10), e a mediana pula de um degrau "
+               "para outro. Sem dado de custo, o estudo não testa \"sobe como foguete, cai como pena\".")
+
+    st.subheader("Q3 — Os reajustes começam nas cidades grandes?")
+    sub = q3["subperiods"]
+    leaders = q3["leaders"]
+    st.markdown(f"**Às vezes, mas não de forma estável.** Na janela inteira, as variações de "
+                f"{', '.join(leaders[:-1])} e {leaders[-1]} nas duas semanas anteriores ajudaram a prever a de "
+                f"{pct_br(q3['primary']['share_forward'] * 100, 0, False)} dos municípios médios (no sentido "
+                f"inverso, {pct_br(q3['primary']['share_reverse'] * 100, 0, False)}). Na primeira metade do período, "
+                f"porém, foram {pct_br(sub['subperiodo_a']['share_forward'] * 100, 0, False)}.")
+    st.caption("A maioria dos municípios se move na mesma semana das grandes cidades; com dados semanais, isso é "
+               "compatível com movimentos simultâneos. Precedência no tempo não é causa.")
+
+    st.subheader("Para o consumidor (descritivo)")
+    eth, choice = desc["ethanol"], desc["station_choice"]
+    cols = st.columns(3)
+    cols[0].metric("Etanol compensou", pct_br(eth["share_city_weeks"] * 100, 0, False),
+                   help=f"Das {fmt.number_br(eth['city_weeks'])} município-semanas com os dois preços, em quantas o "
+                        "etanol custou até 70% da gasolina comum.")
+    cols[1].metric("Escolher o posto economiza", fmt.brl(choice["saving"]["median"]),
+                   help="Mediana menos o menor preço da semana no município, gasolina comum, semanas com pelo menos "
+                        "5 postos (mediana de todas essas semanas).")
+    cols[2].metric("Reajuste semanal típico", fmt.brl(choice["typical_change"]),
+                   help="Tamanho típico de uma mudança de preço no mesmo posto entre semanas seguidas.")
+    st.markdown(md(f"Escolher o posto rendeu tipicamente {fmt.brl(choice['saving']['median'])} por litro "
+                   f"(R$ {fmt.decimal_br(choice['saving_tank'])} num tanque de 50 L), cerca de "
+                   f"**{fmt.decimal_br(choice['saving']['median'] / choice['typical_change'], 0)} vezes** um reajuste "
+                   "semanal típico: pesa mais escolher onde abastecer do que esperar a semana."))
+    st.plotly_chart(charts.share_by_year_figure(eth["by_year"], "Etanol compensou (≤ 70% da gasolina), por ano"),
+                    width="stretch")
+    st.caption("2022 tem só as últimas semanas do ano. A razão muda com a safra da cana e os impostos; o estudo não "
+               "explica o porquê.")
+    gas_regions = desc["regions"]["products"].get("GASOLINA_COMUM", {})
+    if gas_regions:
+        show_table([{"Região": REGION_LABELS[r], "Diferença típica p/ capital": v["median_diff"],
+                     "Semanas mais barata que a capital": v["share_cheaper"], "Semanas": v["weeks"]}
+                    for r, v in gas_regions.items()],
+                   {"Diferença típica p/ capital": fmt.signed_brl, "Semanas mais barata que a capital": tables.percent0})
+        st.caption("Gasolina comum: mediana semanal da região menos a da capital, ao longo da janela do estudo. Os "
+                   "números de hoje estão na página *Regiões*.")
+
+    st.subheader("Limitações")
+    st.markdown(STUDY_LIMITATIONS)
+    st.caption(md(f"Código `{meta['code_sha'][:10]}` · protocolo `{meta['protocol_commit'][:10]}` · hash dos dados "
+                  f"`{meta['data_hashes']['combined'][:12]}` · semente {meta['seed']}. Relatórios completos: "
+                  f"[resumo]({study_results.report_url('resumo.md')}), [Q1]({study_results.report_url('q1.md')}), "
+                  f"[Q2]({study_results.report_url('q2.md')}), [Q3]({study_results.report_url('q3.md')}), "
+                  f"[descritivo]({study_results.report_url('descritivo.md')})."))
+
+
+STUDY_LIMITATIONS = """
+* A ANP pesquisa uma **amostra** de postos; o menor preço é o menor da amostra.
+* A bandeira é a do **cadastro atual**, sem o histórico de trocas.
+* Tudo é **associação**: nenhum número aqui diz que algo causa outra coisa.
+* Lacunas de publicação da ANP em 2022 e 2023 reduzem o poder dos testes na primeira metade do período.
+* Nenhuma tela associa postos ou bandeiras a qualidade do combustível.
+"""
 
 
 # -- Qualidade e metodologia ----------------------------------------------------------------

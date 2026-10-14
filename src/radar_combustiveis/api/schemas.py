@@ -266,6 +266,71 @@ class StationChoiceResponse(Freshness):
                           "consecutivas, no último ano: o reajuste típico, para comparar com `typical_saving`.")
 
 
+Region = Literal["capital", "metropolitana", "litoral", "interior"]
+
+
+class RegionPoint(BaseModel):
+    week_start: date
+    region: Region
+    median: float = Field(description="Mediana de todos os preços da região na semana (não a mediana das medianas).")
+    observations: int
+    stations: int
+    municipalities: int
+
+
+class RegionItem(RegionPoint):
+    label: str
+    difference_to_capital: float | None = Field(
+        None, description="Mediana da região menos a da capital na mesma semana; nulo na capital ou sem ela.")
+    municipality_names: list[str] = Field(description="Municípios da região com preço na semana.")
+
+
+class RegionsResponse(Freshness):
+    product: str
+    unit: str
+    week_start: date = Field(description="Semana mais recente do estado para o produto.")
+    week_end: date
+    items: list[RegionItem] = Field(description="As regiões na semana mais recente.")
+    series: list[RegionPoint] = Field(description="As semanas da janela pedida, em ordem cronológica.")
+
+
+class EthanolRank(BaseModel):
+    weeks: int = Field(description="Semanas da janela com as duas medianas e cobertura normal.")
+    share_pays: float | None = Field(None, description="Fração dessas semanas em que o etanol compensou.")
+    median_ratio: float | None = None
+    latest_ratio: float | None = None
+    latest_week_start: date | None = None
+    ranked: bool = Field(description="Verdadeiro com `weeks` ≥ `min_weeks`.")
+
+
+class ChoiceRank(BaseModel):
+    weeks: int = Field(description="Semanas da janela com ao menos `min_stations` postos.")
+    typical_saving: float | None = Field(None, description="Mediana de (mediana − menor preço) nessas semanas.")
+    latest_saving: float | None = None
+    latest_week_start: date | None = None
+    ranked: bool
+
+
+class RankingItem(BaseModel):
+    location: Location
+    region: Region
+    ethanol: EthanolRank
+    station_choice: ChoiceRank
+
+
+class RankingsResponse(Freshness):
+    product: str = Field(description="Produto da economia de escolher o posto; o etanol compara sempre com a gasolina comum.")
+    unit: str
+    start: date
+    end: date
+    weeks: int
+    min_weeks: int = Field(description="Semanas mínimas para entrar no ranking (metade da janela).")
+    threshold: float
+    min_stations: int
+    tank_liters: int
+    items: list[RankingItem] = Field(description="Todos os municípios com dado na janela, por nome.")
+
+
 class ForecastPoint(BaseModel):
     horizon: int = Field(description="Semanas à frente da semana de origem (1 a 4).")
     target_week_start: date

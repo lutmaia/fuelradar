@@ -7,11 +7,13 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, Query, Request
 from psycopg import Connection
 
+from .. import regions
 from ..ingestion.normalize import normalize_text
 from . import queries
 from .errors import ApiError
-from .schemas import (AnomaliesResponse, AnomalyItem, BacktestMetrics, BrandItem, BrandsResponse, EthanolPoint,
-                      EthanolResponse, ForecastPoint, StationChoiceResponse, StationChoiceWeek,
+from .schemas import (AnomaliesResponse, AnomalyItem, BacktestMetrics, BrandItem, BrandsResponse, ChoiceRank,
+                      EthanolPoint, EthanolRank, EthanolResponse, ForecastPoint, RankingItem, RankingsResponse,
+                      RegionItem, RegionPoint, RegionsResponse, StationChoiceResponse, StationChoiceWeek,
                       ForecastResponse,
                       ModelBacktest, ModelInfo, CompareItem, CompareReference, CompareResponse, CoverageSummary, DataQualityResponse, ErrorResponse,
                       FreshnessResponse, Health, HistoryResponse, LatestPrice, Location, LocationItem,
@@ -48,6 +50,7 @@ ETHANOL_PAYS = 0.70        # regra prática: o etanol rende cerca de 70% da gaso
 CHOICE_MIN_STATIONS = 5    # menos postos que isso e o menor preço da semana diz pouco
 TANK_LITERS = 50
 TYPICAL_WEEKS = 52
+DEFAULT_RANKING_WEEKS = 26
 COVERAGE_STATUS = {"ok": "ok", "cobertura_baixa": "low", "sem_historico": "no_history"}
 
 ERRORS = {404: {"model": ErrorResponse}, 422: {"model": ErrorResponse}, 500: {"model": ErrorResponse},
@@ -414,6 +417,101 @@ def prices_station_choice(conn: Conn, uf: Uf, product: ProductParam, municipalit
         typical_saving=round(statistics.median(savings), 4) if savings else None, typical_weeks=len(savings),
         typical_change=round(change, 4) if change is not None else None,
         data_as_of=fresh["data_as_of"], source_retrieved_at=fresh["source_retrieved_at"])
+
+
+RankingWeeks = Annotated[int, Query(ge=1, le=156, description="Semanas até a mais recente do conjunto.")]
+
+
+@router.get("/prices/regions", response_model=RegionsResponse, responses=ERRORS, tags=["Preços"],
+            summary="Capital, região metropolitana, litoral e interior: mediana semanal por região")
+def prices_regions(conn: Conn, uf: Uf, product: ProductParam, weeks: RankingWeeks = DEFAULT_RANKING_WEEKS):
+    """Mediana de **todos os preços** da região na semana (como no estudo descritivo, não a mediana
+    das medianas): regiões com mais postos pesquisados pesam mais, e a capital domina a própria
+    região. As listas de municípios são as de `regions.py`; o que não está nelas é interior."""
+    prod = require_product(conn, product)
+    end = queries.state_latest_week(conn, uf, prod["product_id"])
+    if end is None:
+        raise ApiError(404, "NO_DATA", "Não há preços deste produto no estado.")
+    start = end - timedelta(weeks=weeks - 1)
+    rows = queries.region_prices(conn, uf, prod["product_id"], start, end, regions.CAPITAL, regions.METRO,
+                                 regions.COAST)
+    series = [RegionPoint(week_start=r["week_start"], region=r["region"], median=r["median"],
+                          observations=r["observations"], stations=r["stations"],
+                          municipalities=len(r["municipalities"])) for r in rows]
+    latest = {r["region"]: r for r in rows if r["week_start"] == end}
+    capital = latest.get("capital")
+    items = []
+    for name in regions.REGIONS:
+        r = latest.get(name)
+        if r is None:
+            continue
+        diff = (round(float(r["median"]) - float(capital["median"]), 4)
+                if capital is not None and name != "capital" else None)
+        items.append(RegionItem(week_start=end, region=name, label=regions.LABELS[name], median=r["median"],
+                                observations=r["observations"], stations=r["stations"],
+                                municipalities=len(r["municipalities"]), difference_to_capital=diff,
+                                municipality_names=list(r["municipalities"])))
+    fresh = queries.series_freshness(conn, uf, prod["product_id"], start, end)
+    return RegionsResponse(data_as_of=fresh["data_as_of"], source_retrieved_at=fresh["source_retrieved_at"],
+                           product=prod["canonical_name"], unit=prod["unit"], week_start=end,
+                           week_end=end + timedelta(days=6), items=items, series=series)
+
+
+def ethanol_rank(gasoline, ethanol, min_weeks):
+    """Mesma regra de `/prices/ethanol-vs-gasoline`, resumida por município."""
+    ratios = []
+    for week in sorted(set(gasoline) & set(ethanol)):
+        g, e = gasoline[week], ethanol[week]
+        if "cobertura_baixa" not in (g["quality_flag"], e["quality_flag"]):
+            ratios.append((week, round(float(e["price_median"]) / float(g["price_median"]), 4)))
+    if not ratios:
+        return EthanolRank(weeks=0, ranked=False)
+    values = [r for _, r in ratios]
+    return EthanolRank(weeks=len(ratios), share_pays=round(sum(r <= ETHANOL_PAYS for r in values) / len(values), 4),
+                       median_ratio=round(statistics.median(values), 4), latest_ratio=ratios[-1][1],
+                       latest_week_start=ratios[-1][0], ranked=len(ratios) >= min_weeks)
+
+
+def choice_rank(rows, min_weeks):
+    """Mesma regra de `/prices/station-choice` (semanas com ao menos 5 postos), resumida na janela."""
+    usable = [r for _, r in sorted(rows.items()) if r["station_count"] >= CHOICE_MIN_STATIONS]
+    if not usable:
+        return ChoiceRank(weeks=0, ranked=False)
+    savings = [round(float(r["price_median"]) - float(r["price_min"]), 4) for r in usable]
+    return ChoiceRank(weeks=len(usable), typical_saving=round(statistics.median(savings), 4),
+                      latest_saving=savings[-1], latest_week_start=usable[-1]["week_start"],
+                      ranked=len(usable) >= min_weeks)
+
+
+@router.get("/prices/rankings", response_model=RankingsResponse, responses=ERRORS, tags=["Preços"],
+            summary="Por município: quanto o etanol compensa e quanto rende escolher o posto")
+def prices_rankings(conn: Conn, uf: Uf, product: ProductParam = GASOLINE,
+                    weeks: RankingWeeks = DEFAULT_RANKING_WEEKS):
+    """Um item por município com dado na janela (as últimas `weeks` semanas do conjunto). O etanol
+    usa a regra de `/prices/ethanol-vs-gasoline`; a escolha do posto, a de `/prices/station-choice`
+    para `product`. Só entra no ranking (`ranked`) quem tem dado em pelo menos metade das semanas."""
+    prod = require_product(conn, product)
+    end = queries.dataset_latest_week(conn, uf)
+    if end is None:
+        raise ApiError(404, "NO_DATA", "Não há preços publicados.")
+    start = end - timedelta(weeks=weeks - 1)
+    min_weeks = (weeks + 1) // 2
+    ids = {code: require_product(conn, code)["product_id"] for code in (GASOLINE, ETHANOL)}
+    by_city = {}
+    for r in queries.city_rows(conn, uf, {*ids.values(), prod["product_id"]}, start, end):
+        city = by_city.setdefault((r["municipality_name"], r["municipality_name_normalized"]), {})
+        city.setdefault(r["product_id"], {})[r["week_start"]] = r
+    items = []
+    for (name, normalized), series in by_city.items():
+        items.append(RankingItem(
+            location=location_of(uf, name), region=regions.region_of(normalized),
+            ethanol=ethanol_rank(series.get(ids[GASOLINE], {}), series.get(ids[ETHANOL], {}), min_weeks),
+            station_choice=choice_rank(series.get(prod["product_id"], {}), min_weeks)))
+    fresh = queries.series_freshness(conn, uf, prod["product_id"], start, end)
+    return RankingsResponse(data_as_of=fresh["data_as_of"], source_retrieved_at=fresh["source_retrieved_at"],
+                            product=prod["canonical_name"], unit=prod["unit"], start=start, end=end, weeks=weeks,
+                            min_weeks=min_weeks, threshold=ETHANOL_PAYS, min_stations=CHOICE_MIN_STATIONS,
+                            tank_liters=TANK_LITERS, items=items)
 
 
 @router.get("/prices/compare", response_model=CompareResponse, responses=ERRORS, tags=["Preços"],

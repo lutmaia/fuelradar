@@ -9,6 +9,7 @@ import math
 import numpy as np
 import pandas as pd
 
+from ..regions import CAPITAL, COAST, METRO, REGIONS, region_of  # noqa: F401  (listas movidas, sem mudança)
 from .common import PRIMARY_PRODUCT, check_window
 from .q2 import pairs
 
@@ -18,33 +19,8 @@ MIN_PAIRED_WEEKS = 26        # semanas com os dois preços para ranquear um muni
 MIN_STATIONS = 5             # postos na semana para medir a economia dentro do município
 TANK_LITERS = 50
 REGION_PRODUCTS = (PRIMARY_PRODUCT, ETHANOL, "DIESEL_S10")
-
-CAPITAL = "SAO PAULO"
-# Região Metropolitana de São Paulo: 39 municípios, a capital tratada à parte. Nomes como a ANP
-# publica (caixa alta, sem acento); a lista foi escrita à mão e o relatório mostra quais estão nos dados.
-METRO = frozenset({
-    "ARUJA", "BARUERI", "BIRITIBA-MIRIM", "BIRITIBA MIRIM", "CAIEIRAS", "CAJAMAR", "CARAPICUIBA", "COTIA",
-    "DIADEMA", "EMBU DAS ARTES", "EMBU-GUACU", "EMBU GUACU", "FERRAZ DE VASCONCELOS", "FRANCISCO MORATO",
-    "FRANCO DA ROCHA", "GUARAREMA", "GUARULHOS", "ITAPECERICA DA SERRA", "ITAPEVI", "ITAQUAQUECETUBA", "JANDIRA",
-    "JUQUITIBA", "MAIRIPORA", "MAUA", "MOGI DAS CRUZES", "OSASCO", "PIRAPORA DO BOM JESUS", "POA",
-    "RIBEIRAO PIRES", "RIO GRANDE DA SERRA", "SALESOPOLIS", "SANTA ISABEL", "SANTANA DE PARNAIBA", "SANTO ANDRE",
-    "SAO BERNARDO DO CAMPO", "SAO CAETANO DO SUL", "SAO LOURENCO DA SERRA", "SUZANO", "TABOAO DA SERRA",
-    "VARGEM GRANDE PAULISTA"})
-# Litoral: Baixada Santista, Litoral Norte e os municípios costeiros do Vale do Ribeira.
-COAST = frozenset({
-    "BERTIOGA", "CUBATAO", "GUARUJA", "ITANHAEM", "MONGAGUA", "PERUIBE", "PRAIA GRANDE", "SANTOS", "SAO VICENTE",
-    "CARAGUATATUBA", "ILHABELA", "SAO SEBASTIAO", "UBATUBA", "IGUAPE", "ILHA COMPRIDA", "CANANEIA"})
-REGIONS = ("capital", "metropolitana", "litoral", "interior")
-
-
-def region_of(municipality):
-    if municipality == CAPITAL:
-        return "capital"
-    if municipality in METRO:
-        return "metropolitana"
-    if municipality in COAST:
-        return "litoral"
-    return "interior"
+# Capital, metropolitana, litoral e interior: definições em `radar_combustiveis/regions.py`, que o
+# painel também usa (a lista é a mesma do estudo).
 
 
 def _year_shares(frame, flag):

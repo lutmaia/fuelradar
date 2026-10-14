@@ -838,6 +838,125 @@ class ConsumerApiTests(ApiCase):
                          404, "NO_DATA")
 
 
+class RegionAndRankingApiTests(ApiCase):
+    """Páginas Regiões (Marco 9): mediana por região e rankings por município, contra cálculo independente.
+
+    Os dados sintéticos são todos do interior; as regiões são remapeadas no teste para exercitar as
+    quatro (Campinas como capital, Jundiaí metropolitana, Tietê litoral, São Carlos e Itu interior)."""
+
+    REGIONS = {"CAPITAL": "CAMPINAS", "METRO": frozenset({"JUNDIAI"}), "COAST": frozenset({"TIETE"})}
+
+    def regions_ok(self, **params):
+        with mock.patch.multiple(routes.regions, **self.REGIONS):
+            return self.ok("/api/v1/prices/regions", **params)
+
+    def test_regions_latest_week_median_of_all_prices_and_difference_to_capital(self):
+        body = self.regions_ok(product="GASOLINA_COMUM", weeks=N_WEEKS)
+        self.assertEqual((body["week_start"], body["week_end"]), (LAST.isoformat(), (LAST + timedelta(days=6)).isoformat()))
+        self.assertEqual(body["data_as_of"], LAST_COLLECTION.isoformat())
+        n = N_WEEKS - 1
+        members = {"capital": ["Campinas"], "metropolitana": ["Jundiaí"], "litoral": ["Tietê"],
+                   "interior": ["São Carlos"]}  # Itu parou na semana 4
+        capital = float(summary(self.values("Campinas", "GASOLINA_COMUM", n))["median"])
+        self.assertEqual([i["region"] for i in body["items"]], ["capital", "metropolitana", "litoral", "interior"])
+        for item in body["items"]:
+            prices = [p for city in members[item["region"]] for p in self.values(city, "GASOLINA_COMUM", n)]
+            median = float(summary(prices)["median"])
+            self.assertAlmostEqual(item["median"], median, places=4)
+            self.assertEqual((item["stations"], item["observations"], item["municipalities"]),
+                             (len(prices), len(prices), len(members[item["region"]])))
+            self.assertEqual([normalize_text(m) for m in item["municipality_names"]],
+                             [normalize_text(m) for m in members[item["region"]]])
+            if item["region"] == "capital":
+                self.assertIsNone(item["difference_to_capital"])
+            else:
+                self.assertAlmostEqual(item["difference_to_capital"], round(median - capital, 4), places=4)
+        self.assertEqual(body["items"][0]["label"], "Capital")
+
+    def test_regions_series_pools_every_price_of_the_region_and_skips_empty_weeks(self):
+        body = self.regions_ok(product="GASOLINA_COMUM", weeks=N_WEEKS)
+        interior = {p["week_start"]: p for p in body["series"] if p["region"] == "interior"}
+        week0 = self.values("São Carlos", "GASOLINA_COMUM", 0) + self.values("Itu", "GASOLINA_COMUM", 0)
+        self.assertAlmostEqual(interior[week(0).isoformat()]["median"], float(summary(week0)["median"]), places=4)
+        self.assertEqual(interior[week(0).isoformat()]["municipalities"], 2)
+        coast = [p["week_start"] for p in body["series"] if p["region"] == "litoral"]
+        self.assertEqual(coast, [LAST.isoformat()])  # Tietê só aparece na última semana: sem preenchimento
+        self.assertEqual(len(body["series"]), 3 * N_WEEKS + 1)
+        recent = self.regions_ok(product="GASOLINA_COMUM", weeks=2)
+        self.assertEqual({p["week_start"] for p in recent["series"]}, {week(N_WEEKS - 2).isoformat(), LAST.isoformat()})
+
+    def test_without_remapping_every_synthetic_city_is_interior(self):
+        body = self.ok("/api/v1/prices/regions", product="GASOLINA_COMUM")
+        self.assertEqual([i["region"] for i in body["items"]], ["interior"])
+        self.assertIsNone(body["items"][0]["difference_to_capital"])
+
+    def test_regions_errors(self):
+        self.assertError(self.get("/api/v1/prices/regions", product="GNV"), 404, "NO_DATA")
+        self.assertError(self.get("/api/v1/prices/regions", product="QUEROSENE"), 404, "PRODUCT_NOT_FOUND")
+        self.assertError(self.get("/api/v1/prices/regions", product="GASOLINA_COMUM", weeks=0), 422,
+                         "VALIDATION_ERROR")
+        self.assertError(self.get("/api/v1/prices/regions"), 422, "VALIDATION_ERROR")
+
+    def test_rankings_ethanol_follows_the_ethanol_endpoint_rule(self):
+        body = self.ok("/api/v1/prices/rankings", weeks=N_WEEKS)
+        self.assertEqual((body["weeks"], body["min_weeks"], body["threshold"], body["product"]),
+                         (N_WEEKS, 6, 0.70, "GASOLINA_COMUM"))
+        self.assertEqual((body["start"], body["end"]), (WEEK0.isoformat(), LAST.isoformat()))
+        by_city = {normalize_text(i["location"]["municipality"]): i for i in body["items"]}
+        self.assertEqual(set(by_city), {"JUNDIAI", "CAMPINAS", "SAO CARLOS", "ITU", "TIETE"})
+        ratios = []
+        for n in range(N_WEEKS - 1):  # a última semana tem cobertura baixa na gasolina de Jundiaí
+            g = float(summary(self.values("Jundiaí", "GASOLINA_COMUM", n))["median"])
+            e = float(summary(self.values("Jundiaí", "ETANOL_HIDRATADO", n))["median"])
+            ratios.append(round(e / g, 4))
+        eth = by_city["JUNDIAI"]["ethanol"]
+        self.assertEqual((eth["weeks"], eth["ranked"]), (N_WEEKS - 1, True))
+        self.assertAlmostEqual(eth["share_pays"], round(sum(r <= 0.70 for r in ratios) / len(ratios), 4), places=4)
+        self.assertAlmostEqual(eth["median_ratio"], round(statistics.median(ratios), 4), places=4)
+        self.assertAlmostEqual(eth["latest_ratio"], ratios[-1], places=4)
+        self.assertEqual(eth["latest_week_start"], week(N_WEEKS - 2).isoformat())
+        endpoint = self.ok("/api/v1/prices/ethanol-vs-gasoline", municipality="Jundiaí", weeks=N_WEEKS)
+        self.assertEqual(eth["latest_ratio"], endpoint["latest"]["ratio"])
+        self.assertEqual(by_city["CAMPINAS"]["ethanol"],
+                         {"weeks": 0, "share_pays": None, "median_ratio": None, "latest_ratio": None,
+                          "latest_week_start": None, "ranked": False})
+
+    def test_rankings_station_choice_needs_five_stations_and_half_the_weeks(self):
+        body = self.ok("/api/v1/prices/rankings", product="GASOLINA_COMUM", weeks=N_WEEKS)
+        by_city = {normalize_text(i["location"]["municipality"]): i for i in body["items"]}
+        savings = []
+        for n in range(N_WEEKS):
+            s = summary(self.values("Campinas", "GASOLINA_COMUM", n))
+            savings.append(round(float(s["median"]) - float(s["min"]), 4))
+        choice = by_city["CAMPINAS"]["station_choice"]
+        self.assertEqual((choice["weeks"], choice["ranked"], choice["latest_week_start"]),
+                         (N_WEEKS, True, LAST.isoformat()))
+        self.assertAlmostEqual(choice["typical_saving"], round(statistics.median(savings), 4), places=4)
+        self.assertAlmostEqual(choice["latest_saving"], savings[-1], places=4)
+        self.assertEqual(by_city["JUNDIAI"]["station_choice"]["weeks"], N_WEEKS - 1)  # 2 postos na última semana
+        for small in ("SAO CARLOS", "ITU", "TIETE"):  # 3 postos ou menos
+            self.assertEqual(by_city[small]["station_choice"]["weeks"], 0)
+            self.assertFalse(by_city[small]["station_choice"]["ranked"])
+        self.assertEqual({i["region"] for i in body["items"]}, {"interior"})
+        with mock.patch.multiple(routes.regions, **self.REGIONS):
+            remapped = self.ok("/api/v1/prices/rankings", weeks=N_WEEKS)
+        regions = {normalize_text(i["location"]["municipality"]): i["region"] for i in remapped["items"]}
+        self.assertEqual((regions["CAMPINAS"], regions["JUNDIAI"], regions["TIETE"], regions["ITU"]),
+                         ("capital", "metropolitana", "litoral", "interior"))
+
+    def test_rankings_window_and_errors(self):
+        recent = self.ok("/api/v1/prices/rankings", weeks=4)
+        names = {normalize_text(i["location"]["municipality"]) for i in recent["items"]}
+        self.assertNotIn("ITU", names)  # sem dado nas últimas 4 semanas
+        self.assertEqual(recent["min_weeks"], 2)
+        tiete = next(i for i in recent["items"] if normalize_text(i["location"]["municipality"]) == "TIETE")
+        self.assertFalse(tiete["station_choice"]["ranked"])
+        diesel = self.ok("/api/v1/prices/rankings", product="DIESEL_S10", weeks=N_WEEKS)
+        self.assertTrue(all(i["station_choice"]["weeks"] == 0 for i in diesel["items"]))  # 3 postos em Campinas
+        self.assertError(self.get("/api/v1/prices/rankings", product="QUEROSENE"), 404, "PRODUCT_NOT_FOUND")
+        self.assertError(self.get("/api/v1/prices/rankings", weeks=157), 422, "VALIDATION_ERROR")
+
+
 class InfrastructureTests(ApiCase):
     def test_unknown_route_and_method_use_the_error_format(self):
         self.assertError(self.get("/api/v1/nao-existe"), 404, "NOT_FOUND")
@@ -849,7 +968,7 @@ class InfrastructureTests(ApiCase):
             "/health/live", "/health/ready", "/api/v1/metadata/freshness", "/api/v1/products", "/api/v1/locations",
             "/api/v1/prices/latest", "/api/v1/prices/history", "/api/v1/prices/compare", "/api/v1/prices/by-brand",
             "/api/v1/prices/ethanol-vs-gasoline", "/api/v1/prices/station-choice",
-            "/api/v1/stations", "/api/v1/forecasts", "/api/v1/anomalies", "/api/v1/data-quality"})
+            "/api/v1/prices/regions", "/api/v1/prices/rankings", "/api/v1/stations", "/api/v1/forecasts", "/api/v1/anomalies", "/api/v1/data-quality"})
         self.assertEqual(self.client.get("/docs").status_code, 200)
 
     def test_forecasts_and_anomalies_say_so_when_no_model_is_published(self):

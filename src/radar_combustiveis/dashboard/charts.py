@@ -156,6 +156,55 @@ def comparison_figures(series, unit):
     return absolute, normalized, base_week
 
 
+REGION_COLORS = {"capital": PALETTE[0], "metropolitana": PALETTE[3], "litoral": PALETTE[1], "interior": PALETTE[2]}
+
+
+def regions_figure(series, labels, unit):
+    """Mediana semanal de cada região. `series`: pontos {week_start, region, median}; lacunas ficam lacunas."""
+    fig = go.Figure()
+    for region, label in labels.items():
+        points = [{"week_start": p["week_start"], "statistics": {"median": p["median"]}}
+                  for p in series if p["region"] == region]
+        if not points:
+            continue
+        weeks, median, _ = _series(points, "median")
+        fig.add_trace(go.Scatter(x=weeks, y=median, mode="lines+markers", name=label, connectgaps=False,
+                                 line={"color": REGION_COLORS.get(region, STATE_COLOR), "width": 2},
+                                 marker={"size": 5}, hovertemplate="%{y:,.2f}<extra>%{fullData.name}</extra>"))
+    return _layout(fig, "Mediana semanal por região", unit)
+
+
+def interval_figure(rows, title, x_title):
+    """Estimativas com intervalo de confiança: `rows` = [(rótulo, valor, inferior, superior)], em %.
+
+    Pontos com barra de erro, não barras: o que importa é o intervalo, e o zero fica marcado."""
+    fig = go.Figure(go.Scatter(
+        x=[r[1] for r in rows], y=[r[0] for r in rows], mode="markers", marker={"size": 12, "color": PALETTE[0]},
+        error_x={"type": "data", "symmetric": False, "color": "#888888", "thickness": 2,
+                 "array": [r[3] - r[1] for r in rows], "arrayminus": [r[1] - r[2] for r in rows]},
+        customdata=[[r[2], r[3]] for r in rows],
+        hovertemplate="%{y}: %{x:.1f}% (IC 95% de %{customdata[0]:.1f}% a %{customdata[1]:.1f}%)<extra></extra>"))
+    fig.add_vline(x=0, line_dash="dash", line_color=STATE_COLOR)
+    fig.update_layout(title=title, margin={"l": 10, "r": 10, "t": 50, "b": 40}, showlegend=False,
+                      xaxis={"title": x_title, "ticksuffix": "%"}, yaxis={"autorange": "reversed"},
+                      height=120 + 40 * len(rows), separators=",.")
+    return fig
+
+
+def share_by_year_figure(by_year, title):
+    """Fração (0 a 1) por ano, em barras que começam no zero; o número de casos vai no rótulo."""
+    years = sorted(by_year)
+    fig = go.Figure(go.Bar(
+        x=[str(y) for y in years], y=[by_year[y]["share"] * 100 for y in years], marker_color=PALETTE[2],
+        text=[f"{by_year[y]['share'] * 100:.0f}%".replace(".", ",") for y in years], textposition="outside",
+        customdata=[by_year[y]["n"] for y in years],
+        hovertemplate="%{x}: %{y:.1f}% de %{customdata} município-semanas<extra></extra>"))
+    fig.update_layout(title=title, margin={"l": 10, "r": 10, "t": 50, "b": 30}, height=300, showlegend=False,
+                      yaxis={"title": "% das município-semanas", "ticksuffix": "%", "range": [0, 110]},
+                      separators=",.")
+    return fig
+
+
 def ethanol_figure(items, threshold):
     """Etanol como % da gasolina por semana, com a linha dos 70%. Semanas sem razão viram lacuna."""
     weeks = [date.fromisoformat(i["week_start"]) for i in items]

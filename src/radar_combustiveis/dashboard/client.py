@@ -117,6 +117,12 @@ class ApiClient:
     def station_choice(self, product, municipality):
         return self._get("/api/v1/prices/station-choice", {"product": product, "municipality": municipality})
 
+    def regions(self, product, weeks=26):
+        return self._get("/api/v1/prices/regions", {"product": product, "weeks": weeks})
+
+    def rankings(self, product, weeks=26):
+        return self._get("/api/v1/prices/rankings", {"product": product, "weeks": weeks})
+
     def forecasts(self, product, municipality=None):
         return self._get("/api/v1/forecasts", {"product": product, "municipality": municipality})
 

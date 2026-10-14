@@ -52,6 +52,8 @@ RANKING = "from radar_combustiveis.dashboard import views\nviews.guarded(views.s
 FORECAST = "from radar_combustiveis.dashboard import views\nviews.guarded(views.forecasts_page)()"
 ANOMALIES = "from radar_combustiveis.dashboard import views\nviews.guarded(views.anomalies_page)()"
 BRANDS = "from radar_combustiveis.dashboard import views\nviews.guarded(views.brands_page)()"
+REGIONS = "from radar_combustiveis.dashboard import views\nviews.guarded(views.regions_page)()"
+STUDY = "from radar_combustiveis.dashboard import views\nviews.guarded(views.study_page)()"
 
 
 # -- Formatação -----------------------------------------------------------------------------
@@ -237,6 +239,22 @@ class ChartAndExportTests(unittest.TestCase):
         _, normalized, base = charts.comparison_figures({"A": a, "B": b}, "R$/litro")
         self.assertIsNone(base)
         self.assertEqual(len(normalized.data), 0)
+
+    def test_region_lines_keep_gaps_and_skip_regions_without_data(self):
+        series = [{"week_start": "2026-09-06", "region": "litoral", "median": 6.7},
+                  {"week_start": "2026-09-20", "region": "litoral", "median": 6.8},
+                  {"week_start": "2026-09-06", "region": "interior", "median": 6.3}]
+        fig = charts.regions_figure(series, views.REGION_LABELS, "R$/litro")
+        by_name = {t.name: t for t in fig.data}
+        self.assertEqual(set(by_name), {"Litoral", "Interior"})
+        self.assertEqual(list(by_name["Litoral"].y), [6.7, None, 6.8])
+
+    def test_interval_figure_draws_the_confidence_interval_around_each_estimate(self):
+        fig = charts.interval_figure([("Gasolina", -5.6, -6.0, -5.2), ("GNV", -2.2, -4.9, 0.6)], "t", "x")
+        trace = fig.data[0]
+        self.assertEqual(list(trace.x), [-5.6, -2.2])
+        self.assertAlmostEqual(trace.error_x.array[1], 2.8)
+        self.assertAlmostEqual(trace.error_x.arrayminus[0], 0.4)
 
     def test_history_csv_is_excel_friendly_and_keeps_missing_values_empty(self):
         history = {"location": {"uf": "SP", "municipality": "CAMPINAS"}, "product": "GASOLINA_COMUM",
@@ -472,6 +490,36 @@ class FakeApi:
                 "min_stations": 5, "tank_liters": 50, "latest": latest,
                 "typical_saving": None if latest is None else 0.40, "typical_weeks": 0 if latest is None else 52,
                 "typical_change": None if latest is None else 0.10}
+
+    def regions(self, product, weeks=26):
+        medians = {"capital": 6.29, "metropolitana": 6.39, "litoral": 6.79, "interior": 6.35}
+        present = self.over.get("regions_present", list(medians))
+        items = [{"week_start": "2026-09-27", "region": r, "label": views.REGION_LABELS[r], "median": medians[r],
+                  "observations": 40, "stations": 40, "municipalities": 1 if r == "capital" else 5,
+                  "difference_to_capital": (None if r == "capital" or "capital" not in present
+                                            else round(medians[r] - medians["capital"], 4)),
+                  "municipality_names": ["SAO PAULO"] if r == "capital" else ["A", "B", "C", "D", "E"]}
+                 for r in medians if r in present]
+        series = [{"week_start": w, "region": i["region"], "median": i["median"], "observations": 40, "stations": 40,
+                   "municipalities": i["municipalities"]} for w in ("2026-09-20", "2026-09-27") for i in items]
+        return {"data_as_of": "2026-10-01", "source_retrieved_at": None, "product": product,
+                "unit": "BRL/M3" if product == "GNV" else "BRL/L", "week_start": "2026-09-27",
+                "week_end": "2026-10-03", "items": items, "series": series}
+
+    def rankings(self, product, weeks=26):
+        def item(name, region, share, ratio, saving, ranked=True):
+            return {"location": {"uf": "SP", "municipality": name}, "region": region,
+                    "ethanol": {"weeks": 26 if ranked else 3, "share_pays": share, "median_ratio": ratio,
+                                "latest_ratio": ratio, "latest_week_start": "2026-09-27", "ranked": ranked},
+                    "station_choice": {"weeks": 26 if ranked else 3, "typical_saving": saving,
+                                       "latest_saving": saving, "latest_week_start": "2026-09-27", "ranked": ranked}}
+        items = self.over.get("ranking_items", [
+            item("CAMPINAS", "interior", 0.9, 0.66, 0.40), item("SANTOS", "litoral", 0.5, 0.70, 0.80),
+            item("JUNDIAI", "interior", 0.9, 0.62, 0.30), item("SAO PAULO", "capital", 0.2, 0.72, 0.55),
+            item("TIETE", "interior", 1.0, 0.55, 1.50, ranked=False)])
+        return {"data_as_of": "2026-10-01", "source_retrieved_at": None, "product": product,
+                "unit": "BRL/M3" if product == "GNV" else "BRL/L", "start": "2026-04-05", "end": "2026-09-27",
+                "weeks": 26, "min_weeks": 13, "threshold": 0.70, "min_stations": 5, "tank_liters": 50, "items": items}
 
     def data_quality(self, week_start=None):
         return {"data_as_of": "2026-10-01", "source_retrieved_at": None,
@@ -812,6 +860,80 @@ class ComparePageTests(PageCase):
         self.assertEqual(len(at.get("plotly_chart")), 0)
 
 
+class RegionsPageTests(PageCase):
+    def test_region_cards_table_and_chart_compare_with_the_capital(self):
+        at = self.run_page(REGIONS, FakeApi(), {"produto": "GASOLINA_COMUM"})
+        self.assertFalse(at.exception)
+        metrics = {m.label: (m.value, m.delta) for m in at.metric}
+        self.assertEqual(metrics["Capital"], ("R$ 6,29", ""))
+        self.assertEqual(metrics["Litoral"], ("R$ 6,79", "+R$ 0,50 frente à capital"))
+        table = at.dataframe[0].value
+        self.assertEqual(list(table["Região"]), ["Capital", "Metropolitana", "Litoral", "Interior"])
+        self.assertEqual(table.iloc[0]["Diferença p/ capital"], 0.0)  # vazio apareceria como "None"
+        self.assertIn("27/09/2026 a 03/10/2026", " ".join(c.value for c in at.caption))
+
+    def test_rankings_are_ordered_and_skip_municipalities_without_enough_weeks(self):
+        at = self.run_page(REGIONS, FakeApi(), {"produto": "GASOLINA_COMUM"})
+        ethanol, choice = at.dataframe[1].value, at.dataframe[3].value
+        # Mesma fração: desempata pela menor razão. Tietê tem poucas semanas e fica de fora.
+        self.assertEqual(list(ethanol["Município"]), ["JUNDIAI", "CAMPINAS", "SANTOS", "SAO PAULO"])
+        self.assertEqual(list(ethanol["Posição"]), [1, 2, 3, 4])
+        self.assertEqual(list(choice["Município"]), ["SANTOS", "SAO PAULO", "CAMPINAS", "JUNDIAI"])
+        self.assertAlmostEqual(choice.iloc[0]["Num tanque de 50 L"], 40.0)
+        self.assertEqual(choice.iloc[0]["Região"], "Litoral")
+        captions = " ".join(c.value for c in at.caption)
+        self.assertIn("pelo menos 13 semanas: 4 municípios", captions)
+        self.assertIn("05/04/2026 a 27/09/2026", captions)
+
+    def test_missing_region_and_product_without_liters(self):
+        at = self.run_page(REGIONS, FakeApi(regions_present=["litoral", "interior"]), {"produto": "GNV"})
+        self.assertFalse(at.exception)
+        metrics = {m.label: (m.value, m.delta) for m in at.metric}
+        self.assertEqual(metrics["Capital"][0], fmt.ND)
+        self.assertEqual(metrics["Litoral"], ("R$ 6,79", ""))  # sem capital, sem diferença
+        self.assertNotIn("Num tanque de 50 L", at.dataframe[-1].value.columns)
+
+    def test_no_ranked_municipality_is_explained(self):
+        at = self.run_page(REGIONS, FakeApi(ranking_items=[]))
+        self.assertFalse(at.exception)
+        infos = " ".join(i.value for i in at.info)
+        self.assertIn("Nenhum município tem semanas suficientes com preços de etanol", infos)
+        self.assertIn("Nenhum município tem semanas suficientes com postos", infos)
+
+
+class StudyPageTests(PageCase):
+    """A página Estudo lê os relatórios congelados de reports/study/, não a API."""
+
+    def test_frozen_results_with_window_findings_and_gate(self):
+        api = FakeApi()
+        at = self.run_page(STUDY, api)
+        self.assertFalse(at.exception)
+        self.assertEqual(api.calls, [])  # nada vem da API
+        metrics = {m.label: (m.value, m.delta) for m in at.metric}
+        results = json.loads((ROOT / "reports" / "study" / "resultados.json").read_text(encoding="utf-8"))
+        self.assertEqual(metrics["Q1 · bandeira branca"], (fmt.percent(results["q1"]["primary"]["pct"] / 100),
+                                                           "✅ estável"))
+        self.assertEqual(metrics["Q2 · altas × quedas"][1], "❌ não estável")
+        self.assertEqual(metrics["Q3 · reajustes se espalham?"][1], "❌ não estável")
+        self.assertEqual(metrics["Escolher o posto economiza"][0], "R$ 0,40")
+        info = " ".join(i.value for i in at.info)
+        self.assertIn("13/11/2022 a 29/03/2026", info)
+        self.assertIn("não mudam", info)
+        captions = " ".join(c.value for c in at.caption)
+        self.assertIn("Gate G1 não passou:** 1 de 3", captions)
+        self.assertIn("reports/study/q1.md", captions)
+        markdown = " ".join(m.value for m in at.markdown)
+        self.assertIn("R\\$ 0,12", markdown)  # Q2 tem três valores em reais: cifrão escapado
+        self.assertNotIn(" R$ ", markdown.replace("R\\$", ""))
+        self.assertEqual(len(at.get("plotly_chart")), 2)
+
+    def test_missing_reports_are_a_readable_error(self):
+        with mock.patch.object(views.study_results, "REPORTS", ROOT / "nao-existe"):
+            at = self.run_page(STUDY, FakeApi())
+        self.assertFalse(at.exception)
+        self.assertIn("não foram encontrados", at.error[0].value)
+
+
 class QualityPageTests(PageCase):
     def test_quality_page_lists_coverage_and_limitations_honestly(self):
         at = self.run_page(QUALITY, FakeApi())
@@ -890,6 +1012,18 @@ class DashboardIntegrationTests(ApiCase):
         by_name = {r["Município"]: r for _, r in table.iterrows()}
         self.assertTrue(pd.isna(by_name[names[1]]["Posição"]))
         self.assertEqual(sorted(int(by_name[n]["Posição"]) for n in (names[0], names[2])), [1, 2])
+
+    def test_regions_page_against_the_real_api(self):
+        at = self.run_page(REGIONS, {"produto": "GASOLINA_COMUM"})
+        metrics = {m.label: m.value for m in at.metric}
+        import statistics
+        everything = [p for (city, code, n), prices in self.expected.items()
+                      if code == "GASOLINA_COMUM" and n == 11 for p in prices.values()]
+        self.assertEqual(metrics["Interior"], fmt.brl(float(statistics.median(everything))))
+        self.assertEqual(metrics["Capital"], fmt.ND)  # os dados sintéticos são todos do interior
+        # 12 semanas sintéticas não chegam à metade da janela de 26: ninguém entra nos rankings, e a página diz.
+        self.assertIn("Nenhum município tem semanas suficientes", " ".join(i.value for i in at.info))
+        self.assertIn("pelo menos 13 semanas: 0 municípios", " ".join(c.value for c in at.caption))
 
     def test_home_and_quality_pages_render_against_the_real_api(self):
         home = self.run_page(HOME)
