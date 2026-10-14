@@ -1,6 +1,7 @@
-"""Endpoints de leitura (arquitetura 15.2). `/forecasts` e `/anomalies` ficam para o Marco 7."""
+"""Endpoints de leitura (arquitetura 15.2), mais previsões (Marco 7) e as medidas para o consumidor do Marco 8b."""
 
 from datetime import date, datetime, timedelta, timezone
+import statistics
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -9,7 +10,8 @@ from psycopg import Connection
 from ..ingestion.normalize import normalize_text
 from . import queries
 from .errors import ApiError
-from .schemas import (AnomaliesResponse, AnomalyItem, BacktestMetrics, BrandItem, BrandsResponse, ForecastPoint,
+from .schemas import (AnomaliesResponse, AnomalyItem, BacktestMetrics, BrandItem, BrandsResponse, EthanolPoint,
+                      EthanolResponse, ForecastPoint, StationChoiceResponse, StationChoiceWeek,
                       ForecastResponse,
                       ModelBacktest, ModelInfo, CompareItem, CompareReference, CompareResponse, CoverageSummary, DataQualityResponse, ErrorResponse,
                       FreshnessResponse, Health, HistoryResponse, LatestPrice, Location, LocationItem,
@@ -40,6 +42,12 @@ MODEL_LABELS = {
 }
 MAX_ANOMALY_WEEKS = 12
 BRAND_MIN_STATIONS = 3   # abaixo disso a mediana de uma bandeira diz pouco e expõe o posto
+# Etanol × gasolina e escolha do posto (Marco 8b, docs/estudo/descritivo.md).
+GASOLINE, ETHANOL = "GASOLINA_COMUM", "ETANOL_HIDRATADO"
+ETHANOL_PAYS = 0.70        # regra prática: o etanol rende cerca de 70% da gasolina por litro
+CHOICE_MIN_STATIONS = 5    # menos postos que isso e o menor preço da semana diz pouco
+TANK_LITERS = 50
+TYPICAL_WEEKS = 52
 COVERAGE_STATUS = {"ok": "ok", "cobertura_baixa": "low", "sem_historico": "no_history"}
 
 ERRORS = {404: {"model": ErrorResponse}, 422: {"model": ErrorResponse}, 500: {"model": ErrorResponse},
@@ -333,6 +341,79 @@ def prices_by_brand(conn: Conn, uf: Uf, product: ProductParam, municipality: Mun
         unit=prod["unit"], week_start=week, week_end=week + timedelta(days=6), reference_median=reference,
         reference_stations=overall["station_count"] if overall else 0, min_stations=BRAND_MIN_STATIONS,
         hidden_brands=len(hidden), hidden_stations=sum(r["stations"] for r in hidden), items=items)
+
+
+@router.get("/prices/ethanol-vs-gasoline", response_model=EthanolResponse, responses=ERRORS, tags=["Preços"],
+            summary="Etanol ou gasolina: razão entre as medianas semanais")
+def prices_ethanol_vs_gasoline(conn: Conn, uf: Uf, municipality: MunicipalityParam | None = None,
+                               weeks: Annotated[int, Query(ge=1, le=156, description="Semanas até a mais recente.")] = 26):
+    """Razão entre a mediana do etanol hidratado e a da gasolina comum, por semana. O etanol
+    compensa quando a razão é até 70% (regra prática: ele rende cerca de 70% da gasolina por litro;
+    o ponto exato depende do carro). Semana com cobertura baixa em um dos dois fica sem razão."""
+    loc = one_location(conn, uf, municipality)
+    end = queries.dataset_latest_week(conn, uf)
+    if end is None:
+        raise ApiError(404, "NO_DATA", "Não há preços publicados.")
+    start = end - timedelta(weeks=weeks - 1)
+    series = {}
+    for code in (GASOLINE, ETHANOL):
+        prod = require_product(conn, code)
+        series[code] = {r["week_start"]: r for r in series_for(conn, uf, loc, prod["product_id"], start, end)[0]}
+    items = []
+    for week in sorted(set(series[GASOLINE]) | set(series[ETHANOL])):
+        g, e = series[GASOLINE].get(week), series[ETHANOL].get(week)
+        point = EthanolPoint(week_start=week, gasoline_median=g and g["price_median"],
+                             ethanol_median=e and e["price_median"])
+        if g is None or e is None:
+            point.reason = "MISSING_PRODUCT"
+        elif "cobertura_baixa" in (g["quality_flag"], e["quality_flag"]):
+            point.reason = "LOW_COVERAGE"
+        else:
+            point.ratio = round(float(e["price_median"]) / float(g["price_median"]), 4)
+            point.pays = point.ratio <= ETHANOL_PAYS
+        items.append(point)
+    if not items:
+        raise ApiError(404, "NO_DATA", "Não há preços de gasolina nem de etanol neste recorte.")
+    with_ratio = [p for p in items if p.ratio is not None]
+    fresh = queries.series_freshness(conn, uf, require_product(conn, ETHANOL)["product_id"], start, end,
+                                     [loc["location_id"]] if loc else None)
+    return EthanolResponse(location=location_of(uf, loc["municipality_name"] if loc else None),
+                           threshold=ETHANOL_PAYS, latest=with_ratio[-1] if with_ratio else None, items=items,
+                           data_as_of=fresh["data_as_of"], source_retrieved_at=fresh["source_retrieved_at"])
+
+
+@router.get("/prices/station-choice", response_model=StationChoiceResponse, responses=ERRORS, tags=["Preços"],
+            summary="Quanto se economiza escolhendo o posto no município")
+def prices_station_choice(conn: Conn, uf: Uf, product: ProductParam, municipality: MunicipalityParam):
+    """Na semana mais recente do município com ao menos 5 postos: mediana menos o menor preço. Traz
+    também a economia típica do último ano e o tamanho típico de um reajuste semanal, para comparar
+    escolher o posto com esperar a semana. O menor preço é o menor da amostra da ANP."""
+    prod = require_product(conn, product)
+    loc = one_location(conn, uf, municipality)
+    end = queries.city_latest_week(conn, loc["location_id"], prod["product_id"])
+    if end is None:
+        raise ApiError(404, "NO_DATA", "Não há preços deste produto no município.")
+    start = end - timedelta(weeks=TYPICAL_WEEKS - 1)
+    rows = [r for r in queries.city_series(conn, loc["location_id"], prod["product_id"], start, end)
+            if r["station_count"] >= CHOICE_MIN_STATIONS]
+    per_liter = prod["unit"] == "BRL/L"
+
+    def week_of(r):
+        saving = round(float(r["price_median"]) - float(r["price_min"]), 4)
+        return StationChoiceWeek(week_start=r["week_start"], week_end=r["week_start"] + timedelta(days=6),
+                                 stations=r["station_count"], median=r["price_median"], min=r["price_min"],
+                                 p25=r["price_p25"], p75=r["price_p75"], saving=saving,
+                                 saving_tank=round(saving * TANK_LITERS, 2) if per_liter else None)
+
+    savings = sorted(float(r["price_median"]) - float(r["price_min"]) for r in rows)
+    change = queries.typical_station_change(conn, loc["location_id"], prod["product_id"], start, end)
+    fresh = queries.series_freshness(conn, uf, prod["product_id"], start, end, [loc["location_id"]])
+    return StationChoiceResponse(
+        location=location_of(uf, loc["municipality_name"]), product=prod["canonical_name"], unit=prod["unit"],
+        min_stations=CHOICE_MIN_STATIONS, tank_liters=TANK_LITERS, latest=week_of(rows[-1]) if rows else None,
+        typical_saving=round(statistics.median(savings), 4) if savings else None, typical_weeks=len(savings),
+        typical_change=round(change, 4) if change is not None else None,
+        data_as_of=fresh["data_as_of"], source_retrieved_at=fresh["source_retrieved_at"])
 
 
 @router.get("/prices/compare", response_model=CompareResponse, responses=ERRORS, tags=["Preços"],

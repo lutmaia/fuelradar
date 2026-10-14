@@ -776,6 +776,68 @@ class BrandApiTests(ApiCase):
                                   week_start=(LAST + timedelta(days=1)).isoformat()), 422, "INVALID_WEEK")
 
 
+class ConsumerApiTests(ApiCase):
+    """Marco 8b: etanol × gasolina e economia de escolher o posto, contra cálculo independente."""
+
+    def test_ethanol_ratio_by_week_and_low_coverage_week_has_no_ratio(self):
+        body = self.ok("/api/v1/prices/ethanol-vs-gasoline", municipality="Jundiaí", weeks=12)
+        self.assertEqual(body["threshold"], 0.70)
+        self.assertEqual(len(body["items"]), N_WEEKS)
+        for n, point in enumerate(body["items"]):
+            self.assertEqual(point["week_start"], week(n).isoformat())
+            g = float(summary(self.expected[("Jundiaí", "GASOLINA_COMUM", n)].values())["median"])
+            e = float(summary(self.expected[("Jundiaí", "ETANOL_HIDRATADO", n)].values())["median"])
+            self.assertAlmostEqual(point["gasoline_median"], g, places=4)
+            self.assertAlmostEqual(point["ethanol_median"], e, places=4)
+            if n == N_WEEKS - 1:  # gasolina com 2 postos na última semana: cobertura baixa
+                self.assertEqual((point["ratio"], point["pays"], point["reason"]), (None, None, "LOW_COVERAGE"))
+            else:
+                self.assertAlmostEqual(point["ratio"], round(e / g, 4), places=4)
+                self.assertEqual(point["pays"], e / g <= 0.70)
+        self.assertEqual(body["latest"]["week_start"], week(N_WEEKS - 2).isoformat())
+
+    def test_ethanol_missing_product_and_state_level(self):
+        body = self.ok("/api/v1/prices/ethanol-vs-gasoline", municipality="Campinas", weeks=4)
+        self.assertTrue(all(p["reason"] == "MISSING_PRODUCT" and p["ratio"] is None for p in body["items"]))
+        self.assertIsNone(body["latest"])
+        state = self.ok("/api/v1/prices/ethanol-vs-gasoline", weeks=1)
+        g = [v for (city, code, n), prices in self.expected.items() if code == "GASOLINA_COMUM" and n == N_WEEKS - 1
+             for v in prices.values()]
+        e = self.expected[("Jundiaí", "ETANOL_HIDRATADO", N_WEEKS - 1)].values()
+        ratio = float(summary(e)["median"]) / float(summary(g)["median"])
+        self.assertAlmostEqual(state["latest"]["ratio"], round(ratio, 4), places=4)
+        self.assertError(self.get("/api/v1/prices/ethanol-vs-gasoline", weeks=0), 422, "VALIDATION_ERROR")
+        self.assertError(self.get("/api/v1/prices/ethanol-vs-gasoline", municipality="Atlântida"), 404,
+                         "LOCATION_NOT_FOUND")
+
+    def test_station_choice_saving_typical_week_and_typical_change(self):
+        body = self.ok("/api/v1/prices/station-choice", municipality="Campinas", product="GASOLINA_COMUM")
+        savings = []
+        for n in range(N_WEEKS):
+            s = summary(self.expected[("Campinas", "GASOLINA_COMUM", n)].values())
+            savings.append(float(s["median"]) - float(s["min"]))
+        latest = body["latest"]
+        self.assertEqual((latest["week_start"], latest["stations"]), (LAST.isoformat(), 8))
+        self.assertAlmostEqual(latest["saving"], savings[-1], places=4)
+        self.assertAlmostEqual(latest["saving_tank"], round(savings[-1] * 50, 2), places=2)
+        self.assertEqual(body["typical_weeks"], N_WEEKS)
+        self.assertAlmostEqual(body["typical_saving"], statistics.median(savings), places=4)
+        self.assertAlmostEqual(body["typical_change"], 0.02, places=4)  # cada posto sobe R$ 0,02 por semana
+        self.assertEqual((body["min_stations"], body["tank_liters"], body["unit"]), (5, 50, "BRL/L"))
+
+    def test_station_choice_needs_enough_stations_and_a_municipality(self):
+        jundiai = self.ok("/api/v1/prices/station-choice", municipality="Jundiaí", product="GASOLINA_COMUM")
+        self.assertEqual(jundiai["latest"]["week_start"], week(N_WEEKS - 2).isoformat())  # última semana: 2 postos
+        self.assertEqual(jundiai["typical_weeks"], N_WEEKS - 1)
+        small = self.ok("/api/v1/prices/station-choice", municipality="São Carlos", product="GASOLINA_COMUM")
+        self.assertEqual((small["latest"], small["typical_saving"], small["typical_weeks"]), (None, None, 0))
+        self.assertError(self.get("/api/v1/prices/station-choice", product="GASOLINA_COMUM"), 422, "VALIDATION_ERROR")
+        self.assertError(self.get("/api/v1/prices/station-choice", municipality="Campinas", product="QUEROSENE"),
+                         404, "PRODUCT_NOT_FOUND")
+        self.assertError(self.get("/api/v1/prices/station-choice", municipality="Campinas", product="GNV"),
+                         404, "NO_DATA")
+
+
 class InfrastructureTests(ApiCase):
     def test_unknown_route_and_method_use_the_error_format(self):
         self.assertError(self.get("/api/v1/nao-existe"), 404, "NOT_FOUND")
@@ -786,6 +848,7 @@ class InfrastructureTests(ApiCase):
         self.assertEqual(paths, {
             "/health/live", "/health/ready", "/api/v1/metadata/freshness", "/api/v1/products", "/api/v1/locations",
             "/api/v1/prices/latest", "/api/v1/prices/history", "/api/v1/prices/compare", "/api/v1/prices/by-brand",
+            "/api/v1/prices/ethanol-vs-gasoline", "/api/v1/prices/station-choice",
             "/api/v1/stations", "/api/v1/forecasts", "/api/v1/anomalies", "/api/v1/data-quality"})
         self.assertEqual(self.client.get("/docs").status_code, 200)
 

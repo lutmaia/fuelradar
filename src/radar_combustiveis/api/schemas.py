@@ -223,6 +223,49 @@ class BrandsResponse(Freshness):
     items: list[BrandItem]
 
 
+class EthanolPoint(BaseModel):
+    week_start: date
+    gasoline_median: float | None = None
+    ethanol_median: float | None = None
+    ratio: float | None = Field(None, description="Mediana do etanol ÷ mediana da gasolina comum, 4 casas.")
+    pays: bool | None = Field(None, description="Verdadeiro quando `ratio` ≤ `threshold` (o etanol compensa).")
+    reason: Literal["MISSING_PRODUCT", "LOW_COVERAGE"] | None = Field(
+        None, description="Por que não há razão na semana: falta um dos produtos ou a cobertura está baixa.")
+
+
+class EthanolResponse(Freshness):
+    location: Location
+    threshold: float = Field(description="Regra prática: o etanol compensa até esta fração do preço da gasolina.")
+    latest: EthanolPoint | None = Field(description="Semana mais recente com razão calculada.")
+    items: list[EthanolPoint] = Field(description="Semanas com algum dos dois preços, em ordem cronológica.")
+
+
+class StationChoiceWeek(BaseModel):
+    week_start: date
+    week_end: date
+    stations: int
+    median: float
+    min: float
+    p25: float
+    p75: float
+    saving: float = Field(description="Mediana menos o menor preço da semana, em R$ por unidade.")
+    saving_tank: float | None = Field(None, description="`saving` vezes `tank_liters`; nulo fora de R$/litro.")
+
+
+class StationChoiceResponse(Freshness):
+    location: Location
+    product: str
+    unit: str
+    min_stations: int = Field(description="Semanas com menos postos não entram: o menor preço de poucos diz pouco.")
+    tank_liters: int
+    latest: StationChoiceWeek | None = Field(description="Semana mais recente do município com postos suficientes.")
+    typical_saving: float | None = Field(None, description="Mediana de `saving` nas semanas do último ano.")
+    typical_weeks: int = Field(description="Semanas usadas em `typical_saving`.")
+    typical_change: float | None = Field(
+        None, description="Mediana do tamanho de uma mudança de preço (|Δ| ≥ R$ 0,01) do mesmo posto entre semanas "
+                          "consecutivas, no último ano: o reajuste típico, para comparar com `typical_saving`.")
+
+
 class ForecastPoint(BaseModel):
     horizon: int = Field(description="Semanas à frente da semana de origem (1 a 4).")
     target_week_start: date

@@ -175,6 +175,22 @@ def list_stations(conn, uf, location_id, product_id, limit, offset, since=None, 
          "since": since, "order": order}).fetchall()
 
 
+def typical_station_change(conn, location_id, product_id, start, end):
+    """Mediana de |Δ| (≥ R$ 0,01) entre semanas consecutivas do mesmo posto: o reajuste típico."""
+    return conn.execute("""
+        WITH obs AS (
+            SELECT f.station_id, f.week_start, f.sale_price,
+                   lag(f.week_start) OVER w AS prev_week, lag(f.sale_price) OVER w AS prev_price
+            FROM fact_price_observation f
+            WHERE f.is_current_source_revision AND f.location_id = %(location)s AND f.product_id = %(product)s
+              AND f.week_start BETWEEN %(start)s::date - 7 AND %(end)s
+            WINDOW w AS (PARTITION BY f.station_id ORDER BY f.week_start))
+        SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY abs(sale_price - prev_price)::double precision) AS change
+        FROM obs
+        WHERE week_start >= %(start)s AND week_start - prev_week = 7 AND abs(sale_price - prev_price) >= 0.01""",
+        {"location": location_id, "product": product_id, "start": start, "end": end}).fetchone()["change"]
+
+
 def brand_prices(conn, uf, location_id, product_id, week_start):
     """Estatísticas da semana por bandeira (a bandeira cadastrada do posto), direto do fato."""
     return conn.execute("""

@@ -451,6 +451,28 @@ class FakeApi:
         return {"data_as_of": "2026-10-09", "source_retrieved_at": None, "model_version": "ultimo_valor 2026-10-04-x",
                 "since_week_start": "2026-09-13", "page": 1, "page_size": 200, "total": len(rows), "items": rows}
 
+    def ethanol(self, municipality=None, weeks=26):
+        if self.over.get("ethanol_missing"):
+            raise ApiError(404, "NO_DATA", "Sem dados.")
+        ratios = self.over.get("ethanol_ratios", [0.66, 0.68, 0.72])
+        items = [{"week_start": (date(2026, 9, 13) + timedelta(weeks=i)).isoformat(), "gasoline_median": 6.0,
+                  "ethanol_median": 6.0 * r if r else None, "ratio": r, "pays": None if r is None else r <= 0.70,
+                  "reason": None if r else "MISSING_PRODUCT"} for i, r in enumerate(ratios)]
+        latest = next((i for i in reversed(items) if i["ratio"] is not None), None)
+        return {"data_as_of": "2026-10-01", "source_retrieved_at": None,
+                "location": {"uf": "SP", "municipality": municipality}, "threshold": 0.70, "latest": latest,
+                "items": items}
+
+    def station_choice(self, product, municipality):
+        latest = None if self.over.get("few_stations") else {
+            "week_start": "2026-09-27", "week_end": "2026-10-03", "stations": 25, "median": 6.29, "min": 5.89,
+            "p25": 6.09, "p75": 6.49, "saving": 0.40, "saving_tank": 20.0}
+        return {"data_as_of": "2026-10-01", "source_retrieved_at": None,
+                "location": {"uf": "SP", "municipality": municipality}, "product": product, "unit": "BRL/L",
+                "min_stations": 5, "tank_liters": 50, "latest": latest,
+                "typical_saving": None if latest is None else 0.40, "typical_weeks": 0 if latest is None else 52,
+                "typical_change": None if latest is None else 0.10}
+
     def data_quality(self, week_start=None):
         return {"data_as_of": "2026-10-01", "source_retrieved_at": None,
                 "last_load": self.freshness()["last_load"],
@@ -529,6 +551,44 @@ class HomePageTests(PageCase):
             self.assertIn("calculados por este projeto", captions)
 
 
+class RefuelSectionTests(PageCase):
+    """Marco 8b: economia de escolher o posto e etanol × gasolina, na página do município e na inicial."""
+
+    def test_saving_tank_comparison_and_ethanol_verdict(self):
+        at = self.run_page(EXPLORE, FakeApi(ethanol_ratios=[0.66, 0.68]),
+                           {"municipio": "CAMPINAS", "produto": "GASOLINA_COMUM"})
+        self.assertFalse(at.exception)
+        self.assertEqual({m.label: m.value for m in at.metric}["Mais barato frente à mediana"], "R$ 0,40")
+        captions = " ".join(c.value for c in at.caption)
+        self.assertIn("R\$ 20,00 num tanque de 50 L", captions)     # cifrão escapado: não vira fórmula
+        self.assertIn("**4,0 vezes**", captions)
+        success = " ".join(s.value for s in at.success)
+        self.assertIn("Etanol compensa:** custa 68,0%", success)        # a semana mais recente
+        self.assertNotIn("nas semanas seguintes falta", captions)
+
+    def test_gasoline_wins_when_ethanol_is_above_70_percent(self):
+        at = self.run_page(EXPLORE, FakeApi(ethanol_ratios=[0.66, 0.74]), {"municipio": "CAMPINAS"})
+        self.assertIn("Gasolina compensa:** o etanol custa 74,0%", " ".join(i.value for i in at.info))
+        self.assertEqual(len(at.warning), 0)  # não é alerta: amarelo fica para dado velho e falhas
+
+    def test_latest_ratio_from_an_older_week_is_said(self):
+        at = self.run_page(EXPLORE, FakeApi(ethanol_ratios=[0.66, None]), {"municipio": "CAMPINAS"})
+        self.assertIn("nas semanas seguintes falta um dos preços", " ".join(c.value for c in at.caption))
+
+    def test_few_stations_and_no_ethanol_are_explained_not_errors(self):
+        at = self.run_page(EXPLORE, FakeApi(few_stations=True, ethanol_missing=True), {"municipio": "CAMPINAS"})
+        self.assertFalse(at.exception)
+        self.assertEqual(len(at.error), 0)
+        infos = " ".join(i.value for i in at.info)
+        self.assertIn("Poucos postos pesquisados", infos)
+        self.assertIn("Sem preços de etanol e gasolina comum", infos)
+
+    def test_home_shows_the_state_ethanol_verdict(self):
+        at = self.run_page(HOME, FakeApi(ethanol_ratios=[0.65]))
+        self.assertIn("No estado (semana de 13/09/2026 a 19/09/2026): **Etanol compensa:**",
+                      " ".join(s.value for s in at.success))
+
+
 class ExplorePageTests(PageCase):
     def test_explore_cards_caption_tables_and_downloads(self):
         at = self.run_page(EXPLORE, FakeApi(), {"municipio": "CAMPINAS", "produto": "GASOLINA_COMUM"})
@@ -543,7 +603,7 @@ class ExplorePageTests(PageCase):
         self.assertIn("27/09/2026 a 03/10/2026", text)
         self.assertIn("25** observações em **25** postos", text)
         self.assertIn("R$/litro", text)
-        self.assertEqual(len(at.get("plotly_chart")), 1)
+        self.assertEqual(len(at.get("plotly_chart")), 2)  # histórico + etanol × gasolina
         stations = at.dataframe[-1].value
         self.assertAlmostEqual(list(stations["Último preço"])[0], 6.01)
         self.assertEqual(pd.Timestamp(list(stations["Data do preço"])[0]).date(), date(2026, 9, 28))

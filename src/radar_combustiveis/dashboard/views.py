@@ -166,6 +166,11 @@ def home(shortcut_page=None):
     show_table(rows, {"Mediana": fmt.brl, "Variação semanal": fmt.percent, "Postos na amostra": fmt.number_br,
                       "Municípios com cobertura baixa": fmt.number_br, "Semana (início)": tables.day})
     st.caption("Mediana de todas as observações da semana no estado; é um indicador da amostra pesquisada.")
+    ethanol = fetch_or_none("ethanol", None, 1)
+    if ethanol and ethanol["latest"]:
+        (st.success if ethanol["latest"]["pays"] else st.info)(
+            f"No estado (semana de {fmt.week_range_br(ethanol['latest']['week_start'])}): "
+            + ethanol_verdict(ethanol["latest"], ethanol["threshold"]) + " Veja o seu município em *Explorar município*.")
 
     coverage = quality["coverage"]
     st.subheader("Cobertura da semana mais recente")
@@ -240,6 +245,7 @@ def explore():
                    help="Mediana do município menos a mediana de todo o estado na mesma semana.")
     if latest["weekly_change"]["value"] is None:
         st.caption(f"Variação semanal: {fmt.change_text(latest['weekly_change'])}.")
+    refuel_section(municipality, product, labels, units)
 
     st.plotly_chart(charts.history_figure(history["items"], municipality, fmt.unit_label(units[product]),
                                           state_history["items"]), width="stretch")
@@ -278,6 +284,65 @@ def explore():
                             "text/csv", help="Série semanal do período mostrado, em CSV para Excel (separador `;`).")
     cols[1].download_button("Baixar postos (CSV)", exports.stations_csv(stations["items"], product),
                             f"postos_{slug}.csv", "text/csv", help="Último preço de cada posto, em CSV para Excel.")
+
+
+# -- Na hora de abastecer (Marco 8b) ---------------------------------------------------------
+
+
+def fetch_or_none(method, *args):
+    """Consulta que pode não ter dado no recorte: NO_DATA vira None, os demais erros sobem."""
+    try:
+        return fetch(method, *args)
+    except ApiError as exc:
+        if exc.code == "NO_DATA":
+            return None
+        raise
+
+
+def ethanol_verdict(point, threshold):
+    ratio = fmt.percent(point["ratio"], signed=False)
+    if point["pays"]:
+        return f"**Etanol compensa:** custa {ratio} do preço da gasolina (até {threshold:.0%} costuma valer a pena)."
+    return f"**Gasolina compensa:** o etanol custa {ratio} do preço dela, acima dos {threshold:.0%}."
+
+
+def refuel_section(municipality, product, labels, units):
+    st.subheader("Na hora de abastecer")
+    left, right = st.columns(2)
+    with left:
+        st.markdown(f"**Vale a pena escolher o posto?** ({labels[product]})")
+        choice = fetch_or_none("station_choice", product, municipality)
+        week = choice and choice["latest"]
+        if not week:
+            st.info(f"Poucos postos pesquisados por semana neste município para medir (mínimo de "
+                    f"{choice['min_stations'] if choice else 5}).")
+        else:
+            unit = fmt.unit_label(units[product])
+            st.metric("Mais barato frente à mediana", fmt.brl(week["saving"]),
+                      help=f"Mediana dos preços da semana menos o menor preço pesquisado ({unit}), semana de "
+                           f"{fmt.week_range_br(week['week_start'])}, {week['stations']} postos.")
+            tank = f" (R$ {fmt.decimal_br(week['saving_tank'])} num tanque de {choice['tank_liters']} L)"                 if week["saving_tank"] is not None else ""
+            st.caption(md(f"Na semana de {fmt.week_range_br(week['week_start'])}, o posto mais barato da amostra "
+                          f"estava {fmt.brl(week['saving'])} abaixo da mediana{tank}."))
+            if choice["typical_saving"] is not None and choice["typical_change"]:
+                times = choice["typical_saving"] / choice["typical_change"]
+                st.caption(md(f"No último ano ({choice['typical_weeks']} semanas), a diferença típica foi de "
+                              f"{fmt.brl(choice['typical_saving'])}, cerca de **{fmt.decimal_br(times, 1)} vezes** "
+                              f"um reajuste semanal típico de um posto ({fmt.brl(choice['typical_change'])})."))
+    with right:
+        st.markdown("**Etanol ou gasolina?**")
+        ethanol = fetch_or_none("ethanol", municipality, 26)
+        point = ethanol and ethanol["latest"]
+        if not point:
+            st.info("Sem preços de etanol e gasolina comum na mesma semana, com cobertura suficiente, neste município.")
+        else:
+            (st.success if point["pays"] else st.info)(ethanol_verdict(point, ethanol["threshold"]))
+            if point["week_start"] != ethanol["items"][-1]["week_start"]:
+                st.caption(f"Razão da semana de {fmt.week_range_br(point['week_start'])}; nas semanas seguintes falta "
+                           "um dos preços ou a cobertura foi baixa.")
+            st.plotly_chart(charts.ethanol_figure(ethanol["items"], ethanol["threshold"]), width="stretch")
+            st.caption("Regra prática: o etanol rende cerca de 70% da gasolina por litro; o ponto exato depende do "
+                       "carro. Medianas da semana; o preço de cada posto varia.")
 
 
 # -- Postos mais baratos e mais caros -------------------------------------------------------

@@ -154,3 +154,17 @@ def comparison_figures(series, unit):
     _layout(normalized, "Mediana semanal (índice, primeira semana comum = 100)", "Índice")
     normalized.update_layout(yaxis={"title": "Índice", "tickformat": ",.1f"})
     return absolute, normalized, base_week
+
+
+def ethanol_figure(items, threshold):
+    """Etanol como % da gasolina por semana, com a linha dos 70%. Semanas sem razão viram lacuna."""
+    weeks = [date.fromisoformat(i["week_start"]) for i in items]
+    ratios = [None if i["ratio"] is None else i["ratio"] * 100 for i in items]
+    fig = go.Figure(go.Scatter(x=weeks, y=ratios, mode="lines+markers", connectgaps=False, name="Etanol ÷ gasolina",
+                               line={"color": PALETTE[2]},
+                               hovertemplate="semana de %{x|%d/%m/%Y}: %{y:.1f}%<extra></extra>"))
+    fig.add_hline(y=threshold * 100, line_dash="dash", line_color=STATE_COLOR,
+                  annotation_text=f"{threshold * 100:.0f}%: abaixo, o etanol compensa", annotation_position="top left")
+    fig.update_layout(margin={"l": 10, "r": 10, "t": 30, "b": 30}, height=260, showlegend=False,
+                      yaxis={"title": "% do preço da gasolina", "ticksuffix": "%"}, separators=",.")
+    return fig
