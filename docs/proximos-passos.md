@@ -32,6 +32,14 @@ Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia e
 2. [x] **Funções puras em `study/` (2026-10-13):** `common`, `q1`, `q2`, `q3` e `gate`, sem acesso ao banco; `tests/test_study.py` com dados sintéticos de resposta conhecida (efeito plantado recuperado, nenhum efeito onde não há, lacre do teste final, cobertura do IC agrupado, Kaplan–Meier e log-rank iguais aos do scipy). Sem `statsmodels`: `scipy` (já instalado) passou a dependência direta. Detalhes de implementação que o texto não fixava estão na tabela de desvios do protocolo, todos **antes** de resultados. Ainda não rodou sobre dados reais.
 3. [x] **Execução real (2026-10-13):** `scripts/run_study.py` sobre 2022-11-13 a 2026-03-29, relatórios reproduzíveis em `reports/study/`, conferência independente em SQL; ver "Verificação do Marco 8" no PLAN.
 
+## Ordem decidida (2026-10-13), pensando em portfólio
+
+1. **Páginas Regiões e Estudo** no painel (parte do Marco 9 que não depende de fonte externa).
+2. **Demonstrativo online e README contando a história**: adianta parte dos Marcos 12 (hospedagem no Streamlit Community Cloud, pacote instantâneo) e 13 (README de estudo de caso: problema, três achados, um gráfico, link da demo).
+3. **Fontes externas** (resto do Marco 9: dólar do Banco Central e preço de produtores da ANP), depois o Marco 10.
+
+Motivo: hoje ninguém consegue ver o projeto sem instalar tudo; a demo e um README curto valem mais para quem avalia do que uma análise nova. Opcional oferecido: guia de estudo das escolhas de método (efeito fixo, erro agrupado, bootstrap em blocos, precedência temporal, lacre do teste) para entrevistas.
+
 ## Próximas decisões
 
 - [ ] **Reavaliar o escopo do Marco 10** (G1 não passou). Pelo protocolo, decidir com o usuário antes de seguir: por exemplo, manter a modelagem v2 como desenhada, reduzi-la ou trocar a camada L2 (que dependia de líderes de Q3, achado não estável).
