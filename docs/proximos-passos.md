@@ -35,8 +35,7 @@ Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia e
 ## Próximas decisões
 
 - [ ] **Reavaliar o escopo do Marco 10** (G1 não passou). Pelo protocolo, decidir com o usuário antes de seguir: por exemplo, manter a modelagem v2 como desenhada, reduzi-la ou trocar a camada L2 (que dependia de líderes de Q3, achado não estável).
-- [ ] **Marco 9 (fontes externas)** começa pela triagem de licença; independe do G1.
-- [ ] Commitar o fim do Marco 8 e fazer o push (os commits das etapas 1 e 2 ainda estão só na máquina local).
+- [ ] **Marco 9 (fontes externas e páginas de comparação)** começa pela triagem de licença do dólar (Banco Central) e do preço de produtores (ANP); independe do G1. Inclui, a pedido do usuário, as páginas **Regiões** (dados atuais, rankings) e **Estudo** (achados congelados) no painel.
 
 O Marco 9 (fontes externas) começa pela triagem de licença e cobertura; fonte que falhar é descartada com o motivo registrado.
 
