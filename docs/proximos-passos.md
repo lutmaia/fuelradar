@@ -6,7 +6,7 @@ Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia e
 
 - **Marcos 0 a 7 concluídos e commitados**: ingestão, qualidade, banco, API, painel, previsões, variações incomuns e comparação por bandeira (239 testes aprovados contra o PostgreSQL do Docker).
 - **Resultado do Marco 7:** o candidato LightGBM **não foi aprovado** (7,9% pior que "último valor" no MAE ponderado); o baseline "último valor" está publicado. Relatório em `reports/forecasting/backtest.md`, cartão em [model-card.md](model-card.md).
-- **Desenho da versão completa** (estudo de caso, marcos 8 a 13) em [estudo-de-caso.md](estudo-de-caso.md), com as decisões do usuário já incorporadas (as de protocolo em 2026-10-13: Q1 a Q3 enxutas, partição da seção 6.2, gate G1, desfecho primário e regra de decisão mantidos, modo sombra dispensado, demonstrativo no Streamlit Community Cloud). **Desenho aprovado em 2026-10-13.** O Marco 8 **começou** (etapa 1 de 3 feita; ver abaixo).
+- **Desenho da versão completa** (estudo de caso, marcos 8 a 13) em [estudo-de-caso.md](estudo-de-caso.md), com as decisões do usuário já incorporadas (as de protocolo em 2026-10-13: Q1 a Q3 enxutas, partição da seção 6.2, gate G1, desfecho primário e regra de decisão mantidos, modo sombra dispensado, demonstrativo no Streamlit Community Cloud). **Desenho aprovado em 2026-10-13.** O Marco 8 **começou** (etapas 1 e 2 de 3 feitas; ver abaixo).
 
 ## Decisões já tomadas (não reabrir sem motivo)
 
@@ -27,7 +27,7 @@ Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia e
 ## Marco 8 em andamento — protocolo e estudo exploratório
 
 1. [x] **Protocolo (2026-10-13):** [docs/estudo/protocolo.md](estudo/protocolo.md), janelas em `forecasting/protocol.py`, [ADR 0008](decisions/0008-protocolo-do-estudo.md) e `tests/test_protocol.py`. **Precisa estar commitado antes da etapa 3**; nenhum resultado foi calculado.
-2. [ ] **Funções puras em `study/`** para Q1 a Q3, testadas com dados sintéticos de resposta conhecida; justificar e adicionar `statsmodels` se necessário.
+2. [x] **Funções puras em `study/` (2026-10-13):** `common`, `q1`, `q2`, `q3` e `gate`, sem acesso ao banco; `tests/test_study.py` com dados sintéticos de resposta conhecida (efeito plantado recuperado, nenhum efeito onde não há, lacre do teste final, cobertura do IC agrupado, Kaplan–Meier e log-rank iguais aos do scipy). Sem `statsmodels`: `scipy` (já instalado) passou a dependência direta. Detalhes de implementação que o texto não fixava estão na tabela de desvios do protocolo, todos **antes** de resultados. Ainda não rodou sobre dados reais.
 3. [ ] **Execução real** (`scripts/run_study.py`) só sobre 2022-11-13 a 2026-03-29, relatórios em `reports/study/`, gate G1 e limitações; então atualizar o `PLAN.md`.
 
 O Marco 9 (fontes externas) começa pela triagem de licença e cobertura; fonte que falhar é descartada com o motivo registrado.

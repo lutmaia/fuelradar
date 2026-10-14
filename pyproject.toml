@@ -19,6 +19,8 @@ dependencies = [
     "httpx==0.28.1",
     # Previsão (Marco 7): candidato LightGBM da arquitetura (traz scipy). Sem scikit-learn: a API nativa basta.
     "lightgbm==4.7.0",
+    # Estudo (Marco 8): distribuições t, F e qui-quadrado. Já vinha com o LightGBM; agora é uso direto.
+    "scipy==1.18.1",
 ]
 
 # Backend de build e ferramentas serão definidos quando necessários.

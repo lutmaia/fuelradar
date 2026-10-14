@@ -98,4 +98,10 @@ Qualquer mudança neste protocolo depois do commit inicial é registrada abaixo,
 
 | Data | Mudança | Motivo | Antes ou depois de resultados |
 |---|---|---|---|
-| — | — | — | — |
+| 2026-10-13 | **Q1:** o erro-padrão agrupado usa a correção G/(G−1)·(N−1)/(N−K), com K contando os efeitos fixos absorvidos, e o IC usa a distribuição t com G−1 graus de liberdade. | O texto dizia só "agrupado por posto"; é a correção usual quando os efeitos fixos não estão contidos nos grupos (mais conservadora). | Antes: esclarecimento de implementação, testado só com dados sintéticos. |
+| 2026-10-13 | **Q1:** a comparação das três maiores bandeiras usa só postos `BRANCA`, `IPIRANGA`, `RAIZEN` e `VIBRA`, com a branca como referência. | Definir a amostra do secundário. | Antes. |
+| 2026-10-13 | **Q2:** o p-valor dos secundários (para o Holm) é o do *bootstrap*: duas vezes a menor fração de reamostras de cada lado do zero. | O texto pedia Holm sem dizer de onde vem o p-valor. | Antes. |
+| 2026-10-13 | **Q3:** um seguidor só é testado com pelo menos 30 semanas utilizáveis (com Δ e defasagens); abaixo disso fica "não testável" e sai do denominador das frações. | Teste F com poucas semanas não tem poder; o texto não fixava um mínimo. | Antes. |
+| 2026-10-13 | **Q3:** nas checagens de limiar de evento (R$ 0,05 e R$ 0,15), o critério de "acompanhar" continua R$ 0,05. Δ é calculado no calendário inteiro e depois recortado em cada subperíodo. | Deixar explícito o que a robustez varia. | Antes. |
+| 2026-10-13 | **Todas:** uma checagem de robustez sem estimativa (por exemplo, sem dados suficientes) impede o "achado estável"; ausência de evidência não conta como mesmo sinal. | Evitar que falta de dado passe por concordância. | Antes. |
+| 2026-10-13 | **Dependências:** sem `statsmodels`; regressão, teste F, Kaplan–Meier e log-rank estão em `study/` com numpy, pandas e as distribuições do `scipy`, conferidos contra o scipy nos testes. | Menos uma dependência; o scipy já estava instalado. | Antes. |
