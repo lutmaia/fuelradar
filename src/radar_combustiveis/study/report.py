@@ -288,6 +288,101 @@ def write_reports(meta, results, verdict, out_dir):
         paths.append(path)
     for name, figure in (("q1.html", q1_figure), ("q2.html", q2_figure), ("q3.html", q3_figure)):
         path = out_dir / name
-        figure(results[name[:2]]).write_html(path, include_plotlyjs="cdn", full_html=True)
+        figure(results[name[:2]]).write_html(path, include_plotlyjs="cdn", full_html=True, div_id="figura")
         paths.append(path)
+    return paths
+
+
+# -- Marco 8b: descritivo -----------------------------------------------------------------------
+
+REGION_LABEL = {"metropolitana": "Região metropolitana (sem a capital)", "litoral": "Litoral", "interior": "Interior"}
+
+
+def descriptive_md(meta, r):
+    e, s, sx, g = r["ethanol"], r["station_choice"], r["station_choice_with_extremes"], r["regions"]
+    lines = header(meta, "Análises descritivas para o consumidor (Marco 8b)")
+    lines += ["Definições: [descritivo.md](../../docs/estudo/descritivo.md). São medidas descritivas, sem teste de "
+              "hipótese.", "", "## 1. Etanol ou gasolina?", "",
+              f"Etanol compensa (até 70% do preço da gasolina) em **{num(hundred(e['share_city_weeks']), '.1f')}%** das "
+              f"{integer(e['city_weeks'])} combinações de município e semana. Na mediana do estado, em "
+              f"{num(hundred(e['state']['share']), '.1f')}% das {e['state']['weeks']} semanas (razão mediana "
+              f"{num(hundred(e['state']['median_ratio']), '.1f')}%; mínima "
+              f"{num(hundred(e['state']['min']['ratio']), '.1f')}% na semana de {e['state']['min']['week']}, máxima "
+              f"{num(hundred(e['state']['max']['ratio']), '.1f')}% na de {e['state']['max']['week']}).", "",
+              f"Na última semana da janela ({e['latest']['week']}), compensava em {e['latest']['paying']} de "
+              f"{e['latest']['cities']} municípios.", "",
+              "| Ano | Município-semanas em que compensa | Base |", "|---|---|---|"]
+    lines += [f"| {y} | {num(hundred(v['share']), '.1f')}% | {integer(v['n'])} |" for y, v in e["by_year"].items()]
+    lines += ["", f"Municípios com pelo menos 26 semanas com os dois preços: {e['ranked_cities']}.", "",
+              "| Compensa com mais frequência | % das semanas | Razão mediana | Compensa com menos frequência | "
+              "% das semanas | Razão mediana |", "|---|---|---|---|---|---|"]
+    for a, b in zip(e["most"], e["least"]):
+        lines.append(f"| {a['municipality']} | {num(hundred(a['share']), '.0f')}% | "
+                     f"{num(hundred(a['median_ratio']), '.1f')}% | {b['municipality']} | "
+                     f"{num(hundred(b['share']), '.0f')}% | {num(hundred(b['median_ratio']), '.1f')}% |")
+    ratio = (s["saving"]["median"] / s["typical_change"]
+             if s["typical_change"] and s["saving"]["median"] is not None else None)
+    lines += ["", "## 2. Quanto se economiza escolhendo o posto? (gasolina comum)", "",
+              f"Em {integer(s['city_weeks'])} combinações de município e semana com pelo menos 5 postos, o posto mais "
+              f"barato fica tipicamente **R$ {num(s['saving']['median'])}/L abaixo da mediana** (P25–P75: "
+              f"R$ {num(s['saving']['p25'])} a {num(s['saving']['p75'])}), cerca de {num(s['saving_pct'], '.1f')}% "
+              f"do preço, ou **R$ {num(s['saving_tank'])} num tanque de 50 L**. O \"meio\" do mercado (P25 a P75) "
+              f"tem largura típica de R$ {num(s['spread']['median'])}/L.", "",
+              f"**Comparação com o tempo:** uma mudança de preço típica no mesmo posto, de uma semana para a outra, "
+              f"é de R$ {num(s['typical_change'])}/L; a economia de escolher o posto equivale a "
+              f"{num(ratio, '.1f')} vezes esse reajuste típico.", "",
+              f"Contando os preços marcados como extremos, a economia mediana seria R$ {num(sx['saving']['median'])}/L.",
+              "", "| Porte | Município-semanas | Economia mediana (R$/L) |", "|---|---|---|"]
+    lines += [f"| {k} | {integer(v['city_weeks'])} | {num(v['saving'])} |" for k, v in s.get("by_size", {}).items()]
+    lines += ["", "Onde escolher o posto faz mais diferença (pelo menos 26 semanas):", "",
+              "| Município | Semanas | Economia mediana (R$/L) |", "|---|---|---|"]
+    lines += [f"| {c['municipality']} | {c['weeks']} | {num(c['saving'])} |" for c in s["most"]]
+    lines += ["", "## 3. Capital × região metropolitana × litoral × interior", "",
+              "Diferença da mediana semanal da região para a da capital (negativo = mais barato que a capital):", "",
+              "| Produto | Região | Diferença mediana (R$/L) | Semanas mais barata que a capital | Semanas |",
+              "|---|---|---|---|---|"]
+    for product, by_region in g["products"].items():
+        for region, v in by_region.items():
+            lines.append(f"| {LABEL[product]} | {REGION_LABEL[region]} | {num(v['median_diff'], '+.3f')} | "
+                         f"{num(hundred(v['share_cheaper']), '.0f')}% | {v['weeks']} |")
+    gc = g["products"].get(PRIMARY_PRODUCT, {})
+    years = sorted({y for v in gc.values() for y in v["by_year"]})
+    if years:
+        lines += ["", "Diferença mediana por ano, gasolina comum (R$/L):", "",
+                  "| Região | " + " | ".join(years) + " |", "|---|" + "---|" * len(years)]
+        for region, v in gc.items():
+            lines.append(f"| {REGION_LABEL[region]} | " + " | ".join(num(v["by_year"].get(y), "+.3f") for y in years)
+                         + " |")
+    present = g["municipalities"]
+    lines += ["", "Municípios de cada região presentes nos dados: "
+              + "; ".join(f"{REGION_LABEL.get(k, k).lower()} ({len(v)})" + (f": {', '.join(v)}" if k != "interior" else "")
+                          for k, v in present.items()) + ".", "",
+              "## Limitações", "",
+              "- A ANP pesquisa uma amostra; o \"posto mais barato\" é o mais barato da amostra da semana, e os preços "
+              "de uma semana podem ser de dias diferentes.",
+              "- A regra dos 70% é aproximada e não substitui o consumo do próprio carro.",
+              "- A mediana regional pesa mais os municípios com mais postos pesquisados; as listas de região foram "
+              "escritas à mão.",
+              "- Descritivo não é causa: diferenças regionais refletem frete, tributos, concorrência e composição da "
+              "amostra, que este relatório não separa."]
+    return lines
+
+
+def descriptive_figure(r):
+    series = r["ethanol"]["state"]["series"]
+    fig = go.Figure(go.Scatter(x=[p["week"] for p in series], y=[hundred(p["ratio"]) for p in series],
+                               mode="lines+markers", name="Etanol ÷ gasolina (mediana estadual)"))
+    fig.add_hline(y=70, line_dash="dash", annotation_text="70%: abaixo da linha, o etanol compensa")
+    fig.update_layout(title="Etanol como % do preço da gasolina, mediana do estado de SP",
+                      yaxis_title="%", height=400, separators=",.")
+    return fig
+
+
+def write_descriptive(meta, results, out_dir):
+    out_dir.mkdir(parents=True, exist_ok=True)
+    data = jsonable(dict(meta=meta, **results))
+    paths = [out_dir / "descritivo.json", out_dir / "descritivo.md", out_dir / "descritivo.html"]
+    paths[0].write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    paths[1].write_text("\n".join(descriptive_md(data["meta"], data)) + "\n", encoding="utf-8")
+    descriptive_figure(data).write_html(paths[2], include_plotlyjs="cdn", full_html=True, div_id="figura")
     return paths

@@ -17,7 +17,7 @@ from scipy import stats
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from radar_combustiveis.forecasting import protocol  # noqa: E402
-from radar_combustiveis.study import common, gate, q1, q2, q3  # noqa: E402
+from radar_combustiveis.study import common, descriptive as ds, gate, q1, q2, q3  # noqa: E402
 
 START = date(2023, 1, 1)  # domingo, dentro do subperíodo A
 GC = "GASOLINA_COMUM"
@@ -375,6 +375,89 @@ class ReportTests(unittest.TestCase):
         self.assertRegex(q1_text, r"\*\*-3,\d\d%\*\*")      # decimal com vírgula
         self.assertNotRegex(q1_text, r"-\d+\.\d\d%")       # nunca ponto decimal
         self.assertIsNone(data["q1"]["robustness"]["subperiodo_b"]["beta"])  # NaN vira null no JSON
+
+
+class DescriptiveTests(unittest.TestCase):
+    def test_ethanol_pays_at_70_percent_and_low_coverage_is_skipped(self):
+        rows = []
+        for w in range(30):
+            for city, ratio in (("A", 0.65), ("B", 0.70), ("C", 0.75)):
+                rows.append(dict(municipality=city, product=GC, week_start=week(w), median=6.0, stations=9,
+                                 low_coverage=False))
+                rows.append(dict(municipality=city, product=ds.ETHANOL, week_start=week(w), median=6.0 * ratio,
+                                 stations=9, low_coverage=(city == "C" and w < 2)))
+        city = pd.DataFrame(rows)
+        state = pd.DataFrame([dict(product=p, week_start=week(w), median=m) for w in range(30)
+                              for p, m in ((GC, 6.0), (ds.ETHANOL, 4.0 if w < 10 else 4.5))])
+        r = ds.ethanol_vs_gasoline(city, state)
+        self.assertEqual(r["city_weeks"], 88)                      # C perde 2 semanas de cobertura baixa
+        self.assertAlmostEqual(r["share_city_weeks"], 60 / 88)    # A e B compensam (70% exato conta)
+        self.assertAlmostEqual(r["state"]["share"], 10 / 30)
+        self.assertEqual([c["municipality"] for c in r["most"]][:2], ["A", "B"])
+        self.assertEqual(r["least"][0]["municipality"], "C")
+        self.assertEqual((r["latest"]["cities"], r["latest"]["paying"]), (3, 2))
+        self.assertEqual(r["state"]["min"]["week"], week(0))
+
+    def test_station_choice_saving_ignores_small_weeks_and_extremes(self):
+        rows = []
+        for w in range(30):
+            for s, price in enumerate([5.80, 6.00, 6.10, 6.20, 6.30]):
+                rows.append(dict(station_id=s, municipality="A", product=GC, week_start=week(w), price=price,
+                                 extreme=False))
+            rows.append(dict(station_id=9, municipality="A", product=GC, week_start=week(w), price=4.0, extreme=True))
+            for s, price in enumerate([5.0, 5.5]):  # só 2 postos: não entra
+                rows.append(dict(station_id=20 + s, municipality="B", product=GC, week_start=week(w), price=price,
+                                 extreme=False))
+        r = ds.station_choice(pd.DataFrame(rows), sizes={"A": "medio"})
+        self.assertEqual(r["city_weeks"], 30)
+        self.assertAlmostEqual(r["saving"]["median"], 0.30)          # 6,10 − 5,80
+        self.assertAlmostEqual(r["saving_tank"], 15.0)
+        self.assertAlmostEqual(r["spread"]["median"], 0.20)          # 6,20 − 6,00
+        self.assertEqual(r["by_size"]["medio"]["city_weeks"], 30)
+        with_extreme = ds.station_choice(pd.DataFrame(rows), exclude_extreme=False)
+        self.assertGreater(with_extreme["saving"]["median"], 0.30)  # o 4,00 vira o mínimo
+        self.assertTrue(math.isnan(r["typical_change"]))            # preços constantes: nenhuma mudança
+
+    def test_regions_and_difference_to_the_capital(self):
+        rows = []
+        for w in range(10):
+            for city, price in (("SAO PAULO", 6.0), ("SANTOS", 6.2), ("CAMPINAS", 5.9), ("OSASCO", 6.1)):
+                rows.append(dict(station_id=city, municipality=city, product=GC, week_start=week(w),
+                                 price=price + (0.2 if city == "CAMPINAS" and w >= 8 else 0), extreme=False))
+        r = ds.regions(pd.DataFrame(rows))
+        self.assertEqual(r["municipalities"]["litoral"], ["SANTOS"])
+        self.assertEqual(r["municipalities"]["metropolitana"], ["OSASCO"])
+        gc = r["products"][GC]
+        self.assertAlmostEqual(gc["litoral"]["median_diff"], 0.2)
+        self.assertAlmostEqual(gc["interior"]["median_diff"], -0.1)
+        self.assertAlmostEqual(gc["interior"]["share_cheaper"], 0.8)
+        self.assertEqual(ds.region_of("SAO PAULO"), "capital")
+        self.assertEqual(ds.region_of("RIBEIRAO PRETO"), "interior")
+
+    def test_descriptive_report_is_written(self):
+        import tempfile
+        from radar_combustiveis.study.report import write_descriptive
+        city, state = q3_data(weeks=40)
+        ethanol = city.assign(product=ds.ETHANOL, median=city["median"] * 0.68)
+        city = pd.concat([city, ethanol])
+        state = pd.concat([state, state.assign(product=ds.ETHANOL, median=state["median"] * 0.72)])
+        obs = q2_data(stations=6, weeks=40).assign(municipality="SAO PAULO")
+        obs = pd.concat([obs, q2_data(stations=6, weeks=40, seed=2).assign(municipality="SANTOS", station_id=lambda d: d["station_id"] + 100)])
+        meta = dict(uf="SP", code_sha="abc", protocol_commit="def", seed=protocol.SEED, bootstrap_reps=0,
+                    data_hashes=dict(combined="1" * 64, observations="2" * 64, city="3" * 64, state="4" * 64),
+                    window=[protocol.STUDY_START, protocol.STUDY_END], observations=len(obs), weeks_with_data=40)
+        with tempfile.TemporaryDirectory() as tmp:
+            write_descriptive(meta, ds.analyze(obs, city, state, q3.sizes(city)), Path(tmp))
+            text = (Path(tmp) / "descritivo.md").read_text(encoding="utf-8")
+        self.assertIn("Etanol compensa (até 70% do preço da gasolina) em **100,0%**", text)
+        self.assertIn("| Litoral |", text)
+        self.assertIn("num tanque de 50 L", text)
+
+    def test_refuses_the_final_test(self):
+        obs = q2_data(stations=2, weeks=2).assign(municipality="A")
+        obs.loc[0, "week_start"] = protocol.TEST_START
+        with self.assertRaises(protocol.HoldoutViolation):
+            ds.station_choice(obs)
 
 
 class GateTests(unittest.TestCase):

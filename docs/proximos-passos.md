@@ -8,6 +8,7 @@ Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia e
 - **Resultado do Marco 7:** o candidato LightGBM **não foi aprovado** (7,9% pior que "último valor" no MAE ponderado); o baseline "último valor" está publicado. Relatório em `reports/forecasting/backtest.md`, cartão em [model-card.md](model-card.md).
 - **Desenho da versão completa** (estudo de caso, marcos 8 a 13) em [estudo-de-caso.md](estudo-de-caso.md), com as decisões do usuário já incorporadas (as de protocolo em 2026-10-13: Q1 a Q3 enxutas, partição da seção 6.2, gate G1, desfecho primário e regra de decisão mantidos, modo sombra dispensado, demonstrativo no Streamlit Community Cloud). **Desenho aprovado em 2026-10-13.**
 - **Resultado do Marco 8:** Q1 (bandeira branca −5,6%) é achado estável; Q2 e Q3 não. **Gate G1 não passou** (1 de 3). Resumo em `reports/study/resumo.md`.
+- **Marco 8b (descritivo):** etanol × gasolina, economia escolhendo o posto e regiões, em `reports/study/descritivo.md`. Levar algum desses números ao painel ainda não foi decidido.
 
 ## Decisões já tomadas (não reabrir sem motivo)
 
