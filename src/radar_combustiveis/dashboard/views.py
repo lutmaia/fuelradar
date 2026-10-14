@@ -264,7 +264,7 @@ def explore():
                f"semana tem {fmt.number_br(latest['sample']['stations'])}). Cada preço é o último registrado para o "
                "posto, **em datas que podem diferir**; confira a coluna de data.")
     show_table([{
-        "Posto": s["name"] or s["legal_name"], "Bandeira": s["brand"] or fmt.ND, "Endereço": s["address"] or fmt.ND,
+        "Posto": s["name"] or s["legal_name"], "Bandeira": fmt.brand_label(s["brand"]), "Endereço": s["address"] or fmt.ND,
         "Bairro": s["neighborhood"] or fmt.ND, "Último preço": s["latest_price"],
         "Data do preço": tables.to_date(s["latest_price_date"]),
         "Aviso": "preço extremo" if "preco_extremo" in s["latest_price_flags"] else ""} for s in stations["items"]],
@@ -291,7 +291,7 @@ def station_rows(stations, with_warning):
                "Data do preço": tables.to_date(s["latest_price_date"])}
         if with_warning:  # as duas tabelas ficam com as mesmas colunas
             row["Aviso"] = "preço extremo" if "preco_extremo" in s["latest_price_flags"] else ""
-        row["Bandeira"] = s["brand"] or fmt.ND
+        row["Bandeira"] = fmt.brand_label(s["brand"])
         row["Endereço"] = ", ".join(part for part in (s["address"], s["neighborhood"]) if part) or fmt.ND
         rows.append(row)
     return rows
@@ -365,7 +365,7 @@ def brands_page():
     st.plotly_chart(charts.brand_figure(body["items"], body["reference_median"], fmt.unit_label(units[product])),
                     width="stretch")
     show_table([{
-        "Bandeira": i["brand"], "Postos": i["stations"], "Mediana": i["median"],
+        "Bandeira": fmt.brand_label(i["brand"]), "Postos": i["stations"], "Mediana": i["median"],
         "Diferença p/ todos": i["difference_to_reference"], "Mínimo": i["min"], "Máximo": i["max"]}
         for i in body["items"]],
         {"Postos": fmt.number_br, "Mediana": fmt.brl, "Diferença p/ todos": fmt.signed_brl,
@@ -376,7 +376,8 @@ def brands_page():
                    "poucos postos diz pouco.")
     st.info("**Preço não é qualidade.** A diferença entre bandeiras mostra quanto cada grupo cobra, não a qualidade "
             "do combustível. *Bandeira branca* são postos sem contrato de fornecimento exclusivo com uma "
-            "distribuidora, e o preço também reflete localização, volume e margem.")
+            "distribuidora, e o preço também reflete localização, volume e margem. A ANP registra a distribuidora, "
+            "não a marca da fachada: a **Raízen** opera a marca **Shell** e a **Vibra**, a marca **Petrobras**.")
 
 
 # -- Previsões ------------------------------------------------------------------------------

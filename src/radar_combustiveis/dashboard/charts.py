@@ -8,6 +8,8 @@ from datetime import date, timedelta
 
 import plotly.graph_objects as go
 
+from . import formatting as fmt
+
 PALETTE = ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#56B4E9", "#D55E00"]
 STATE_COLOR = "#555555"
 LOW_COLOR = "#D55E00"
@@ -48,7 +50,7 @@ def brand_figure(items, reference, unit):
     Pontos, não barras: o eixo não começa em zero e barras cortadas exagerariam as diferenças."""
     ordered = sorted(items, key=lambda i: i["median"], reverse=True)
     fig = go.Figure(go.Scatter(
-        x=[i["median"] for i in ordered], y=[f"{i['brand']} ({i['stations']} postos)" for i in ordered],
+        x=[i["median"] for i in ordered], y=[f"{fmt.brand_label(i['brand'])} · {i['stations']} postos" for i in ordered],
         mode="markers", marker={"size": 13, "color": [PALETTE[0] if i["median"] <= reference else PALETTE[1]
                                                       for i in ordered]},
         error_x={"type": "data", "symmetric": False, "color": "#888888", "thickness": 2,

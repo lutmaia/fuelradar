@@ -78,6 +78,13 @@ class FormattingTests(unittest.TestCase):
         self.assertEqual(fmt.signed_brl(-0.1), "−R$ 0,10")
         self.assertEqual(fmt.signed_brl(None), "N/D")
 
+    def test_popular_brand_names_are_shown_in_parentheses(self):
+        self.assertEqual(fmt.brand_label("RAIZEN"), "RAIZEN (Shell)")
+        self.assertEqual(fmt.brand_label("VIBRA"), "VIBRA (Petrobras)")
+        self.assertEqual(fmt.brand_label("VIBRA ENERGIA"), "VIBRA ENERGIA (Petrobras)")
+        self.assertEqual(fmt.brand_label("IPIRANGA"), "IPIRANGA")
+        self.assertEqual(fmt.brand_label(None), fmt.ND)
+
     def test_dates_and_instants(self):
         self.assertEqual(fmt.date_br("2026-09-27"), "27/09/2026")
         self.assertEqual(fmt.date_br(date(2026, 1, 5)), "05/01/2026")
@@ -398,7 +405,9 @@ class FakeApi:
             {"brand": "BRANCA", "stations": 12, "observations": 12, "median": 6.19, "mean": 6.2, "min": 5.89,
              "max": 6.49, "difference_to_reference": -0.2},
             {"brand": "IPIRANGA", "stations": 9, "observations": 9, "median": 6.49, "mean": 6.5, "min": 6.29,
-             "max": 6.79, "difference_to_reference": 0.1}]
+             "max": 6.79, "difference_to_reference": 0.1},
+            {"brand": "RAIZEN", "stations": 7, "observations": 7, "median": 6.59, "mean": 6.6, "min": 6.39,
+             "max": 6.89, "difference_to_reference": 0.2}]
         return {"data_as_of": "2026-10-09", "source_retrieved_at": None,
                 "location": {"uf": "SP", "municipality": municipality}, "product": product, "unit": "BRL/L",
                 "week_start": "2026-10-04", "week_end": "2026-10-10", "reference_median": 6.39,
@@ -619,11 +628,14 @@ class BrandsPageTests(PageCase):
         at = self.run_page(BRANDS, FakeApi(), {"municipio": "CAMPINAS"})
         self.assertFalse(at.exception)
         table = at.dataframe[0].value
-        self.assertEqual(list(table["Bandeira"]), ["BRANCA", "IPIRANGA"])
+        self.assertEqual(list(table["Bandeira"]), ["BRANCA", "IPIRANGA", "RAIZEN (Shell)"])
         self.assertAlmostEqual(list(table["Diferença p/ todos"])[0], -0.2)
         self.assertEqual(len(at.get("plotly_chart")), 1)
         text = self.text_of(at) + " ".join(i.value for i in at.info)
         self.assertIn("Preço não é qualidade", text)
+        self.assertIn("a marca **Shell**", text)
+        labels = json.loads(at.get("plotly_chart")[0].proto.spec)["data"][0]["y"]
+        self.assertIn("RAIZEN (Shell) · 7 postos", labels)
         self.assertIn("2 bandeira(s) com menos de 3 postos", text)
         self.assertNotIn("adulter", text.lower())
 

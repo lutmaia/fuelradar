@@ -352,6 +352,31 @@ class Q3Tests(unittest.TestCase):
             q3.analyze(city, state)
 
 
+class ReportTests(unittest.TestCase):
+    def test_reports_are_written_with_brazilian_numbers_and_the_gate(self):
+        import json
+        import tempfile
+        from radar_combustiveis.study.report import write_reports
+        city, state = q3_data(weeks=60)
+        results = dict(q1=q1.analyze(q1_data(cities=10, weeks=12)), q2=q2.analyze(q2_data(stations=30), reps=30),
+                       q3=q3.analyze(city, state))
+        meta = dict(uf="SP", code_sha="abc", protocol_commit="def", seed=protocol.SEED, bootstrap_reps=30,
+                    data_hashes=dict(combined="1" * 64, observations="2" * 64, city="3" * 64, state="4" * 64),
+                    window=[protocol.STUDY_START, protocol.STUDY_END], observations=1234567, weeks_with_data=10)
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = write_reports(meta, results, gate.g1(results), Path(tmp))
+            self.assertEqual(sorted(p.name for p in paths),
+                             ["q1.html", "q1.md", "q2.html", "q2.md", "q3.html", "q3.md", "resultados.json", "resumo.md"])
+            summary = (Path(tmp) / "resumo.md").read_text(encoding="utf-8")
+            q1_text = (Path(tmp) / "q1.md").read_text(encoding="utf-8")
+            data = json.loads((Path(tmp) / "resultados.json").read_text(encoding="utf-8"))
+        self.assertIn("1.234.567 observações", summary)
+        self.assertIn("Gate G1: não passou", summary)
+        self.assertRegex(q1_text, r"\*\*-3,\d\d%\*\*")      # decimal com vírgula
+        self.assertNotRegex(q1_text, r"-\d+\.\d\d%")       # nunca ponto decimal
+        self.assertIsNone(data["q1"]["robustness"]["subperiodo_b"]["beta"])  # NaN vira null no JSON
+
+
 class GateTests(unittest.TestCase):
     def test_two_of_three(self):
         self.assertTrue(gate.g1({"q1": {"stable": True}, "q2": {"stable": False}, "q3": {"stable": True}})["passed"])

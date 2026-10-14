@@ -16,6 +16,9 @@ CHANGE_REASONS = {
     "LOW_COVERAGE": "cobertura insuficiente",
 }
 UNIT_LABELS = {"BRL/L": "R$/litro", "BRL/M3": "R$/m³", "BRL/13KG": "R$/botijão de 13 kg"}
+# A ANP registra a distribuidora; o consumidor conhece a marca da fachada. Só exibição: dados,
+# filtros e CSV mantêm o nome publicado pela ANP.
+POPULAR_BRANDS = {"RAIZEN": "Shell", "VIBRA": "Petrobras", "VIBRA ENERGIA": "Petrobras"}
 
 
 def _br_number(value, decimals):
@@ -82,6 +85,14 @@ def change_text(weekly_change):
 
 def coverage_label(status):
     return COVERAGE_LABELS.get(status, status)
+
+
+def brand_label(brand):
+    """`RAIZEN` → `RAIZEN (Shell)`; bandeira sem marca popular conhecida fica como está."""
+    if not brand:
+        return ND
+    popular = POPULAR_BRANDS.get(brand.strip().upper())
+    return f"{brand} ({popular})" if popular else brand
 
 
 def unit_label(unit):
