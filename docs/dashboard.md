@@ -50,6 +50,16 @@ Os botões baixam CSV com `;` como separador, vírgula decimal e BOM, para abrir
 
 A página de qualidade mostra o modelo publicado e o resultado do backtest, inclusive quando o candidato de machine learning não é aprovado (hoje o publicado é o baseline "último valor"). A previsão é da mediana semanal, não do preço de um posto, e não considera petróleo, câmbio nem política de preços. Veja o [cartão do modelo](model-card.md).
 
+## Modo instantâneo (demonstrativo)
+
+Com `RADAR_SNAPSHOT` apontando para um pacote, o painel lê o pacote em vez da API ([ADR 0009](decisions/0009-demonstrativo-e-pacote-instantaneo.md)). O pacote é gerado por `scripts/build_snapshot.py` (com `API_DATABASE_URL`) e fica em `snapshot/radar-sp.json.gz`; `demo/streamlit_app.py` é o ponto de entrada do demonstrativo:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run demo/streamlit_app.py
+```
+
+Em modo instantâneo, o rodapé avisa que é demonstrativo e quando o pacote foi gerado, e os postos aparecem sem CNPJ nem razão social (sem nome fantasia, pela bandeira).
+
 ## Não existe ainda
 
-Autenticação, agendamento e implantação pública. Entram no Marco 8.
+Autenticação e atualização automática do pacote (Marco 12).

@@ -6,11 +6,13 @@ Marco 7; não há página nem texto que as simule.
 """
 
 from datetime import date, timedelta
+import os
 
 import streamlit as st
 
 from . import charts, exports, formatting as fmt, study as study_results, tables
 from .client import ApiClient, ApiError, ApiUnavailable
+from .snapshot import SnapshotClient
 
 DEFAULT_PRODUCT = "GASOLINA_COMUM"
 STALE_AFTER_DAYS = 14
@@ -31,7 +33,9 @@ ATTRIBUTION = (
 
 
 def make_client():
-    return ApiClient.from_env()
+    """Com `RADAR_SNAPSHOT` (caminho do pacote), o painel lê o pacote instantâneo; senão, a API."""
+    path = os.environ.get("RADAR_SNAPSHOT")
+    return SnapshotClient.from_file(path) if path else ApiClient.from_env()
 
 
 @st.cache_resource
@@ -47,6 +51,10 @@ def fetch(method, *args):
 
 def api_base_url():
     return _api().base_url
+
+
+def snapshot_mode():
+    return getattr(_api(), "mode", "api") == "snapshot"
 
 
 def guarded(page):
@@ -69,6 +77,10 @@ def footer():
     """Rodapé de toda página: crédito à ANP e aviso de que os números derivados são do projeto."""
     st.divider()
     st.caption(ATTRIBUTION)
+    if snapshot_mode():
+        st.caption(f"**Demonstrativo:** os números vêm de um pacote gerado em "
+                   f"{fmt.datetime_br(_api().built_at)} a partir dos dados da ANP; ainda não há atualização "
+                   "automática. Sem CNPJ nem razão social: postos sem nome fantasia aparecem pela bandeira.")
 
 
 # -- Auxiliares de tela ---------------------------------------------------------------------
@@ -1002,7 +1014,8 @@ def quality():
     st.markdown(METHODOLOGY)
     st.subheader("Limitações conhecidas")
     st.markdown(LIMITATIONS)
-    st.caption(f"Documentação interativa da API: {api_base_url()}/docs")
+    if not snapshot_mode():
+        st.caption(f"Documentação interativa da API: {api_base_url()}/docs")
 
 
 METHODOLOGY = """

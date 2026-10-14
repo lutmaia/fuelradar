@@ -1,0 +1,7 @@
+# Dependências só do demonstrativo (painel em modo instantâneo, sem API nem banco).
+# O Streamlit Community Cloud usa este arquivo por estar na pasta do ponto de entrada.
+# Mesmas versões de ../requirements.txt; o restante vem como dependência transitiva.
+streamlit==1.65.0
+plotly==7.1.0
+pandas==3.0.6
+httpx==0.28.1

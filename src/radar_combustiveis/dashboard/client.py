@@ -31,6 +31,8 @@ def _clean(params):
 
 
 class ApiClient:
+    mode = "api"
+
     def __init__(self, http):
         self._http = http
 

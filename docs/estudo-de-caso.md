@@ -228,7 +228,7 @@ Substituem os antigos Marcos 8 e 9 do [PLAN.md](../PLAN.md); ordem de execução
 | **12 — Automação e operação (custo zero)** | CI, `weekly_refresh`, contêineres, pacote instantâneo, modo instantâneo do painel, demonstrativo gratuito | execução semanal sem intervenção, falha injetada detectada, recuperação verificada, demonstrativo no ar sem custo (G4) |
 | **13 — Acabamento e narrativa** | README, relatório, ficha do dataset, vídeo | revisão da definição de pronto e reprodução por terceiro verificável |
 
-ADRs previstos: 0008 protocolo do estudo, 0009 fontes externas e alinhamento *as-of*, 0010 modelagem v2, 0011 avaliação contínua, 0012 operação e hospedagem.
+ADRs previstos: 0008 protocolo do estudo, 0009 fontes externas e alinhamento *as-of*, 0010 modelagem v2, 0011 avaliação contínua, 0012 operação e hospedagem. *Atualização de 2026-10-14:* o demonstrativo foi antecipado e ficou com o 0009 ([pacote instantâneo](decisions/0009-demonstrativo-e-pacote-instantaneo.md)); os previstos passam a usar os números seguintes livres.
 
 ## 12. Dependências novas previstas
 

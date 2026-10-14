@@ -604,59 +604,64 @@ class DataQualityTests(ApiCase):
                          422, "INVALID_WEEK")
 
 
+def insert_published_model(admin_url):
+    """Modelo publicado, previsões e variações incomuns inseridos direto no banco de teste."""
+    with psycopg.connect(admin_url) as conn:
+        product = dict(conn.execute("SELECT canonical_name, product_id FROM dim_product").fetchall())
+        place = dict(conn.execute("SELECT municipality_name_normalized, location_id FROM dim_location").fetchall())
+        metrics = {
+            "overall": {"n": 900, "mae": 0.1064, "wmae": 0.0812, "bias": -0.0173, "coverage": 0.753,
+                        "interval_width": 0.284},
+            "evaluated_points": 900, "evaluated_origins": 27,
+            "decision": {"approved": False, "best_baseline": "ultimo_valor", "improvement": -0.0788,
+                         "checks": {"melhora_minima_de_5pct_no_mae_ponderado": False, "reprodutivel": True}},
+            "reference": {"best_baseline": "ultimo_valor",
+                          "candidate_overall": {"n": 900, "mae": 0.112, "wmae": 0.0876, "bias": -0.011,
+                                                "coverage": 0.766, "interval_width": 0.309}}}
+        model_id = conn.execute("""
+            INSERT INTO model_version (name, version, kind, status, is_published, uf, origin_week, code_sha,
+                                       data_hash, metrics)
+            VALUES ('ultimo_valor', '2026-09-27-abcd1234', 'baseline', 'approved', true, 'SP', %s, 'sha',
+                    'abcd1234', %s::jsonb) RETURNING model_version_id""",
+                                (LAST, json.dumps(metrics))).fetchone()[0]
+        gasoline = product["GASOLINA_COMUM"]
+        for location, rows in ((place[normalize_text("Campinas")], 6.30), (None, 6.40)):
+            for h in (1, 2, 3, 4):
+                conn.execute("""
+                    INSERT INTO forecast (model_version_id, uf, location_id, product_id, origin_week, target_week,
+                                          horizon, point, lower, upper, interval_level, history_weeks,
+                                          station_count, generated_on)
+                    VALUES (%s, 'SP', %s, %s, %s, %s, %s, %s, %s, %s, 0.8, 120, 8, %s)""",
+                             (model_id, location, gasoline, LAST, LAST + timedelta(weeks=h), h,
+                              rows, rows - 0.1 * h, rows + 0.1 * h, TODAY))
+        itu = place[normalize_text("Itu")]
+        conn.execute("""
+            INSERT INTO forecast_eligibility (model_version_id, uf, location_id, product_id, eligible, reasons,
+                                              history_weeks, last_week)
+            VALUES (%s, 'SP', %s, %s, false, ARRAY['menos_de_52_semanas_de_historico'], 5, %s)""",
+                     (model_id, itu, gasoline, LAST))
+        for location, prod, week, observed, expected, product_name in (
+                (place[normalize_text("Campinas")], gasoline, LAST, 6.90, 6.30, "GASOLINA_COMUM"),
+                (place[normalize_text("Jundiaí")], gasoline, LAST, 5.60, 6.00, "GASOLINA_COMUM"),
+                (place[normalize_text("Campinas")], gasoline, LAST - timedelta(weeks=1), 6.60, 6.30, "GASOLINA_COMUM"),
+                (None, product["DIESEL_S10"], LAST - timedelta(weeks=9), 6.80, 6.30, "DIESEL_S10")):
+            conn.execute("""
+                INSERT INTO anomaly (model_version_id, uf, location_id, product_id, week_start, observed, expected,
+                                     lower, upper, residual, direction, station_count, interval_level)
+                VALUES (%s, 'SP', %s, %s, %s, %s, %s, %s, %s, %s, %s, 8, 0.95)""",
+                         (model_id, location, prod, week, observed, expected, expected - 0.2, expected + 0.2,
+                          round(observed - expected, 4), "acima" if observed > expected else "abaixo"))
+        conn.commit()
+    return model_id
+
+
 class ForecastApiTests(ApiCase):
     """`/forecasts` e `/anomalies` sobre um modelo publicado inserido direto no banco de teste."""
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        with psycopg.connect(cls.admin_url) as conn:
-            product = dict(conn.execute("SELECT canonical_name, product_id FROM dim_product").fetchall())
-            place = dict(conn.execute("SELECT municipality_name_normalized, location_id FROM dim_location").fetchall())
-            metrics = {
-                "overall": {"n": 900, "mae": 0.1064, "wmae": 0.0812, "bias": -0.0173, "coverage": 0.753,
-                            "interval_width": 0.284},
-                "evaluated_points": 900, "evaluated_origins": 27,
-                "decision": {"approved": False, "best_baseline": "ultimo_valor", "improvement": -0.0788,
-                             "checks": {"melhora_minima_de_5pct_no_mae_ponderado": False, "reprodutivel": True}},
-                "reference": {"best_baseline": "ultimo_valor",
-                              "candidate_overall": {"n": 900, "mae": 0.112, "wmae": 0.0876, "bias": -0.011,
-                                                    "coverage": 0.766, "interval_width": 0.309}}}
-            model_id = conn.execute("""
-                INSERT INTO model_version (name, version, kind, status, is_published, uf, origin_week, code_sha,
-                                           data_hash, metrics)
-                VALUES ('ultimo_valor', '2026-09-27-abcd1234', 'baseline', 'approved', true, 'SP', %s, 'sha',
-                        'abcd1234', %s::jsonb) RETURNING model_version_id""",
-                                    (LAST, json.dumps(metrics))).fetchone()[0]
-            cls.model_id = model_id
-            gasoline = product["GASOLINA_COMUM"]
-            for location, rows in ((place[normalize_text("Campinas")], 6.30), (None, 6.40)):
-                for h in (1, 2, 3, 4):
-                    conn.execute("""
-                        INSERT INTO forecast (model_version_id, uf, location_id, product_id, origin_week, target_week,
-                                              horizon, point, lower, upper, interval_level, history_weeks,
-                                              station_count, generated_on)
-                        VALUES (%s, 'SP', %s, %s, %s, %s, %s, %s, %s, %s, 0.8, 120, 8, %s)""",
-                                 (model_id, location, gasoline, LAST, LAST + timedelta(weeks=h), h,
-                                  rows, rows - 0.1 * h, rows + 0.1 * h, TODAY))
-            itu = place[normalize_text("Itu")]
-            conn.execute("""
-                INSERT INTO forecast_eligibility (model_version_id, uf, location_id, product_id, eligible, reasons,
-                                                  history_weeks, last_week)
-                VALUES (%s, 'SP', %s, %s, false, ARRAY['menos_de_52_semanas_de_historico'], 5, %s)""",
-                         (model_id, itu, gasoline, LAST))
-            for location, prod, week, observed, expected, product_name in (
-                    (place[normalize_text("Campinas")], gasoline, LAST, 6.90, 6.30, "GASOLINA_COMUM"),
-                    (place[normalize_text("Jundiaí")], gasoline, LAST, 5.60, 6.00, "GASOLINA_COMUM"),
-                    (place[normalize_text("Campinas")], gasoline, LAST - timedelta(weeks=1), 6.60, 6.30, "GASOLINA_COMUM"),
-                    (None, product["DIESEL_S10"], LAST - timedelta(weeks=9), 6.80, 6.30, "DIESEL_S10")):
-                conn.execute("""
-                    INSERT INTO anomaly (model_version_id, uf, location_id, product_id, week_start, observed, expected,
-                                         lower, upper, residual, direction, station_count, interval_level)
-                    VALUES (%s, 'SP', %s, %s, %s, %s, %s, %s, %s, %s, %s, 8, 0.95)""",
-                             (model_id, location, prod, week, observed, expected, expected - 0.2, expected + 0.2,
-                              round(observed - expected, 4), "acima" if observed > expected else "abaixo"))
-            conn.commit()
+        cls.model_id = insert_published_model(cls.admin_url)
 
     def test_forecast_for_a_city_has_four_ordered_horizons_with_model_and_backtest(self):
         body = self.ok("/api/v1/forecasts", municipality="Campinas", product="GASOLINA_COMUM")
