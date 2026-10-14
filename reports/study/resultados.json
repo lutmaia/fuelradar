@@ -1,0 +1,3542 @@
+{
+  "meta": {
+    "uf": "SP",
+    "code_sha": "d0babef13bcc279ae052668213967979550c6e23",
+    "protocol_commit": "d0babef13bcc279ae052668213967979550c6e23",
+    "data_hashes": {
+      "observations": "0b95e2366b32e4c19fe844a6be5e8ed0f7516792ab26fa45392e6b2ee8bcac89",
+      "city": "89e75d74ae93218fdde8017ac559a97477d196bdba3ba7dd8805a9b382733207",
+      "state": "df2f21c97ce860ce4855c1b73f1518e63afca99c8ef455d0424151f9e109d168",
+      "combined": "1c7b8e52107be9a9419313d3075b3bfbd90ba4a37fedaf805863184633ebc6ab"
+    },
+    "window": [
+      "2022-11-13",
+      "2026-03-29"
+    ],
+    "seed": 20261013,
+    "bootstrap_reps": 2000,
+    "observations": 675834,
+    "weeks_with_data": 147
+  },
+  "g1": {
+    "stable": [
+      "q1"
+    ],
+    "passed": false,
+    "required": 2
+  },
+  "q1": {
+    "primary": {
+      "beta": -0.057514413705564454,
+      "se": 0.0020316329245572617,
+      "p": 6.723436732365094e-160,
+      "pct": -5.5891717810450325,
+      "pct_ci": [
+        -5.964482704803286,
+        -5.212362930827242
+      ],
+      "n_obs": 173992,
+      "n_cells": 13407,
+      "n_clusters": 3737
+    },
+    "secondary": {
+      "GASOLINA_ADITIVADA": {
+        "beta": -0.06599984106516994,
+        "se": 0.00266447231153633,
+        "p": 1.64443699864818e-123,
+        "pct": -6.386898692456954,
+        "pct_ci": [
+          -6.874691547628564,
+          -5.896550765269892
+        ],
+        "n_obs": 131513,
+        "n_cells": 12345,
+        "n_clusters": 3032,
+        "p_holm": 6.57774799459272e-123
+      },
+      "ETANOL_HIDRATADO": {
+        "beta": -0.06085021817283712,
+        "se": 0.002296354371290953,
+        "p": 5.998853522660938e-142,
+        "pct": -5.903583144607783,
+        "pct_ci": [
+          -6.3262744746286685,
+          -5.478984471204617
+        ],
+        "n_obs": 171860,
+        "n_cells": 13405,
+        "n_clusters": 3742,
+        "p_holm": 2.999426761330469e-141
+      },
+      "DIESEL_COMUM": {
+        "beta": -0.034203963938600215,
+        "se": 0.0033188905191304133,
+        "p": 3.8429785342366904e-24,
+        "pct": -3.362562098957489,
+        "pct_ci": [
+          -3.9896227991204514,
+          -2.7314059548107394
+        ],
+        "n_obs": 54389,
+        "n_cells": 10010,
+        "n_clusters": 1566,
+        "p_holm": 7.685957068473381e-24
+      },
+      "DIESEL_S10": {
+        "beta": -0.046147129733891075,
+        "se": 0.002525274486129821,
+        "p": 1.1260803779651832e-70,
+        "pct": -4.509854254257184,
+        "pct_ci": [
+          -4.981507648278926,
+          -4.0358596641315465
+        ],
+        "n_obs": 113379,
+        "n_cells": 12850,
+        "n_clusters": 2882,
+        "p_holm": 3.37824113389555e-70
+      },
+      "GNV": {
+        "beta": -0.02196516680532788,
+        "se": 0.014148522480810615,
+        "p": 0.12454680015626599,
+        "pct": -2.1725689122764846,
+        "pct_ci": [
+          -4.889146560626411,
+          0.6216002395943221
+        ],
+        "n_obs": 4178,
+        "n_cells": 589,
+        "n_clusters": 80,
+        "p_holm": 0.12454680015626599
+      }
+    },
+    "brands": {
+      "IPIRANGA": {
+        "pct": 5.732370151012023,
+        "pct_ci": [
+          5.131071783671204,
+          6.337107651241269
+        ],
+        "p": 4.434568057212259e-78,
+        "p_holm": 8.869136114424518e-78,
+        "n_obs": 171659,
+        "n_cells": 13581,
+        "n_clusters": 3670
+      },
+      "RAIZEN": {
+        "pct": 5.535609503769545,
+        "pct_ci": [
+          4.980229194545771,
+          6.093927959444723
+        ],
+        "p": 1.0503547962294149e-84,
+        "p_holm": 3.151064388688245e-84,
+        "n_obs": 171659,
+        "n_cells": 13581,
+        "n_clusters": 3670
+      },
+      "VIBRA": {
+        "pct": 6.870698986863255,
+        "pct_ci": [
+          6.053299790244582,
+          7.694398236832023
+        ],
+        "p": 3.1375610247464186e-62,
+        "p_holm": 3.1375610247464186e-62,
+        "n_obs": 171659,
+        "n_cells": 13581,
+        "n_clusters": 3670
+      }
+    },
+    "robustness": {
+      "vizinhanca_cep5": {
+        "beta": -0.05711616304972658,
+        "se": 0.00266852072974423,
+        "p": 3.346890166932232e-91,
+        "pct": -5.551565118846735,
+        "pct_ci": [
+          -6.044574410973991,
+          -5.055968874868655
+        ],
+        "n_obs": 61482,
+        "n_cells": 18540,
+        "n_clusters": 1895
+      },
+      "sem_preco_extremo": {
+        "beta": -0.05371804504992617,
+        "se": 0.0018023057019004977,
+        "p": 3.0190779925690843e-175,
+        "pct": -5.230072266261477,
+        "pct_ci": [
+          -5.564360632065113,
+          -4.894600568484253
+        ],
+        "n_obs": 171797,
+        "n_cells": 13406,
+        "n_clusters": 3723
+      },
+      "subperiodo_a": {
+        "beta": -0.06137315032065745,
+        "se": 0.002409958593734815,
+        "p": 1.6718879298738037e-129,
+        "pct": -5.952776322508058,
+        "pct_ci": [
+          -6.396135738888664,
+          -5.507316911926951
+        ],
+        "n_obs": 79461,
+        "n_cells": 6492,
+        "n_clusters": 2955
+      },
+      "subperiodo_b": {
+        "beta": -0.05420524720365006,
+        "se": 0.002098617157206749,
+        "p": 1.674524212491267e-133,
+        "pct": -5.27623313341159,
+        "pct_ci": [
+          -5.665202361358801,
+          -4.88566007459732
+        ],
+        "n_obs": 94531,
+        "n_cells": 6915,
+        "n_clusters": 3127
+      }
+    },
+    "stable": true
+  },
+  "q2": {
+    "primary": {
+      "estimate": 0.01999999999999999,
+      "ci": [
+        0.0,
+        0.1
+      ],
+      "p": 0.937
+    },
+    "secondary": {
+      "GASOLINA_ADITIVADA": {
+        "estimate": 0.0,
+        "ci": [
+          0.0,
+          0.1
+        ],
+        "p": 1.0,
+        "p_holm": 1.0
+      },
+      "ETANOL_HIDRATADO": {
+        "estimate": 0.0,
+        "ci": [
+          0.0,
+          0.0
+        ],
+        "p": 1.0,
+        "p_holm": 1.0
+      },
+      "DIESEL_COMUM": {
+        "estimate": 0.03,
+        "ci": [
+          -0.03,
+          0.1
+        ],
+        "p": 1.0,
+        "p_holm": 1.0
+      },
+      "DIESEL_S10": {
+        "estimate": 0.06,
+        "ci": [
+          -0.04999999999999999,
+          0.1
+        ],
+        "p": 0.905,
+        "p_holm": 1.0
+      },
+      "GNV": {
+        "estimate": 0.0,
+        "ci": [
+          -0.04000000000000001,
+          0.09999999999999998
+        ],
+        "p": 1.0,
+        "p_holm": 1.0
+      }
+    },
+    "descriptive": {
+      "DIESEL_COMUM": {
+        "pairs": 46294,
+        "changes": 9695,
+        "ups": 4765,
+        "downs": 4930,
+        "frac_change": 0.20942238735041258,
+        "frac_up": 0.10292910528362206,
+        "frac_down": 0.10649328206679051,
+        "size_up": {
+          "median": 0.13,
+          "p10": 0.05,
+          "p90": 0.8
+        },
+        "size_down": {
+          "median": 0.1,
+          "p10": 0.05,
+          "p90": 0.34
+        }
+      },
+      "DIESEL_S10": {
+        "pairs": 84799,
+        "changes": 16266,
+        "ups": 8273,
+        "downs": 7993,
+        "frac_change": 0.19181829974410075,
+        "frac_up": 0.0975601127371785,
+        "frac_down": 0.09425818700692225,
+        "size_up": {
+          "median": 0.16,
+          "p10": 0.05,
+          "p90": 0.8
+        },
+        "size_down": {
+          "median": 0.1,
+          "p10": 0.05,
+          "p90": 0.38800000000000184
+        }
+      },
+      "ETANOL_HIDRATADO": {
+        "pairs": 128165,
+        "changes": 35178,
+        "ups": 18826,
+        "downs": 16352,
+        "frac_change": 0.2744743104591737,
+        "frac_up": 0.1468887761869465,
+        "frac_down": 0.1275855342722272,
+        "size_up": {
+          "median": 0.1,
+          "p10": 0.05,
+          "p90": 0.22
+        },
+        "size_down": {
+          "median": 0.1,
+          "p10": 0.05,
+          "p90": 0.3
+        }
+      },
+      "GASOLINA_ADITIVADA": {
+        "pairs": 102005,
+        "changes": 20540,
+        "ups": 12255,
+        "downs": 8285,
+        "frac_change": 0.20136267830008334,
+        "frac_up": 0.12014116955051223,
+        "frac_down": 0.0812215087495711,
+        "size_up": {
+          "median": 0.1,
+          "p10": 0.06,
+          "p90": 0.34
+        },
+        "size_down": {
+          "median": 0.1,
+          "p10": 0.04,
+          "p90": 0.3
+        }
+      },
+      "GASOLINA_COMUM": {
+        "pairs": 130079,
+        "changes": 28874,
+        "ups": 16691,
+        "downs": 12183,
+        "frac_change": 0.22197280114392023,
+        "frac_up": 0.12831433205974832,
+        "frac_down": 0.09365846908417193,
+        "size_up": {
+          "median": 0.12,
+          "p10": 0.06,
+          "p90": 0.35
+        },
+        "size_down": {
+          "median": 0.1,
+          "p10": 0.04,
+          "p90": 0.3
+        }
+      },
+      "GNV": {
+        "pairs": 6068,
+        "changes": 595,
+        "ups": 298,
+        "downs": 297,
+        "frac_change": 0.09805537244561635,
+        "frac_up": 0.04911008569545155,
+        "frac_down": 0.048945286750164796,
+        "size_up": {
+          "median": 0.2,
+          "p10": 0.1,
+          "p90": 0.49
+        },
+        "size_down": {
+          "median": 0.2,
+          "p10": 0.07,
+          "p90": 0.5
+        }
+      }
+    },
+    "up_minus_down": {
+      "estimate": 0.03465586297557638,
+      "ci": [
+        -0.013661882408903597,
+        0.07653646212457121
+      ],
+      "p": 0.185
+    },
+    "durations": {
+      "DIESEL_COMUM": {
+        "spells": 9695,
+        "events": 5286,
+        "median_weeks": 3.0
+      },
+      "DIESEL_S10": {
+        "spells": 16266,
+        "events": 8658,
+        "median_weeks": 3.0
+      },
+      "ETANOL_HIDRATADO": {
+        "spells": 35178,
+        "events": 20615,
+        "median_weeks": 2.0
+      },
+      "GASOLINA_ADITIVADA": {
+        "spells": 20540,
+        "events": 11037,
+        "median_weeks": 3.0
+      },
+      "GASOLINA_COMUM": {
+        "spells": 28874,
+        "events": 16327,
+        "median_weeks": 2.0
+      },
+      "GNV": {
+        "spells": 595,
+        "events": 223,
+        "median_weeks": 5.0
+      }
+    },
+    "duration_asymmetry": {
+      "median_after_up": 2.0,
+      "median_after_down": 2.0,
+      "p_logrank": 3.6219135645549606e-54
+    },
+    "robustness": {
+      "limiar_0_05": 0.04999999999999999,
+      "sem_preco_extremo": 0.01999999999999999,
+      "subperiodo_a": 0.1,
+      "subperiodo_b": 0.0
+    },
+    "stable": false
+  },
+  "q3": {
+    "leaders": [
+      "CAMPINAS",
+      "GUARULHOS",
+      "RIBEIRAO PRETO",
+      "SAO PAULO"
+    ],
+    "followers": [
+      "ADAMANTINA",
+      "AMERICANA",
+      "ARACATUBA",
+      "ARARAQUARA",
+      "ARARAS",
+      "ASSIS",
+      "ATIBAIA",
+      "AVARE",
+      "BARRETOS",
+      "BARUERI",
+      "BAURU",
+      "BEBEDOURO",
+      "BIRIGUI",
+      "BOTUCATU",
+      "BRAGANCA PAULISTA",
+      "CACAPAVA",
+      "CARAGUATATUBA",
+      "CARAPICUIBA",
+      "CATANDUVA",
+      "COTIA",
+      "DIADEMA",
+      "EMBU DAS ARTES",
+      "FRANCA",
+      "GARCA",
+      "GUARATINGUETA",
+      "GUARUJA",
+      "HORTOLANDIA",
+      "INDAIATUBA",
+      "ITANHAEM",
+      "ITAPECERICA DA SERRA",
+      "ITAPETININGA",
+      "ITAPOLIS",
+      "ITAQUAQUECETUBA",
+      "ITATIBA",
+      "ITU",
+      "JACAREI",
+      "JALES",
+      "JAU",
+      "JUNDIAI",
+      "LEME",
+      "LIMEIRA",
+      "LINS",
+      "LORENA",
+      "MARILIA",
+      "MATAO",
+      "MAUA",
+      "MOCOCA",
+      "MOGI DAS CRUZES",
+      "MOGI GUACU",
+      "MOGI MIRIM",
+      "OSASCO",
+      "OURINHOS",
+      "PARAGUACU PAULISTA",
+      "PAULINIA",
+      "PINDAMONHANGABA",
+      "PIRACICABA",
+      "PRAIA GRANDE",
+      "PRESIDENTE PRUDENTE",
+      "RIBEIRAO PIRES",
+      "RIO CLARO",
+      "SALTO",
+      "SANTA BARBARA D'OESTE",
+      "SANTO ANDRE",
+      "SANTOS",
+      "SAO BERNARDO DO CAMPO",
+      "SAO CAETANO DO SUL",
+      "SAO CARLOS",
+      "SAO JOAO DA BOA VISTA",
+      "SAO JOSE DO RIO PRETO",
+      "SAO JOSE DOS CAMPOS",
+      "SAO ROQUE",
+      "SAO VICENTE",
+      "SERTAOZINHO",
+      "SOROCABA",
+      "SUMARE",
+      "SUZANO",
+      "TABOAO DA SERRA",
+      "TAUBATE",
+      "UBATUBA",
+      "VALINHOS",
+      "VARZEA PAULISTA",
+      "VINHEDO",
+      "VOTUPORANGA"
+    ],
+    "primary": {
+      "testable": 83,
+      "share_forward": 0.3855421686746988,
+      "share_reverse": 0.04819277108433735,
+      "followers": {
+        "ADAMANTINA": {
+          "p_forward": 0.24059933773156594,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.0029951451642515553,
+          "p_reverse_holm": 0.23661646797587288,
+          "weeks_used": 76
+        },
+        "AMERICANA": {
+          "p_forward": 0.00024253113354119786,
+          "p_forward_holm": 0.015036930279554267,
+          "p_reverse": 0.10396707779461427,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 81
+        },
+        "ARACATUBA": {
+          "p_forward": 0.00014135796433348247,
+          "p_forward_holm": 0.009188267681676361,
+          "p_reverse": 0.8693059575961019,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 114
+        },
+        "ARARAQUARA": {
+          "p_forward": 0.0009072388547931239,
+          "p_forward_holm": 0.04808365930403556,
+          "p_reverse": 0.05576891890666614,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 76
+        },
+        "ARARAS": {
+          "p_forward": 0.00039965262832795766,
+          "p_forward_holm": 0.023579505071349503,
+          "p_reverse": 0.224284550483359,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "ASSIS": {
+          "p_forward": 0.011710240926977287,
+          "p_forward_holm": 0.526960841713978,
+          "p_reverse": 0.038703147140543986,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "ATIBAIA": {
+          "p_forward": 0.020803597897322564,
+          "p_forward_holm": 0.8321439158929025,
+          "p_reverse": 0.17798783350034497,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 82
+        },
+        "AVARE": {
+          "p_forward": 0.01938810480061279,
+          "p_forward_holm": 0.8143004016257372,
+          "p_reverse": 0.035205453753949525,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 98
+        },
+        "BARRETOS": {
+          "p_forward": 0.00010434948550853165,
+          "p_forward_holm": 0.006887066043563089,
+          "p_reverse": 0.9443783807201822,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 93
+        },
+        "BARUERI": {
+          "p_forward": 0.25593722477726866,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.20751751976201457,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 102
+        },
+        "BAURU": {
+          "p_forward": 5.7303660227158585e-05,
+          "p_forward_holm": 0.004093226522415851,
+          "p_reverse": 0.23899831760126847,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 112
+        },
+        "BEBEDOURO": {
+          "p_forward": 9.546785968523022e-06,
+          "p_forward_holm": 0.0007371376920731592,
+          "p_reverse": 0.5338288663207303,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 111
+        },
+        "BIRIGUI": {
+          "p_forward": 0.043969523354395544,
+          "p_forward_holm": 1.0,
+          "p_reverse": 1.891725229854219e-05,
+          "p_reverse_holm": 0.0015512146884804597,
+          "weeks_used": 105
+        },
+        "BOTUCATU": {
+          "p_forward": 0.0007700660580362153,
+          "p_forward_holm": 0.041583567133955626,
+          "p_reverse": 0.091731963267125,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 115
+        },
+        "BRAGANCA PAULISTA": {
+          "p_forward": 0.4949359558638795,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.0031805303442928702,
+          "p_reverse_holm": 0.2480813668548439,
+          "weeks_used": 76
+        },
+        "CACAPAVA": {
+          "p_forward": 9.45048323170717e-06,
+          "p_forward_holm": 0.0007371376920731592,
+          "p_reverse": 0.15025356272580156,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 111
+        },
+        "CARAGUATATUBA": {
+          "p_forward": 0.5268818490686454,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.0005628127100511729,
+          "p_reverse_holm": 0.04558782951414501,
+          "weeks_used": 117
+        },
+        "CARAPICUIBA": {
+          "p_forward": 0.34092691608168973,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.0250195037495317,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 62
+        },
+        "CATANDUVA": {
+          "p_forward": 0.02328661790175262,
+          "p_forward_holm": 0.9081780981683522,
+          "p_reverse": 0.6020711010784878,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 114
+        },
+        "COTIA": {
+          "p_forward": 1.1907165521429492e-05,
+          "p_forward_holm": 0.0009049445796286414,
+          "p_reverse": 0.08086693529607802,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 97
+        },
+        "DIADEMA": {
+          "p_forward": 0.0031784483689275464,
+          "p_forward_holm": 0.14986742407170928,
+          "p_reverse": 0.05775813362078091,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "EMBU DAS ARTES": {
+          "p_forward": 0.00018785487192628686,
+          "p_forward_holm": 0.01202271180328236,
+          "p_reverse": 0.004776814285333466,
+          "p_reverse_holm": 0.3629305588244131,
+          "weeks_used": 109
+        },
+        "FRANCA": {
+          "p_forward": 0.04627872739472419,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.04065000599561838,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 114
+        },
+        "GARCA": {
+          "p_forward": 0.5180032191093391,
+          "p_forward_holm": 1.0,
+          "p_reverse": 7.20239880412578e-06,
+          "p_reverse_holm": 0.0005977991007424398,
+          "weeks_used": 84
+        },
+        "GUARATINGUETA": {
+          "p_forward": 0.01628317780587862,
+          "p_forward_holm": 0.7164598234586593,
+          "p_reverse": 0.3780842244370821,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 99
+        },
+        "GUARUJA": {
+          "p_forward": 0.23460937915384944,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.21730387070905197,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 115
+        },
+        "HORTOLANDIA": {
+          "p_forward": 0.02883070334453646,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.19575396401670309,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 90
+        },
+        "INDAIATUBA": {
+          "p_forward": 0.6641471142574834,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.5419891517164936,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 97
+        },
+        "ITANHAEM": {
+          "p_forward": 0.09099172955298272,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.10396288679863737,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 110
+        },
+        "ITAPECERICA DA SERRA": {
+          "p_forward": 0.0004011607737761859,
+          "p_forward_holm": 0.023579505071349503,
+          "p_reverse": 0.4533391358556489,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 93
+        },
+        "ITAPETININGA": {
+          "p_forward": 0.0392647659456976,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.6253254954767047,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 78
+        },
+        "ITAPOLIS": {
+          "p_forward": 0.17120522877537925,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.3190399029618163,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 107
+        },
+        "ITAQUAQUECETUBA": {
+          "p_forward": 0.017233989582433017,
+          "p_forward_holm": 0.7410615520446198,
+          "p_reverse": 0.13151752636283565,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 85
+        },
+        "ITATIBA": {
+          "p_forward": 0.7453192336868086,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.07791625320379712,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 81
+        },
+        "ITU": {
+          "p_forward": 2.830002989885486e-06,
+          "p_forward_holm": 0.00022640023919083888,
+          "p_reverse": 0.7198592632522767,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "JACAREI": {
+          "p_forward": 0.39320340217753225,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.006617618223666728,
+          "p_reverse_holm": 0.4830861303276711,
+          "weeks_used": 114
+        },
+        "JALES": {
+          "p_forward": 0.00045656463553271013,
+          "p_forward_holm": 0.026024184225364476,
+          "p_reverse": 0.8204739317435967,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 92
+        },
+        "JAU": {
+          "p_forward": 0.3553930840048805,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.14505744291480244,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 100
+        },
+        "JUNDIAI": {
+          "p_forward": 0.23025747407480057,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.052307018703047145,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 96
+        },
+        "LEME": {
+          "p_forward": 0.1438061214846712,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.8568835925304209,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 81
+        },
+        "LIMEIRA": {
+          "p_forward": 0.8375666092698769,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.004775402089794909,
+          "p_reverse_holm": 0.3629305588244131,
+          "weeks_used": 73
+        },
+        "LINS": {
+          "p_forward": 0.05695450171724588,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.8829167705649349,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 92
+        },
+        "LORENA": {
+          "p_forward": 0.11470434920416944,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.03281811010515853,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 91
+        },
+        "MARILIA": {
+          "p_forward": 0.0006329151591402954,
+          "p_forward_holm": 0.035443248911856545,
+          "p_reverse": 0.0230820521897811,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 97
+        },
+        "MATAO": {
+          "p_forward": 0.35122247177971383,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.3505730806695782,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 98
+        },
+        "MAUA": {
+          "p_forward": 3.9483714355501835e-06,
+          "p_forward_holm": 0.0003119213434084645,
+          "p_reverse": 0.3295063852557286,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "MOCOCA": {
+          "p_forward": 5.153085363258167e-05,
+          "p_forward_holm": 0.0038132831688110435,
+          "p_reverse": 0.4698989731733573,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 81
+        },
+        "MOGI DAS CRUZES": {
+          "p_forward": 0.6129860454319895,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.0161011484736856,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 86
+        },
+        "MOGI GUACU": {
+          "p_forward": 0.7386111779451401,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.9989542913232716,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 76
+        },
+        "MOGI MIRIM": {
+          "p_forward": 0.22024837943116504,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.32661076407081513,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 53
+        },
+        "OSASCO": {
+          "p_forward": 1.632342968228359e-07,
+          "p_forward_holm": 1.3385212339472543e-05,
+          "p_reverse": 0.0062950337249256865,
+          "p_reverse_holm": 0.4658324956445008,
+          "weeks_used": 118
+        },
+        "OURINHOS": {
+          "p_forward": 0.30102435175382203,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.2877964102492515,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 113
+        },
+        "PARAGUACU PAULISTA": {
+          "p_forward": 0.0022770240503402267,
+          "p_forward_holm": 0.11385120251701134,
+          "p_reverse": 0.3112334823890325,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 78
+        },
+        "PAULINIA": {
+          "p_forward": 5.985732375744702e-05,
+          "p_forward_holm": 0.004190012663021291,
+          "p_reverse": 0.37299764201783603,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 96
+        },
+        "PINDAMONHANGABA": {
+          "p_forward": 0.48839863518269483,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.00919841249281437,
+          "p_reverse_holm": 0.6622856994826347,
+          "weeks_used": 37
+        },
+        "PIRACICABA": {
+          "p_forward": 0.000952661692591952,
+          "p_forward_holm": 0.04953840801478151,
+          "p_reverse": 0.04149435304471513,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 103
+        },
+        "PRAIA GRANDE": {
+          "p_forward": 8.512200068437481e-05,
+          "p_forward_holm": 0.005769968346829281,
+          "p_reverse": 0.08273436661009627,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "PRESIDENTE PRUDENTE": {
+          "p_forward": 8.48524756886659e-05,
+          "p_forward_holm": 0.005769968346829281,
+          "p_reverse": 0.018940134131793285,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "RIBEIRAO PIRES": {
+          "p_forward": 2.1559093661408688e-05,
+          "p_forward_holm": 0.0016169320246056517,
+          "p_reverse": 0.21674128788253877,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "RIO CLARO": {
+          "p_forward": 0.37298325969910184,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.19896633490777632,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 69
+        },
+        "SALTO": {
+          "p_forward": 0.3628240158076258,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.2756894007759125,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 94
+        },
+        "SANTA BARBARA D'OESTE": {
+          "p_forward": 0.02774808709877611,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.9561575883736982,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 34
+        },
+        "SANTO ANDRE": {
+          "p_forward": 0.00065618720224252,
+          "p_forward_holm": 0.0360902961233386,
+          "p_reverse": 0.577301955015967,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "SANTOS": {
+          "p_forward": 8.118709354330271e-05,
+          "p_forward_holm": 0.005601909454487887,
+          "p_reverse": 0.04284875053073989,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "SAO BERNARDO DO CAMPO": {
+          "p_forward": 1.2545596814303324e-07,
+          "p_forward_holm": 1.041284535587176e-05,
+          "p_reverse": 0.26450351473630207,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "SAO CAETANO DO SUL": {
+          "p_forward": 0.023543594443538107,
+          "p_forward_holm": 0.9081780981683522,
+          "p_reverse": 0.4282670324662347,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "SAO CARLOS": {
+          "p_forward": 0.0031222380014939433,
+          "p_forward_holm": 0.14986742407170928,
+          "p_reverse": 0.46359745516777173,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 72
+        },
+        "SAO JOAO DA BOA VISTA": {
+          "p_forward": 0.0018438645393817276,
+          "p_forward_holm": 0.0940370915084681,
+          "p_reverse": 0.08110221299095903,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 106
+        },
+        "SAO JOSE DO RIO PRETO": {
+          "p_forward": 0.002348111162710636,
+          "p_forward_holm": 0.11505744697282116,
+          "p_reverse": 0.955069325939532,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "SAO JOSE DOS CAMPOS": {
+          "p_forward": 5.6850368366886825e-05,
+          "p_forward_holm": 0.004093226522415851,
+          "p_reverse": 0.22723112723300218,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "SAO ROQUE": {
+          "p_forward": 0.10516269227050204,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.33786929466730664,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 37
+        },
+        "SAO VICENTE": {
+          "p_forward": 0.00020497832012107562,
+          "p_forward_holm": 0.012913634167627764,
+          "p_reverse": 0.688485015670191,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "SERTAOZINHO": {
+          "p_forward": 0.00029443243888009835,
+          "p_forward_holm": 0.017960378771686,
+          "p_reverse": 0.6404487634483562,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 96
+        },
+        "SOROCABA": {
+          "p_forward": 5.3765958713861294e-05,
+          "p_forward_holm": 0.003924914986111874,
+          "p_reverse": 0.1521428517063559,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 118
+        },
+        "SUMARE": {
+          "p_forward": 0.0351894150259212,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.03481924730455923,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 84
+        },
+        "SUZANO": {
+          "p_forward": 0.2320113231977718,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.28327222377299704,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 114
+        },
+        "TABOAO DA SERRA": {
+          "p_forward": 0.019984711197003624,
+          "p_forward_holm": 0.8193731590771486,
+          "p_reverse": 0.6080369546229809,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 117
+        },
+        "TAUBATE": {
+          "p_forward": 1.4694645417027573e-06,
+          "p_forward_holm": 0.00011902662787792334,
+          "p_reverse": 0.0005879274231062424,
+          "p_reverse_holm": 0.0470341938484994,
+          "weeks_used": 118
+        },
+        "UBATUBA": {
+          "p_forward": 0.11912800929077708,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.0035372893575061227,
+          "p_reverse_holm": 0.27237128052797144,
+          "weeks_used": 69
+        },
+        "VALINHOS": {
+          "p_forward": 0.00035353256767453573,
+          "p_forward_holm": 0.021211954060472143,
+          "p_reverse": 0.057152672540886976,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 99
+        },
+        "VARZEA PAULISTA": {
+          "p_forward": 0.044906044106458425,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.5601115580188977,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 94
+        },
+        "VINHEDO": {
+          "p_forward": 0.003708880173777207,
+          "p_forward_holm": 0.17060848799375153,
+          "p_reverse": 0.7402484843764783,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 99
+        },
+        "VOTUPORANGA": {
+          "p_forward": 0.3328598478398625,
+          "p_forward_holm": 1.0,
+          "p_reverse": 0.18406205659879757,
+          "p_reverse_holm": 1.0,
+          "weeks_used": 114
+        }
+      }
+    },
+    "subperiods": {
+      "subperiodo_a": {
+        "testable": 78,
+        "share_forward": 0.0,
+        "share_reverse": 0.01282051282051282,
+        "followers": {
+          "ADAMANTINA": {
+            "p_forward": 0.10807133691520515,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.950279492778696,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 39
+          },
+          "AMERICANA": {
+            "p_forward": 0.0011870734823155615,
+            "p_forward_holm": 0.09259173162061379,
+            "p_reverse": 0.1576112147904436,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 37
+          },
+          "ARACATUBA": {
+            "p_forward": 0.019080180186591442,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.9972417939544964,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "ARARAQUARA": {
+            "p_forward": 0.07612958129250719,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.17202435700126006,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 39
+          },
+          "ARARAS": {
+            "p_forward": 0.11664389013492679,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.4564987824521343,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "ASSIS": {
+            "p_forward": 0.09525445195197504,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.1747579369264125,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "ATIBAIA": {
+            "p_forward": 0.0908155901070376,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.4145416014373565,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "AVARE": {
+            "p_forward": 0.4491232018763599,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.5003336154705422,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "BARRETOS": {
+            "p_forward": null,
+            "p_forward_holm": null,
+            "p_reverse": null,
+            "p_reverse_holm": null,
+            "weeks_used": 20
+          },
+          "BARUERI": {
+            "p_forward": 0.18716862038048945,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.19134368474224672,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 37
+          },
+          "BAURU": {
+            "p_forward": 0.17725197433452536,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.31615188378221387,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 43
+          },
+          "BEBEDOURO": {
+            "p_forward": 0.1523900694829898,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.5013917411199236,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 42
+          },
+          "BIRIGUI": {
+            "p_forward": 0.3736439129160758,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.005306107661298183,
+            "p_reverse_holm": 0.4032641822586619,
+            "weeks_used": 41
+          },
+          "BOTUCATU": {
+            "p_forward": 0.0053730334378729195,
+            "p_forward_holm": 0.3868584075268502,
+            "p_reverse": 0.14743472424049697,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "BRAGANCA PAULISTA": {
+            "p_forward": 0.9111893919729638,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.018714705759911274,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 43
+          },
+          "CACAPAVA": {
+            "p_forward": 0.02058655281354845,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.18573000838774636,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "CARAGUATATUBA": {
+            "p_forward": 0.0869495021426685,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.0035091447804629686,
+            "p_reverse_holm": 0.2702041480956486,
+            "weeks_used": 45
+          },
+          "CARAPICUIBA": {
+            "p_forward": 0.41200954983304694,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.02950759184299061,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 31
+          },
+          "CATANDUVA": {
+            "p_forward": 0.18112370048419688,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.9032017420735478,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "COTIA": {
+            "p_forward": 0.0035837202506109425,
+            "p_forward_holm": 0.26519529854520973,
+            "p_reverse": 0.12853628514111035,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 35
+          },
+          "DIADEMA": {
+            "p_forward": 0.0016134608100576342,
+            "p_forward_holm": 0.1226230215643802,
+            "p_reverse": 0.34416667694865277,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "EMBU DAS ARTES": {
+            "p_forward": 0.10198150416188449,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.13832600745251003,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 43
+          },
+          "FRANCA": {
+            "p_forward": 0.010729887327931514,
+            "p_forward_holm": 0.7618220002831375,
+            "p_reverse": 0.0011501398266022585,
+            "p_reverse_holm": 0.09086104630157843,
+            "weeks_used": 45
+          },
+          "GARCA": {
+            "p_forward": 0.2360395295191039,
+            "p_forward_holm": 1.0,
+            "p_reverse": 1.5691834694186974e-05,
+            "p_reverse_holm": 0.001255346775534958,
+            "weeks_used": 41
+          },
+          "GUARATINGUETA": {
+            "p_forward": 0.3865988911045516,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.65217815613498,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "GUARUJA": {
+            "p_forward": 0.5840273292047835,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.49796934647126223,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 42
+          },
+          "HORTOLANDIA": {
+            "p_forward": 0.9686277467818898,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.41799978862981874,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 32
+          },
+          "INDAIATUBA": {
+            "p_forward": 0.9988929616158733,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.9545183918221255,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 39
+          },
+          "ITANHAEM": {
+            "p_forward": 0.10710519727861639,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.05092501297839153,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 41
+          },
+          "ITAPECERICA DA SERRA": {
+            "p_forward": 0.01505464774263963,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.36019998531322106,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 43
+          },
+          "ITAPETININGA": {
+            "p_forward": 0.12344792085557185,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.344210317033403,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 41
+          },
+          "ITAPOLIS": {
+            "p_forward": 0.37578262041985694,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.04190482771954903,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 42
+          },
+          "ITAQUAQUECETUBA": {
+            "p_forward": null,
+            "p_forward_holm": null,
+            "p_reverse": null,
+            "p_reverse_holm": null,
+            "weeks_used": 25
+          },
+          "ITATIBA": {
+            "p_forward": 0.963658508359808,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.11066114531618212,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "ITU": {
+            "p_forward": 0.03505104093209295,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.8433672321660386,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "JACAREI": {
+            "p_forward": 0.3997730370980428,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.05204672891859704,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 41
+          },
+          "JALES": {
+            "p_forward": 0.22344656750326755,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.8415017055542455,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 36
+          },
+          "JAU": {
+            "p_forward": 0.7058372092707674,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.03583627203888238,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 41
+          },
+          "JUNDIAI": {
+            "p_forward": 0.6066827975059724,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.04232695648888151,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 35
+          },
+          "LEME": {
+            "p_forward": 0.8303044041048823,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.27513534519004373,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 41
+          },
+          "LIMEIRA": {
+            "p_forward": 0.6856261727002897,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.047420139295557065,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 36
+          },
+          "LINS": {
+            "p_forward": 0.5735451771285701,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.2936478459685535,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 34
+          },
+          "LORENA": {
+            "p_forward": 0.22599971897890184,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.017657967108638806,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "MARILIA": {
+            "p_forward": 0.06289101830387522,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.1470009667035371,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 43
+          },
+          "MATAO": {
+            "p_forward": 0.5936633748953103,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.8726492822489023,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 39
+          },
+          "MAUA": {
+            "p_forward": 0.002578998729425833,
+            "p_forward_holm": 0.19342490470693746,
+            "p_reverse": 0.5841141808158837,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "MOCOCA": {
+            "p_forward": null,
+            "p_forward_holm": null,
+            "p_reverse": 0.4339869948052859,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 28
+          },
+          "MOGI DAS CRUZES": {
+            "p_forward": null,
+            "p_forward_holm": null,
+            "p_reverse": null,
+            "p_reverse_holm": null,
+            "weeks_used": 28
+          },
+          "MOGI GUACU": {
+            "p_forward": 0.6870815890638272,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.016539999905130182,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 42
+          },
+          "MOGI MIRIM": {
+            "p_forward": 0.36069952044271925,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.2751514956387932,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 41
+          },
+          "OSASCO": {
+            "p_forward": 0.0015633887388263764,
+            "p_forward_holm": 0.12038093288963098,
+            "p_reverse": 0.1947266962556335,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "OURINHOS": {
+            "p_forward": 0.4172382887098974,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.12223912364927414,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 40
+          },
+          "PARAGUACU PAULISTA": {
+            "p_forward": 0.024918751426865608,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.3068816770583972,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 33
+          },
+          "PAULINIA": {
+            "p_forward": 0.027606293824066812,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.3417836289953537,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "PINDAMONHANGABA": {
+            "p_forward": 0.48839863518269483,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.00919841249281437,
+            "p_reverse_holm": 0.6806825244682634,
+            "weeks_used": 37
+          },
+          "PIRACICABA": {
+            "p_forward": 0.1562404444988568,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.0027876485529548635,
+            "p_reverse_holm": 0.21743658713047936,
+            "weeks_used": 42
+          },
+          "PRAIA GRANDE": {
+            "p_forward": 0.24208822860985474,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.45530363510242855,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "PRESIDENTE PRUDENTE": {
+            "p_forward": 0.13895015649073544,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.12226905010066079,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "RIBEIRAO PIRES": {
+            "p_forward": 0.22256394602139346,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.08534347886321351,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "RIO CLARO": {
+            "p_forward": 0.3339408258709656,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.3770373959312409,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 39
+          },
+          "SALTO": {
+            "p_forward": 0.2636628293968909,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.3204653024361032,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 41
+          },
+          "SANTA BARBARA D'OESTE": {
+            "p_forward": 0.02774808709877611,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.9561575883736982,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 34
+          },
+          "SANTO ANDRE": {
+            "p_forward": 0.24210909894457897,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.8303480730910923,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "SANTOS": {
+            "p_forward": 0.01863705116291855,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.5988648197529215,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "SAO BERNARDO DO CAMPO": {
+            "p_forward": 0.05405831631752252,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.20108750384717686,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "SAO CAETANO DO SUL": {
+            "p_forward": 0.5337276867111885,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.4573110135167924,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "SAO CARLOS": {
+            "p_forward": 0.033700476004498686,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.8376804555459445,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 39
+          },
+          "SAO JOAO DA BOA VISTA": {
+            "p_forward": 0.12584551255214393,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.7561837892697741,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 39
+          },
+          "SAO JOSE DO RIO PRETO": {
+            "p_forward": 0.28884337033033064,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.8346143874260499,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "SAO JOSE DOS CAMPOS": {
+            "p_forward": 0.33907430512950804,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.31578452863871886,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "SAO ROQUE": {
+            "p_forward": 0.10516269227050204,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.33786929466730664,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 37
+          },
+          "SAO VICENTE": {
+            "p_forward": 0.12493623613265603,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.799642605642032,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "SERTAOZINHO": {
+            "p_forward": 0.09439094389358167,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.6878325300766689,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 41
+          },
+          "SOROCABA": {
+            "p_forward": 0.2978560796563867,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.2941659987414178,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "SUMARE": {
+            "p_forward": null,
+            "p_forward_holm": null,
+            "p_reverse": 0.03063066031912445,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 28
+          },
+          "SUZANO": {
+            "p_forward": 0.11387742212263254,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.5413106242465934,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "TABOAO DA SERRA": {
+            "p_forward": 0.594647673668096,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.19338962138529484,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          },
+          "TAUBATE": {
+            "p_forward": 0.1538485331564392,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.006749656972573192,
+            "p_reverse_holm": 0.5062242729429894,
+            "weeks_used": 45
+          },
+          "UBATUBA": {
+            "p_forward": 0.28134740934860664,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.023900847953627232,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 40
+          },
+          "VALINHOS": {
+            "p_forward": 0.004193005686615837,
+            "p_forward_holm": 0.30608941512295607,
+            "p_reverse": 0.1745573647817151,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 41
+          },
+          "VARZEA PAULISTA": {
+            "p_forward": 0.5889129158844753,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.9191381484881208,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 41
+          },
+          "VINHEDO": {
+            "p_forward": 0.029386753910840953,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.8730491993993738,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 41
+          },
+          "VOTUPORANGA": {
+            "p_forward": 0.47257211666543314,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.6543065680319424,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 45
+          }
+        }
+      },
+      "subperiodo_b": {
+        "testable": 77,
+        "share_forward": 0.23376623376623376,
+        "share_reverse": 0.03896103896103896,
+        "followers": {
+          "ADAMANTINA": {
+            "p_forward": 0.7544992374207621,
+            "p_forward_holm": 1.0,
+            "p_reverse": 9.142705447613404e-05,
+            "p_reverse_holm": 0.007131310249138456,
+            "weeks_used": 37
+          },
+          "AMERICANA": {
+            "p_forward": 0.01036199629460233,
+            "p_forward_holm": 0.4662898332571049,
+            "p_reverse": 0.12551813041648896,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 42
+          },
+          "ARACATUBA": {
+            "p_forward": 0.06086697923277287,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.10672576434525151,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 67
+          },
+          "ARARAQUARA": {
+            "p_forward": 0.04595574359729151,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.5994527007528866,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 35
+          },
+          "ARARAS": {
+            "p_forward": 0.010987509634143891,
+            "p_forward_holm": 0.4834504239023312,
+            "p_reverse": 0.35394441574197844,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "ASSIS": {
+            "p_forward": 0.2150796441395992,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.07801074216431986,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "ATIBAIA": {
+            "p_forward": 0.002650674683873548,
+            "p_forward_holm": 0.14357447760791256,
+            "p_reverse": 0.9167714440707954,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 35
+          },
+          "AVARE": {
+            "p_forward": 0.004262745468389127,
+            "p_forward_holm": 0.2216627643562346,
+            "p_reverse": 0.060935271451216355,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 52
+          },
+          "BARRETOS": {
+            "p_forward": 0.0017113162422193176,
+            "p_forward_holm": 0.0975450258065011,
+            "p_reverse": 0.8276978242845374,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "BARUERI": {
+            "p_forward": 0.1939368563635542,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.33152382939230773,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 63
+          },
+          "BAURU": {
+            "p_forward": 0.0004934867060148533,
+            "p_forward_holm": 0.031089662478935756,
+            "p_reverse": 0.9288576303353893,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 67
+          },
+          "BEBEDOURO": {
+            "p_forward": 5.391748727966642e-05,
+            "p_forward_holm": 0.0037203066222969827,
+            "p_reverse": 0.9641933170875508,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 67
+          },
+          "BIRIGUI": {
+            "p_forward": 0.22707715217040952,
+            "p_forward_holm": 1.0,
+            "p_reverse": 3.8909055690591105e-05,
+            "p_reverse_holm": 0.0030738153995566973,
+            "weeks_used": 62
+          },
+          "BOTUCATU": {
+            "p_forward": 0.1563673151948966,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.7550815801710147,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 68
+          },
+          "BRAGANCA PAULISTA": {
+            "p_forward": 0.5991937964193584,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.10637279029195049,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 31
+          },
+          "CACAPAVA": {
+            "p_forward": 0.001040721498711261,
+            "p_forward_holm": 0.061402568423964396,
+            "p_reverse": 0.04276074185556064,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 64
+          },
+          "CARAGUATATUBA": {
+            "p_forward": 0.0004726872056295001,
+            "p_forward_holm": 0.030251981160288006,
+            "p_reverse": 0.13537125805502354,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 70
+          },
+          "CARAPICUIBA": {
+            "p_forward": 0.3110994156503538,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.586675956741268,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 30
+          },
+          "CATANDUVA": {
+            "p_forward": 0.3365672756782756,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.08720190165189838,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 67
+          },
+          "COTIA": {
+            "p_forward": 0.01138695042233129,
+            "p_forward_holm": 0.48963886816024543,
+            "p_reverse": 0.024476852605230127,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 62
+          },
+          "DIADEMA": {
+            "p_forward": 0.015841022308464195,
+            "p_forward_holm": 0.6336408923385678,
+            "p_reverse": 0.2180542932679454,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "EMBU DAS ARTES": {
+            "p_forward": 0.023002926341173586,
+            "p_forward_holm": 0.8741112009645963,
+            "p_reverse": 0.0013290642596859295,
+            "p_reverse_holm": 0.10100888373613064,
+            "weeks_used": 66
+          },
+          "FRANCA": {
+            "p_forward": 0.8020892277409106,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.8322580654504569,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 67
+          },
+          "GARCA": {
+            "p_forward": 0.05307836861741356,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.3827121328219369,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 43
+          },
+          "GUARATINGUETA": {
+            "p_forward": 0.18652699289392982,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.7396307612603281,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 52
+          },
+          "GUARUJA": {
+            "p_forward": 0.008405278902696321,
+            "p_forward_holm": 0.3866428295240308,
+            "p_reverse": 0.27887889461878396,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "HORTOLANDIA": {
+            "p_forward": 2.9292342509099843e-07,
+            "p_forward_holm": 2.1383410031642884e-05,
+            "p_reverse": 0.306622914296215,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 56
+          },
+          "INDAIATUBA": {
+            "p_forward": 0.5364813949125874,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.23302932269617294,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 56
+          },
+          "ITANHAEM": {
+            "p_forward": 0.00807108289648829,
+            "p_forward_holm": 0.37934089613494965,
+            "p_reverse": 0.547109180242408,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 67
+          },
+          "ITAPECERICA DA SERRA": {
+            "p_forward": 0.04770577317470124,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.9049346628529775,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 50
+          },
+          "ITAPETININGA": {
+            "p_forward": 0.3512615846010937,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.9808614432593201,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 35
+          },
+          "ITAPOLIS": {
+            "p_forward": 0.40720881414296606,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.9837106342612888,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 63
+          },
+          "ITAQUAQUECETUBA": {
+            "p_forward": 0.0011211546401009521,
+            "p_forward_holm": 0.06502696912585522,
+            "p_reverse": 0.1105061952039286,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 60
+          },
+          "ITATIBA": {
+            "p_forward": 0.19678248217810906,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.06141714414861776,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 34
+          },
+          "ITU": {
+            "p_forward": 1.4222919347710238e-07,
+            "p_forward_holm": 1.0667189510782678e-05,
+            "p_reverse": 0.6722612557898444,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "JACAREI": {
+            "p_forward": 0.02155078405718154,
+            "p_forward_holm": 0.84048057823008,
+            "p_reverse": 0.0017256708391783426,
+            "p_reverse_holm": 0.1294253129383757,
+            "weeks_used": 71
+          },
+          "JALES": {
+            "p_forward": 0.0006040254523106571,
+            "p_forward_holm": 0.036845552590950084,
+            "p_reverse": 0.8901732639487574,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 54
+          },
+          "JAU": {
+            "p_forward": 0.10982534031812229,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.46421265443159887,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 57
+          },
+          "JUNDIAI": {
+            "p_forward": 0.39242536617617696,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.40631375876830284,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 59
+          },
+          "LEME": {
+            "p_forward": 0.01223387606263675,
+            "p_forward_holm": 0.5138227946307434,
+            "p_reverse": 0.22837502815928654,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 40
+          },
+          "LIMEIRA": {
+            "p_forward": 0.5378944057855325,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.5636911233555468,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 35
+          },
+          "LINS": {
+            "p_forward": 0.08535105565923758,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.9838071479050702,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 56
+          },
+          "LORENA": {
+            "p_forward": 0.19306262266489044,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.5510248366298612,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 44
+          },
+          "MARILIA": {
+            "p_forward": 0.0017299567127640433,
+            "p_forward_holm": 0.0975450258065011,
+            "p_reverse": 0.06985240175462708,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 52
+          },
+          "MATAO": {
+            "p_forward": 0.9990353027402014,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.07875127233742267,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 57
+          },
+          "MAUA": {
+            "p_forward": 0.000543852423903058,
+            "p_forward_holm": 0.03371885028198959,
+            "p_reverse": 0.954832097178575,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "MOCOCA": {
+            "p_forward": 2.793471152566364e-07,
+            "p_forward_holm": 2.0671686528991096e-05,
+            "p_reverse": 0.9537575996904952,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 51
+          },
+          "MOGI DAS CRUZES": {
+            "p_forward": 0.18927672093798226,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.00013201785702758034,
+            "p_reverse_holm": 0.010165374991123686,
+            "weeks_used": 56
+          },
+          "MOGI GUACU": {
+            "p_forward": 0.4201758833383184,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.20945185280183937,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 32
+          },
+          "MOGI MIRIM": {
+            "p_forward": null,
+            "p_forward_holm": null,
+            "p_reverse": null,
+            "p_reverse_holm": null,
+            "weeks_used": 12
+          },
+          "OSASCO": {
+            "p_forward": 0.0007569270155936962,
+            "p_forward_holm": 0.04541562093562177,
+            "p_reverse": 0.16682963246674287,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "OURINHOS": {
+            "p_forward": 0.06535856657190538,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.7269561311380031,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "PARAGUACU PAULISTA": {
+            "p_forward": 0.20257128348261444,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.22777852316797959,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 43
+          },
+          "PAULINIA": {
+            "p_forward": 0.034137428127209345,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.9960053984119195,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 49
+          },
+          "PINDAMONHANGABA": {
+            "p_forward": null,
+            "p_forward_holm": null,
+            "p_reverse": null,
+            "p_reverse_holm": null,
+            "weeks_used": 0
+          },
+          "PIRACICABA": {
+            "p_forward": 0.004999158568024318,
+            "p_forward_holm": 0.2499579284012159,
+            "p_reverse": 0.4818735431492807,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 59
+          },
+          "PRAIA GRANDE": {
+            "p_forward": 3.117260270095517e-05,
+            "p_forward_holm": 0.0021820821890668617,
+            "p_reverse": 0.18768839076142643,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "PRESIDENTE PRUDENTE": {
+            "p_forward": 8.30590238038747e-05,
+            "p_forward_holm": 0.00548189557105573,
+            "p_reverse": 0.3554424709847559,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "RIBEIRAO PIRES": {
+            "p_forward": 7.88150372350328e-05,
+            "p_forward_holm": 0.005280607494747198,
+            "p_reverse": 0.5552095196199275,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "RIO CLARO": {
+            "p_forward": null,
+            "p_forward_holm": null,
+            "p_reverse": 0.20954775737094636,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 28
+          },
+          "SALTO": {
+            "p_forward": 0.9133129107452135,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.024177961916740588,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 51
+          },
+          "SANTA BARBARA D'OESTE": {
+            "p_forward": null,
+            "p_forward_holm": null,
+            "p_reverse": null,
+            "p_reverse_holm": null,
+            "weeks_used": 0
+          },
+          "SANTO ANDRE": {
+            "p_forward": 0.0026104450474165922,
+            "p_forward_holm": 0.14357447760791256,
+            "p_reverse": 0.5210674574730609,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "SANTOS": {
+            "p_forward": 0.006837335894400855,
+            "p_forward_holm": 0.3350294588256419,
+            "p_reverse": 0.06157631583654287,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "SAO BERNARDO DO CAMPO": {
+            "p_forward": 1.0363839383660613e-07,
+            "p_forward_holm": 7.876517931582066e-06,
+            "p_reverse": 0.2549218145043511,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "SAO CAETANO DO SUL": {
+            "p_forward": 0.0045546830098057165,
+            "p_forward_holm": 0.23228883350009155,
+            "p_reverse": 0.725411736144518,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "SAO CARLOS": {
+            "p_forward": 0.39006142558330514,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.3288826152915047,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 31
+          },
+          "SAO JOAO DA BOA VISTA": {
+            "p_forward": 0.013493785079181784,
+            "p_forward_holm": 0.5532451882464532,
+            "p_reverse": 0.007613774430249196,
+            "p_reverse_holm": 0.5558055334081913,
+            "weeks_used": 65
+          },
+          "SAO JOSE DO RIO PRETO": {
+            "p_forward": 0.007500587804373226,
+            "p_forward_holm": 0.36002821460991485,
+            "p_reverse": 0.20885687081300452,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "SAO JOSE DOS CAMPOS": {
+            "p_forward": 2.3258377203157216e-06,
+            "p_forward_holm": 0.00016513447814241623,
+            "p_reverse": 0.9931365645576647,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "SAO ROQUE": {
+            "p_forward": null,
+            "p_forward_holm": null,
+            "p_reverse": null,
+            "p_reverse_holm": null,
+            "weeks_used": 0
+          },
+          "SAO VICENTE": {
+            "p_forward": 6.593618544403742e-05,
+            "p_forward_holm": 0.004483660610194545,
+            "p_reverse": 0.05219208907000281,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "SERTAOZINHO": {
+            "p_forward": 0.00039428008685788455,
+            "p_forward_holm": 0.025628205645762497,
+            "p_reverse": 0.9958858874954412,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 53
+          },
+          "SOROCABA": {
+            "p_forward": 6.573318354155931e-07,
+            "p_forward_holm": 4.732789214992271e-05,
+            "p_reverse": 0.4554026115275523,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "SUMARE": {
+            "p_forward": 0.7172817252894783,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.017555950552291914,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 54
+          },
+          "SUZANO": {
+            "p_forward": 0.17981035339585674,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.005502725893582364,
+            "p_reverse_holm": 0.407201716125095,
+            "weeks_used": 67
+          },
+          "TABOAO DA SERRA": {
+            "p_forward": 0.0036788098845378083,
+            "p_forward_holm": 0.19497692388050383,
+            "p_reverse": 0.2660073508141813,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 70
+          },
+          "TAUBATE": {
+            "p_forward": 2.335094959842008e-08,
+            "p_forward_holm": 1.7980231190783462e-06,
+            "p_reverse": 0.5970892661584876,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 71
+          },
+          "UBATUBA": {
+            "p_forward": null,
+            "p_forward_holm": null,
+            "p_reverse": 0.4771556432853373,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 29
+          },
+          "VALINHOS": {
+            "p_forward": 0.40388604732185385,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.5668497531391499,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 56
+          },
+          "VARZEA PAULISTA": {
+            "p_forward": 0.05439345197859123,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.01469100179911729,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 51
+          },
+          "VINHEDO": {
+            "p_forward": 0.9508082172212223,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.09642635530649467,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 56
+          },
+          "VOTUPORANGA": {
+            "p_forward": 0.05878496957013306,
+            "p_forward_holm": 1.0,
+            "p_reverse": 0.7068411165986151,
+            "p_reverse_holm": 1.0,
+            "weeks_used": 67
+          }
+        }
+      }
+    },
+    "events": {
+      "count": 21,
+      "up": 12,
+      "down": 9,
+      "threshold_up": 0.1,
+      "threshold_down": 0.05
+    },
+    "diffusion": {
+      "grande": {
+        "cases": 80,
+        "followed": 67,
+        "median_weeks": 0.0
+      },
+      "medio": {
+        "cases": 1569,
+        "followed": 1132,
+        "median_weeks": 0.0
+      },
+      "alta": {
+        "cases": 924,
+        "followed": 768,
+        "median_weeks": 0.0
+      },
+      "queda": {
+        "cases": 725,
+        "followed": 431,
+        "median_weeks": 1.0
+      },
+      "p_logrank_porte": 0.03666354774070278
+    },
+    "diffusion_robustness": {
+      "evento_0.05": {
+        "events": 27,
+        "grande": {
+          "cases": 103,
+          "followed": 75,
+          "median_weeks": 0.0
+        },
+        "medio": {
+          "cases": 2002,
+          "followed": 1304,
+          "median_weeks": 0.0
+        },
+        "alta": {
+          "cases": 1380,
+          "followed": 976,
+          "median_weeks": 0.0
+        },
+        "queda": {
+          "cases": 725,
+          "followed": 403,
+          "median_weeks": 1.0
+        },
+        "p_logrank_porte": 0.05668306686175927
+      },
+      "evento_0.15": {
+        "events": 7,
+        "grande": {
+          "cases": 27,
+          "followed": 25,
+          "median_weeks": 0.0
+        },
+        "medio": {
+          "cases": 523,
+          "followed": 480,
+          "median_weeks": 0.0
+        },
+        "alta": {
+          "cases": 463,
+          "followed": 423,
+          "median_weeks": 0.0
+        },
+        "queda": {
+          "cases": 87,
+          "followed": 82,
+          "median_weeks": 0.0
+        },
+        "p_logrank_porte": 0.9757776934211562
+      }
+    },
+    "cross_correlation": {
+      "ADAMANTINA": {
+        "best_lag": -1,
+        "correlations": {
+          "-4": -0.054293330359764636,
+          "-3": 0.1119530728375191,
+          "-2": 0.025929334359267794,
+          "-1": 0.32423413303549076,
+          "0": 0.269463607415805,
+          "1": -0.026748107063003665,
+          "2": 0.22026607109400786,
+          "3": -0.17521763425824835,
+          "4": -0.05596969932353841
+        }
+      },
+      "AMERICANA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.1246885259320263,
+          "-3": -0.015387578595843061,
+          "-2": -0.15940496459651007,
+          "-1": 0.13303798682758117,
+          "0": 0.5368272121120358,
+          "1": 0.2328697287298016,
+          "2": -0.1745103218994504,
+          "3": 0.02995406944779682,
+          "4": 0.07606531245305403
+        }
+      },
+      "ARACATUBA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.01755199529691961,
+          "-3": -0.014648655099197503,
+          "-2": -0.01745163563010813,
+          "-1": 0.038034073847622286,
+          "0": 0.5752895523508386,
+          "1": 0.22247756576043298,
+          "2": -0.18487696166984932,
+          "3": 0.07642933768634894,
+          "4": 0.04742373167158513
+        }
+      },
+      "ARARAQUARA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.19620619016669588,
+          "-3": -0.05913636581751372,
+          "-2": -0.2530295246773936,
+          "-1": 0.1470455253738512,
+          "0": 0.35720801640809446,
+          "1": 0.10793675289822803,
+          "2": -0.09320543938899928,
+          "3": -0.07277774106751371,
+          "4": 0.12888292238949664
+        }
+      },
+      "ARARAS": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": -0.033316496965857374,
+          "-3": -0.08369038004959116,
+          "-2": -0.09088123266180538,
+          "-1": 0.1572943439673344,
+          "0": 0.3615594323553402,
+          "1": 0.2621192213502498,
+          "2": -0.07900095076712037,
+          "3": 0.03699033491069011,
+          "4": -0.06752487597524107
+        }
+      },
+      "ASSIS": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": -0.07718787582668542,
+          "-3": 0.04170849479059185,
+          "-2": -0.20139215345054828,
+          "-1": 0.20421845357643703,
+          "0": 0.24659801967905245,
+          "1": 0.11035658107976984,
+          "2": -0.08333084645786153,
+          "3": 0.036011843616077295,
+          "4": -0.0020300689992121894
+        }
+      },
+      "ATIBAIA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.031054451308777823,
+          "-3": -0.0495273231441088,
+          "-2": -0.2251848767532148,
+          "-1": 0.10665200122050988,
+          "0": 0.2560788668263736,
+          "1": 0.10150217532985313,
+          "2": -0.03785817007117605,
+          "3": -0.1808271090545201,
+          "4": 0.2252638437445406
+        }
+      },
+      "AVARE": {
+        "best_lag": -1,
+        "correlations": {
+          "-4": 0.021513069202876232,
+          "-3": -0.053011316505237945,
+          "-2": -0.025209527661640283,
+          "-1": 0.2885345615457843,
+          "0": 0.18817827807513443,
+          "1": -0.005260255916432085,
+          "2": 0.10436540341742459,
+          "3": -0.22659335370144443,
+          "4": -0.08220054741516758
+        }
+      },
+      "BARRETOS": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": -0.008979723177899872,
+          "-3": 0.016390363301181685,
+          "-2": 0.023479813417048374,
+          "-1": -0.05803218669685396,
+          "0": 0.3553765008301106,
+          "1": 0.11764250889733426,
+          "2": 0.015547095567414208,
+          "3": -0.09174369423118817,
+          "4": 0.18558237328840205
+        }
+      },
+      "BARUERI": {
+        "best_lag": 2,
+        "correlations": {
+          "-4": 0.0015684019123558914,
+          "-3": -0.026291984749905045,
+          "-2": 0.13082399047182064,
+          "-1": -0.14286626946131942,
+          "0": 0.04959093038185213,
+          "1": -0.07103057476218935,
+          "2": 0.16183060513615638,
+          "3": -0.04246886292079832,
+          "4": -0.039925842241761426
+        }
+      },
+      "BAURU": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.1530201299069217,
+          "-3": -0.16678876726770986,
+          "-2": -0.16437437342619055,
+          "-1": 0.020730951273626078,
+          "0": 0.6012855676225392,
+          "1": 0.2434451545488188,
+          "2": -0.09048074797060959,
+          "3": -0.08489078693852019,
+          "4": 0.16255639661186316
+        }
+      },
+      "BEBEDOURO": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.10484240344734286,
+          "-3": -0.04334035104250653,
+          "-2": -0.10431260315602042,
+          "-1": -0.01362306925474761,
+          "0": 0.5385318389710474,
+          "1": 0.2627760533043036,
+          "2": -0.0035110381859294955,
+          "3": -0.016741235692271112,
+          "4": -0.009678796655871083
+        }
+      },
+      "BIRIGUI": {
+        "best_lag": -1,
+        "correlations": {
+          "-4": 0.033726493835932646,
+          "-3": 0.007063182591307185,
+          "-2": -0.125190957259279,
+          "-1": 0.4041634909675746,
+          "0": 0.2135078351094744,
+          "1": 0.09108750612755785,
+          "2": -0.10377939908320537,
+          "3": 0.009686178102166867,
+          "4": -0.06726128522040074
+        }
+      },
+      "BOTUCATU": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.27847754871265434,
+          "-3": -0.17099511825945654,
+          "-2": -0.18305472460895844,
+          "-1": -0.06260075451536862,
+          "0": 0.41936573791721904,
+          "1": 0.14926069261873925,
+          "2": -0.06373944770081233,
+          "3": -0.08526871996252734,
+          "4": 0.0385626828393531
+        }
+      },
+      "BRAGANCA PAULISTA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.05255413867418203,
+          "-3": -0.04929196188114226,
+          "-2": -0.3283512912659101,
+          "-1": 0.21331213946229033,
+          "0": 0.48331117686827,
+          "1": 0.20551885097499303,
+          "2": -0.15098278554666356,
+          "3": -0.10377081224391992,
+          "4": 0.1661493720527334
+        }
+      },
+      "CACAPAVA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.07760048314960577,
+          "-3": 0.039950503363124945,
+          "-2": -0.17199193123286738,
+          "-1": 0.08636632391176123,
+          "0": 0.5285837476044611,
+          "1": 0.26004632272026174,
+          "2": -0.20894954591639167,
+          "3": -0.051844311223160175,
+          "4": 0.0783467097059576
+        }
+      },
+      "CARAGUATATUBA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.1303239417336973,
+          "-3": -0.1381829855221909,
+          "-2": 0.01649521963360493,
+          "-1": 0.3242438347515275,
+          "0": 0.3889824620690707,
+          "1": -0.007963901673024753,
+          "2": -0.0434580337714982,
+          "3": -0.07441039858627214,
+          "4": -0.013268294154936468
+        }
+      },
+      "CARAPICUIBA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.005238675539277086,
+          "-3": -0.20011963065601665,
+          "-2": -0.06865643988553324,
+          "-1": 0.2674747394404657,
+          "0": 0.564917349320566,
+          "1": -0.22027238988045997,
+          "2": -0.030303918042998642,
+          "3": -0.05346291071453036,
+          "4": 0.12545411155578623
+        }
+      },
+      "CATANDUVA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.12973137167927637,
+          "-3": -0.09802478444461785,
+          "-2": -0.08396398106245823,
+          "-1": 0.049609926664821814,
+          "0": 0.6864370104055876,
+          "1": 0.2232604710867541,
+          "2": -0.07763432677620705,
+          "3": -0.08157335572020295,
+          "4": 0.08559073722406887
+        }
+      },
+      "COTIA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.09571210716437534,
+          "-3": -0.0976505442174932,
+          "-2": -0.09893939723585797,
+          "-1": 0.20182882501130872,
+          "0": 0.3488037110798663,
+          "1": 0.2985362179769918,
+          "2": -0.14770823072056088,
+          "3": 0.06440441511744065,
+          "4": -0.09194713919825384
+        }
+      },
+      "DIADEMA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.23319754668176154,
+          "-3": -0.1359620259615058,
+          "-2": -0.14048157848302611,
+          "-1": 0.2030202477402385,
+          "0": 0.30992879578676596,
+          "1": -0.12784420543384797,
+          "2": 0.21205593957595206,
+          "3": -0.102903893996188,
+          "4": 0.04315889133812776
+        }
+      },
+      "EMBU DAS ARTES": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.1628813167172941,
+          "-3": -0.08568932093167855,
+          "-2": -0.2592731830541954,
+          "-1": 0.16929516883822,
+          "0": 0.5794188761080361,
+          "1": 0.2066855370220891,
+          "2": -0.1391620869826952,
+          "3": 0.06936094142089289,
+          "4": 0.0918643142529702
+        }
+      },
+      "FRANCA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.20887416543202741,
+          "-3": -0.10756375617038942,
+          "-2": -0.23035091298934157,
+          "-1": 0.07828742158814725,
+          "0": 0.3113911499054535,
+          "1": 0.19301808915835064,
+          "2": -0.15829505055613569,
+          "3": 0.06898413823067814,
+          "4": -0.16180288558697134
+        }
+      },
+      "GARCA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.08111248682384736,
+          "-3": -0.17862398257842596,
+          "-2": -0.003598632124922866,
+          "-1": 0.4028109888039445,
+          "0": 0.4883713721477783,
+          "1": 0.05551076468497548,
+          "2": -0.11408801261258583,
+          "3": 0.12475982076397416,
+          "4": -0.14496958552390685
+        }
+      },
+      "GUARATINGUETA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.0970359553136923,
+          "-3": -0.027170768677114744,
+          "-2": -0.11231228313399239,
+          "-1": 0.018346765712160876,
+          "0": 0.46338292363017075,
+          "1": 0.2159390796203722,
+          "2": -0.10039147787442641,
+          "3": -0.02613231535351916,
+          "4": 0.15341808616413388
+        }
+      },
+      "GUARUJA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.08572115606441046,
+          "-3": -0.040205003607666566,
+          "-2": -0.16775543810920074,
+          "-1": 0.04744559692350309,
+          "0": 0.3903256320594754,
+          "1": 0.011065446083538818,
+          "2": 0.006967151595958481,
+          "3": 0.07110668056259035,
+          "4": 0.027489070694291375
+        }
+      },
+      "HORTOLANDIA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.038610077170893785,
+          "-3": -0.13621576691438064,
+          "-2": 0.08485922187337798,
+          "-1": 0.16003022803219424,
+          "0": 0.32843103487378666,
+          "1": -0.06203647481481259,
+          "2": 0.13923746440332732,
+          "3": -0.09604401372857228,
+          "4": 0.014126109415172268
+        }
+      },
+      "INDAIATUBA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.07696126126351463,
+          "-3": 0.018584036432546407,
+          "-2": 0.04707795200852452,
+          "-1": -0.051539265915875994,
+          "0": 0.4360522607355574,
+          "1": -0.14276297448431166,
+          "2": -0.0014059752250688913,
+          "3": -0.0059092467522977535,
+          "4": 0.030800750311972
+        }
+      },
+      "ITANHAEM": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": -0.04008685609774836,
+          "-3": -0.025423352977838286,
+          "-2": -0.15501419469330704,
+          "-1": 0.1720390125037092,
+          "0": 0.2603555594409366,
+          "1": 0.082887461982143,
+          "2": -0.0631748515669123,
+          "3": 0.1261600175166262,
+          "4": 0.08759035280392373
+        }
+      },
+      "ITAPECERICA DA SERRA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.00798764463018233,
+          "-3": -0.049629791326721975,
+          "-2": -0.12374328386235621,
+          "-1": 0.09994428568300656,
+          "0": 0.31067034325200726,
+          "1": 0.17690718011221618,
+          "2": -0.14139308366250083,
+          "3": 0.18318819700083538,
+          "4": -0.09661798238396725
+        }
+      },
+      "ITAPETININGA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.12883823292712893,
+          "-3": -0.10951315267257801,
+          "-2": -0.07861115817210645,
+          "-1": 0.06424888664983977,
+          "0": 0.2232617613202786,
+          "1": 0.104180737347239,
+          "2": -0.14691843757799186,
+          "3": 0.009810862060348625,
+          "4": -0.04772369998822687
+        }
+      },
+      "ITAPOLIS": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": -0.015474986910716845,
+          "-3": 0.0836965452520861,
+          "-2": -0.11499898772692875,
+          "-1": 0.11591560595127177,
+          "0": 0.2617417722250235,
+          "1": -0.07770187132025565,
+          "2": 0.07318275341726921,
+          "3": -0.06980250705222218,
+          "4": -0.01615047050227069
+        }
+      },
+      "ITAQUAQUECETUBA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.059039223246178725,
+          "-3": 0.07189779248006789,
+          "-2": -0.1956257169824572,
+          "-1": 0.11663872481693786,
+          "0": 0.4336104400526217,
+          "1": 0.022334382654010193,
+          "2": -0.06851860981753814,
+          "3": 0.015037491038692624,
+          "4": 0.1141421067846323
+        }
+      },
+      "ITATIBA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.14700399003535256,
+          "-3": -0.1327812218075217,
+          "-2": -0.20347818585347327,
+          "-1": 0.1589171775967514,
+          "0": 0.4065587677519737,
+          "1": -0.10976125643720756,
+          "2": 0.010704027470510812,
+          "3": -0.08603406458726111,
+          "4": 0.13405141341309362
+        }
+      },
+      "ITU": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.026192229250611057,
+          "-3": -0.06580756312909741,
+          "-2": -0.08325929992676438,
+          "-1": 0.016168189587949945,
+          "0": 0.5223402532790712,
+          "1": 0.19065761416184304,
+          "2": -0.05355205613603676,
+          "3": -0.07385790846133573,
+          "4": 0.018579662456366986
+        }
+      },
+      "JACAREI": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.08640604881724445,
+          "-3": -0.18814554508370937,
+          "-2": -0.11086152777689877,
+          "-1": 0.20022374287998762,
+          "0": 0.5515609632726025,
+          "1": 0.07299800489173754,
+          "2": -0.07385538116069404,
+          "3": -0.13421018290519943,
+          "4": 0.22937618299283585
+        }
+      },
+      "JALES": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": -0.16531134491130725,
+          "-3": 0.055305599872165385,
+          "-2": 0.07555037989237932,
+          "-1": 0.025945051145830834,
+          "0": 0.40876400456140366,
+          "1": 0.3366599019943001,
+          "2": -0.2540181516889471,
+          "3": 0.19124414653831567,
+          "4": 0.06425687134873846
+        }
+      },
+      "JAU": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.21331983776322216,
+          "-3": -0.12578343408237572,
+          "-2": -0.12478673709184322,
+          "-1": 0.1346333626599828,
+          "0": 0.6325348043475139,
+          "1": -0.02936987215262698,
+          "2": -0.05911189006306832,
+          "3": -0.06751719021182988,
+          "4": -0.008611945251423532
+        }
+      },
+      "JUNDIAI": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.04076785813057531,
+          "-3": -0.0242876020193616,
+          "-2": -0.2212438842755339,
+          "-1": 0.13322407137456108,
+          "0": 0.467094520253037,
+          "1": -0.04568057764265604,
+          "2": -0.07488043277812073,
+          "3": -0.00853080027116663,
+          "4": 0.12184285552182453
+        }
+      },
+      "LEME": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.261616106063344,
+          "-3": -0.10852857932635486,
+          "-2": -0.07677683806619336,
+          "-1": 0.03944501019498072,
+          "0": 0.31193510367448396,
+          "1": 0.18622880167228106,
+          "2": -0.1784428695877598,
+          "3": 0.02198386047227661,
+          "4": 0.12952544479322148
+        }
+      },
+      "LIMEIRA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.21616205535377278,
+          "-3": -0.1172354948888991,
+          "-2": -0.17923218499925578,
+          "-1": 0.21784011753848861,
+          "0": 0.4008637654833958,
+          "1": -0.06433001339953535,
+          "2": -0.022725026760342593,
+          "3": -0.05072840392487067,
+          "4": 0.03428229435612776
+        }
+      },
+      "LINS": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.1669277285767732,
+          "-3": -0.07949502231645965,
+          "-2": 0.036079335343554765,
+          "-1": -0.044047318841544524,
+          "0": 0.3206734283769263,
+          "1": 0.11069512474163941,
+          "2": -0.09348782024851876,
+          "3": 0.05307656662876286,
+          "4": -0.08256992180144868
+        }
+      },
+      "LORENA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.13905311865842465,
+          "-3": -0.011671670893600309,
+          "-2": -0.21339634952779094,
+          "-1": 0.03460653096047674,
+          "0": 0.4041308930192899,
+          "1": 0.11769448002484739,
+          "2": -0.10220958890725271,
+          "3": -0.14488504678905104,
+          "4": 0.040812409487666165
+        }
+      },
+      "MARILIA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.16155320257076433,
+          "-3": 0.08115507175740064,
+          "-2": -0.2045693342335101,
+          "-1": 0.12620054784322235,
+          "0": 0.45637384088001737,
+          "1": 0.30294959405533045,
+          "2": -0.0729788066211984,
+          "3": -0.011495661510535986,
+          "4": 0.033109095118945754
+        }
+      },
+      "MATAO": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.11888408019691084,
+          "-3": -0.02030821652387374,
+          "-2": -0.11592510718762397,
+          "-1": 0.07305401949921081,
+          "0": 0.324452783963394,
+          "1": -0.023216841735779023,
+          "2": -0.07835977151234134,
+          "3": -0.058441927205473,
+          "4": 0.19815048647880665
+        }
+      },
+      "MAUA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.15946502061875262,
+          "-3": -0.18995827864125422,
+          "-2": 0.023366967943363924,
+          "-1": -0.03446463549380156,
+          "0": 0.48119962929437937,
+          "1": 0.24865321146664357,
+          "2": -0.027901199983046146,
+          "3": -0.014228290490913805,
+          "4": 0.07076269686673041
+        }
+      },
+      "MOCOCA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": -0.008111953349834212,
+          "-3": -0.07805794064591802,
+          "-2": 0.047618385322038825,
+          "-1": 0.1551102890483419,
+          "0": 0.24496053026224576,
+          "1": 0.18923056260213336,
+          "2": 0.0406186600372995,
+          "3": -0.07584563749679835,
+          "4": -0.03606079105775411
+        }
+      },
+      "MOGI DAS CRUZES": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.18932133049681452,
+          "-3": -0.15360759782426328,
+          "-2": -0.011173734546730976,
+          "-1": 0.1658160020149199,
+          "0": 0.5803649667752583,
+          "1": -0.05622588780030127,
+          "2": -0.14703727722517637,
+          "3": 0.02152955588281149,
+          "4": 0.06350415476722075
+        }
+      },
+      "MOGI GUACU": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.012934679653499632,
+          "-3": 0.0031876532302146272,
+          "-2": -0.05161462911779186,
+          "-1": -9.550090150807888e-05,
+          "0": 0.3430362550950318,
+          "1": -0.0403537567565484,
+          "2": -0.015772968374289445,
+          "3": -0.0953543728406331,
+          "4": 0.18091002415868196
+        }
+      },
+      "MOGI MIRIM": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.20433794312922765,
+          "-3": -0.07427108578673688,
+          "-2": -0.22782609129467804,
+          "-1": -0.012453667351941696,
+          "0": 0.6653514136913926,
+          "1": 0.047106411834093705,
+          "2": -0.06556304356686793,
+          "3": -0.335418265496069,
+          "4": 0.10236940185028652
+        }
+      },
+      "OSASCO": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.2832310987063142,
+          "-3": -0.03361251385220022,
+          "-2": -0.13060776535317256,
+          "-1": -0.16329570352001962,
+          "0": 0.4532141029869982,
+          "1": 0.2667144168160465,
+          "2": -0.11839032123850159,
+          "3": -0.00858213058785669,
+          "4": 0.11164944620369509
+        }
+      },
+      "OURINHOS": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": -0.02545037371259181,
+          "-3": -0.05640927738034201,
+          "-2": 0.05642344702151239,
+          "-1": 0.08018223916663693,
+          "0": 0.13838224245409783,
+          "1": -0.047221239985524584,
+          "2": 0.09564623283568828,
+          "3": -0.12653656348728845,
+          "4": 0.11707702976173706
+        }
+      },
+      "PARAGUACU PAULISTA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": -0.022529860997996805,
+          "-3": -0.01665802134709027,
+          "-2": -0.12275275870643197,
+          "-1": -0.15059835109782552,
+          "0": 0.3192727949210899,
+          "1": 0.20833762697425703,
+          "2": 0.049788595915524425,
+          "3": 0.03168285044681387,
+          "4": 0.027654315577438273
+        }
+      },
+      "PAULINIA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.18361519303822382,
+          "-3": -0.14830775353380662,
+          "-2": -0.13911954843345628,
+          "-1": 0.07171160466884788,
+          "0": 0.48035259611618936,
+          "1": 0.33561436258030514,
+          "2": -0.08739490463429934,
+          "3": -0.10228617554836902,
+          "4": -0.07333391723312586
+        }
+      },
+      "PINDAMONHANGABA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.30566129843255707,
+          "-3": -0.3407295965763821,
+          "-2": -0.2911664308463428,
+          "-1": 0.39344110837443014,
+          "0": 0.5168194305914537,
+          "1": -0.12232943158061753,
+          "2": -0.30218746187696566,
+          "3": -0.11602303066237314,
+          "4": 0.019924308691618025
+        }
+      },
+      "PIRACICABA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.1616817848031899,
+          "-3": -0.0812309515734991,
+          "-2": -0.21192080021921322,
+          "-1": 0.09984280896380839,
+          "0": 0.5935465339940472,
+          "1": 0.15333342002061587,
+          "2": -0.14913289446731054,
+          "3": 0.04110298738354373,
+          "4": 0.076215375872047
+        }
+      },
+      "PRAIA GRANDE": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.12564767601242022,
+          "-3": -0.15263271940443618,
+          "-2": -0.10207297677808648,
+          "-1": 0.17620706294071156,
+          "0": 0.19017477849349076,
+          "1": 0.17075289493604148,
+          "2": -0.09719080043068301,
+          "3": -0.01765554906190685,
+          "4": 0.05193058615060779
+        }
+      },
+      "PRESIDENTE PRUDENTE": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.09720699730697148,
+          "-3": 0.013980670996848603,
+          "-2": -0.2478980144797976,
+          "-1": 0.04699128005178407,
+          "0": 0.44957882162029233,
+          "1": 0.20923326347682325,
+          "2": -0.07926731723119447,
+          "3": -0.16536328504105402,
+          "4": 0.13072266868886698
+        }
+      },
+      "RIBEIRAO PIRES": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.13322722864467715,
+          "-3": -0.03235929819687601,
+          "-2": -0.13753997518487396,
+          "-1": -0.05949528734505433,
+          "0": 0.47408279633225836,
+          "1": 0.24065951714832562,
+          "2": -0.1300126769994734,
+          "3": 0.010033772330955867,
+          "4": 0.09704117157521339
+        }
+      },
+      "RIO CLARO": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.17474418767083,
+          "-3": 0.010909415034626634,
+          "-2": -0.21934147597798614,
+          "-1": 0.12823977026825953,
+          "0": 0.6658005393370355,
+          "1": 0.006753377852078592,
+          "2": 0.0001435466875687359,
+          "3": -0.023270554704643967,
+          "4": 0.008663500476293108
+        }
+      },
+      "SALTO": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.25342385022106384,
+          "-3": -0.09969333696991992,
+          "-2": -0.11990647376073141,
+          "-1": 0.00942990122166491,
+          "0": 0.4918494888897645,
+          "1": -0.16751339826801945,
+          "2": -0.061360440014736055,
+          "3": -0.030760536304073917,
+          "4": 0.08636262814365925
+        }
+      },
+      "SANTA BARBARA D'OESTE": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.17460998905304906,
+          "-3": -0.04021718812388766,
+          "-2": -0.13986437137907334,
+          "-1": 0.05561180806604359,
+          "0": 0.4148620583742809,
+          "1": 0.119126411233366,
+          "2": -0.34778448609009943,
+          "3": 0.017181894780493225,
+          "4": 0.13936207297203795
+        }
+      },
+      "SANTO ANDRE": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.14615118821525672,
+          "-3": -0.18640281838905848,
+          "-2": -0.055961249455523804,
+          "-1": 0.08336970250697552,
+          "0": 0.5118653281208723,
+          "1": 0.0839124874009774,
+          "2": -0.008732919459049878,
+          "3": 0.027947058415169285,
+          "4": 0.008677058202291326
+        }
+      },
+      "SANTOS": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.11789126999853078,
+          "-3": -0.0034869485311112996,
+          "-2": -0.06561900079913094,
+          "-1": -0.13647331819161782,
+          "0": 0.27998812854676386,
+          "1": 0.08225925813811814,
+          "2": 0.10255941183140242,
+          "3": -0.12950915722959533,
+          "4": -0.019950052901622696
+        }
+      },
+      "SAO BERNARDO DO CAMPO": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.0913750419198422,
+          "-3": -0.027874322841434516,
+          "-2": -0.1289394153341601,
+          "-1": 0.08705252380550539,
+          "0": 0.44091111949260664,
+          "1": 0.37296774706561875,
+          "2": -0.22723409328820676,
+          "3": -0.012056865214124165,
+          "4": 0.10580003148062478
+        }
+      },
+      "SAO CAETANO DO SUL": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.07984591034709979,
+          "-3": -0.07680050082367464,
+          "-2": -0.1162630058551721,
+          "-1": 0.10802041944697435,
+          "0": 0.1607388053586484,
+          "1": 0.010136333406294174,
+          "2": 0.07481797230338286,
+          "3": 0.07846927418918544,
+          "4": -0.1600483391323655
+        }
+      },
+      "SAO CARLOS": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": -0.0027473496227538143,
+          "-3": 0.013830712223696402,
+          "-2": -0.015459265990053336,
+          "-1": 0.07305848461185568,
+          "0": 0.4439209250796981,
+          "1": 0.1208577540126507,
+          "2": -0.13655495829440684,
+          "3": -0.13080553766203473,
+          "4": 0.09367601946300264
+        }
+      },
+      "SAO JOAO DA BOA VISTA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": -0.004792239357700452,
+          "-3": 0.02627161691797814,
+          "-2": -0.10375152541056488,
+          "-1": 0.19240058152743664,
+          "0": 0.3669199466399884,
+          "1": 0.18484805998974382,
+          "2": -0.0706491462991211,
+          "3": 0.04646598653286963,
+          "4": -0.1343868436503829
+        }
+      },
+      "SAO JOSE DO RIO PRETO": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.07638861172841589,
+          "-3": -0.049641902910071735,
+          "-2": -0.044408645366537075,
+          "-1": 0.04193685459058212,
+          "0": 0.45994669619802375,
+          "1": 0.1683246440937558,
+          "2": -0.056080873910692795,
+          "3": -0.03589599598487589,
+          "4": -0.017764434493214756
+        }
+      },
+      "SAO JOSE DOS CAMPOS": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.12609547708061,
+          "-3": -0.048598400604053967,
+          "-2": -0.14548784452876348,
+          "-1": 0.014069996850477747,
+          "0": 0.5945638336277711,
+          "1": 0.1694256517450078,
+          "2": -0.23534633160014515,
+          "3": -0.033393239436772436,
+          "4": 0.14732763049677358
+        }
+      },
+      "SAO ROQUE": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.08406626587190179,
+          "-3": -0.05640324690662177,
+          "-2": -0.28835054382677094,
+          "-1": 0.03133984987731664,
+          "0": 0.46802631807405504,
+          "1": 0.2479816262289167,
+          "2": -0.09563050941800626,
+          "3": -0.01819514086685404,
+          "4": -0.12803011279071297
+        }
+      },
+      "SAO VICENTE": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": -0.02893423782573372,
+          "-3": -0.014006330617440995,
+          "-2": -0.08322900646631647,
+          "-1": 0.07748897743313823,
+          "0": 0.22983073978078247,
+          "1": 0.05103860969216425,
+          "2": 0.1795226972538926,
+          "3": 0.03082786005847606,
+          "4": 0.016964068489946672
+        }
+      },
+      "SERTAOZINHO": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.14237458957578997,
+          "-3": -0.16620416750831346,
+          "-2": -0.07251287398502167,
+          "-1": 0.050900270727574755,
+          "0": 0.5943936943100141,
+          "1": 0.4164343620756187,
+          "2": 0.05547991211253292,
+          "3": -0.05409130071040481,
+          "4": 0.08535914910001459
+        }
+      },
+      "SOROCABA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": -0.06670021028806984,
+          "-3": -0.020875560372446974,
+          "-2": -0.12296007882368923,
+          "-1": 0.1157494900341274,
+          "0": 0.40803792680538187,
+          "1": 0.24890470805838494,
+          "2": -0.05501901408197873,
+          "3": -0.1721616409836088,
+          "4": 0.09371135277997929
+        }
+      },
+      "SUMARE": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.16315018153460484,
+          "-3": -0.04988397680224693,
+          "-2": -0.09479204951318301,
+          "-1": 0.21929094778076402,
+          "0": 0.2232610344060726,
+          "1": 0.13279713158207224,
+          "2": -0.1293641718047589,
+          "3": 0.05573140949631043,
+          "4": 0.10516961824368548
+        }
+      },
+      "SUZANO": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.1905582269445837,
+          "-3": -0.1440828988998151,
+          "-2": -0.06636459260303967,
+          "-1": 0.14075809226017957,
+          "0": 0.39747165216676084,
+          "1": -0.003399723663164585,
+          "2": -0.007020335892093009,
+          "3": 0.05523884888308578,
+          "4": -0.02825757565284206
+        }
+      },
+      "TABOAO DA SERRA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.09680906849882302,
+          "-3": -0.07275927250306959,
+          "-2": -0.0004075878865386684,
+          "-1": 0.06431851826657857,
+          "0": 0.40143777891774174,
+          "1": 0.09169060671385418,
+          "2": -0.02207047298766481,
+          "3": 0.07594357182010508,
+          "4": 0.1157304356264604
+        }
+      },
+      "TAUBATE": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.1579929533373364,
+          "-3": -0.12493181100615956,
+          "-2": -0.29283273859277004,
+          "-1": 0.1502246053157258,
+          "0": 0.550325364349662,
+          "1": 0.1426758924453332,
+          "2": 0.17203708521009634,
+          "3": -0.19926052016295326,
+          "4": 0.060965451101281785
+        }
+      },
+      "UBATUBA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.21769846626982908,
+          "-3": -0.3978152302812606,
+          "-2": 0.16223903135011397,
+          "-1": 0.07376582570268708,
+          "0": 0.35922165364158415,
+          "1": -0.35991841944996683,
+          "2": 0.06851076124360725,
+          "3": 0.05518038148491485,
+          "4": -0.005524287716678715
+        }
+      },
+      "VALINHOS": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.16874583405360316,
+          "-3": -0.03614671998687104,
+          "-2": -0.11987020212096655,
+          "-1": -0.16327062580357793,
+          "0": 0.3569336503512795,
+          "1": 0.1261896824532846,
+          "2": 0.006015270662854352,
+          "3": -0.12304430041757049,
+          "4": -0.1366589879136153
+        }
+      },
+      "VARZEA PAULISTA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.19711871423550487,
+          "-3": -0.03775629025461409,
+          "-2": -0.09179972959531836,
+          "-1": 0.07539779886524507,
+          "0": 0.6416514472928979,
+          "1": 0.08101186685099918,
+          "2": -0.15528889128406012,
+          "3": -0.03492637345875812,
+          "4": 0.07904148678395381
+        }
+      },
+      "VINHEDO": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.309375400571051,
+          "-3": -0.2514119395013843,
+          "-2": -0.0695283384814317,
+          "-1": 0.07993589526804033,
+          "0": 0.4382092056326526,
+          "1": 0.1796619822320641,
+          "2": -0.2971796162638824,
+          "3": 0.016340375707539614,
+          "4": 0.19237310388009726
+        }
+      },
+      "VOTUPORANGA": {
+        "best_lag": 0,
+        "correlations": {
+          "-4": 0.007608517498910709,
+          "-3": 0.01636673929184782,
+          "-2": -0.13187052028632545,
+          "-1": 0.06441296396297815,
+          "0": 0.47108654684419854,
+          "1": 0.2858397372325724,
+          "2": 0.013957174196263966,
+          "3": 0.04354206912388774,
+          "4": 0.11704055814243412
+        }
+      }
+    },
+    "ethanol": {
+      "testable": 83,
+      "share_forward": 0.1566265060240964,
+      "share_reverse": 0.13253012048192772
+    },
+    "stable": false
+  }
+}
