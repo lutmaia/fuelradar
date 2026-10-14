@@ -2,7 +2,7 @@
 
 Preços de combustível pesquisados pela ANP em São Paulo, organizados para responder perguntas práticas (*onde abastecer, etanol ou gasolina, quanto o preço vai mudar*) e testados com um estudo pré-registrado.
 
-**Demonstração online:** *(link do Streamlit Community Cloud, a publicar)* · dados de 13/11/2022 a 09/10/2026 (última coleta) · sem instalar nada.
+**[Demonstração online](https://fuelradar-a5kwciypheseufpbfh6ggv.streamlit.app/)** · dados de 13/11/2022 a 09/10/2026 (última coleta) · sem instalar nada.
 
 ## O problema
 

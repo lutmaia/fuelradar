@@ -25,4 +25,5 @@
 - **Sem atualização automática:** o pacote é gerado à mão até o Marco 12.
 - **Histórico de 3 anos a partir da semana mais recente do conjunto:** uma série que parou há mais tempo mostra no demonstrativo só a parte dentro dessa janela.
 - **O desempate entre postos com o mesmo preço** segue o nome usado pela API (com a razão social), não o nome público; a ordem dos empatados pode parecer arbitrária.
-- **A verificar ao implantar:** se o Streamlit Community Cloud usa `demo/requirements.txt` (pasta do ponto de entrada) antes do `pyproject.toml` da raiz, a versão de Python disponível e os limites de memória do plano gratuito.
+- **Implantado em 2026-10-14** em https://fuelradar-a5kwciypheseufpbfh6ggv.streamlit.app/: a instalação com `demo/requirements.txt` funcionou e as páginas abriram com o pacote. Limites de memória do plano gratuito seguem sem medição.
+- **Verificado só em parte:** se o Streamlit Community Cloud usa `demo/requirements.txt` (pasta do ponto de entrada) antes do `pyproject.toml` da raiz, a versão de Python disponível e os limites de memória do plano gratuito.
