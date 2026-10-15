@@ -46,7 +46,8 @@ Defeito antigo visto na conferência de 2026-10-14, ainda não corrigido: a linh
 ## Próximas decisões
 
 - [x] **Escopo do Marco 10 reavaliado (2026-10-14): opção B.** A camada L2 fica sem os líderes de Q3, só com os sinais do estado; o resto do desenho não muda. Registrado na tabela de desvios do protocolo. Alternativas consideradas: manter como desenhado, só dados externos (L0 × L1 × L3) e pular para o Marco 11.
-- [ ] **Licença dos preços de produtores da ANP** (pendente desde 2026-10-14): aceitar como dado aberto de governo com crédito à ANP (sugestão), perguntar à ANP (faleconosco@anp.gov.br) ou descartar pela regra da dúvida. Detalhes em [triagem-fontes-externas.md](estudo/triagem-fontes-externas.md).
+- [ ] **Quais fontes da ANP usar** (2026-10-15): os termos de uso do portal da ANP autorizam reprodução sem fins lucrativos com citação e link, e valem para produtores, distribuição e a fonte principal. Candidatas: preços de produtores (Sudeste, sem etanol, atraso de ~1 a 2 semanas, `.xls`) e **preços de distribuição** (SP e 108 municípios, com etanol, mesma semana dos postos, atraso de 5 a 9 semanas, `.xlsx`). Detalhes em [triagem-fontes-externas.md](estudo/triagem-fontes-externas.md).
+- [ ] **Rodapé do painel:** acrescentar o link da fonte da ANP, que os termos de uso pedem; README: dizer que os dados da ANP e derivados seguem os termos da ANP (sem fins lucrativos).
 - [ ] **Depois da decisão:** ingestão das fontes aprovadas (`external/`, migração com `available_at`, manifesto e hash, qualidade, alinhamento *as-of*). Os preços de produtores exigiriam uma dependência nova para ler `.xls` (`xlrd`). Se o dólar entrar no pacote do demonstrativo, o pacote passa a ser publicado sob ODbL.
 
 As páginas Regiões e Estudo, a outra parte do Marco 9, estão prontas (2026-10-14).

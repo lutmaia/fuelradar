@@ -4,12 +4,28 @@ Triagem feita em 2026-10-14, antes de qualquer código de ingestão, pelos crit�
 
 Os arquivos baixados para a triagem ficaram fora do repositório (pasta temporária). Nada foi ingerido.
 
-## Resumo
+## Atualização de 2026-10-15: termos de uso da ANP e preços de distribuição
+
+A pedido do usuário, revista a página geral de preços da ANP (`gov.br/anp/.../precos-e-defesa-da-concorrencia/precos`). Duas descobertas:
+
+1. **Os termos de uso do portal da ANP são explícitos** ("Termos de uso do portal da ANP"): *"É autorizada a reprodução total ou parcial, sem fins lucrativos, do conteúdo, mediante a citação obrigatória da fonte de forma clara e visível, de preferência com link (endereço eletrônico) que remeta às informações originais do conteúdo reproduzido no site da Agência."* O uso *"com finalidade comercial de venda de serviços"* é proibido. Isso vale para todo o conteúdo do portal, **inclusive o levantamento de preços nos postos que o projeto já usa**. O projeto é sem fins lucrativos; falta o rodapé do painel trazer o link da fonte. A dúvida de licença dos preços de produtores deixa de existir: eles têm os mesmos termos da fonte principal.
+2. **Preços de distribuição de combustíveis** (página própria, arquivos `.xlsx` em `.../precos/pdc/semanal/`): preço médio ponderado por volume que as distribuidoras cobram, com tributos e frete, **por estado e por município** (459 municípios no Brasil). Medido nos arquivos baixados em 2026-10-15:
+   - **Produtos:** gasolina C comum e aditivada, **etanol hidratado**, diesel B S10 e S500, os mesmos da pesquisa nos postos.
+   - **Semana:** domingo a sábado, a mesma da pesquisa nos postos (sem ajuste de calendário).
+   - **São Paulo (estado):** os cinco produtos com 198 semanas consecutivas de 13/11/2022 a 23/08/2026, sem lacuna.
+   - **Municípios de SP:** 108, os mesmos da nossa base, nos cinco produtos; o arquivo desde 2024 tem 139 semanas de linhas por município (há células `-` sem preço, não contadas). Há outro arquivo de ago/2020 a dez/2023, não medido.
+   - **Atraso:** a semana mais recente era a de 23/08/2026 num arquivo atualizado em 21/09/2026; a ANP diz atualizar até o último dia útil do mês seguinte. Para prever 1 a 4 semanas à frente, o dado disponível na data da previsão tem cerca de 5 a 9 semanas.
+   - Médias truncadas (até 25% das observações descartadas em cada extremo) e dados declarados pelos agentes regulados.
+
+**Consequência para o ODbL do dólar:** a ODbL exige que um banco de dados derivado publicado fique sob ODbL, que permite uso comercial; os dados da ANP não permitem. Para não misturar as duas condições, a série do dólar não deve entrar no pacote público do demonstrativo; números e gráficos calculados com ela podem ser exibidos com o crédito ao BCB.
+
+## Resumo (2026-10-14)
 
 | Fonte | Acesso | Licença | Cobertura | Situação |
 |---|---|---|---|---|
 | Dólar comercial, venda (BCB, SGS série 1) | API JSON aberta, sem chave | **ODbL**, declarada na ficha do portal de dados abertos do BCB | diária, 991 cotações de 01/11/2022 a 13/10/2026 | **aprovada** |
 | Preços médios ponderados de produtores e importadores (ANP) | planilha `.xls` oficial, atualizada semanalmente | **não declarada** em nenhuma página encontrada | semanal, 204 semanas sem lacuna desde 11/2022 (gasolina A, diesel S-10 e S-500) | **aguarda decisão do usuário** |
+| Preços de distribuição (ANP), *visto em 2026-10-15* | planilhas `.xlsx` oficiais | termos do portal da ANP: sem fins lucrativos, com citação e link | semanal, SP e 108 municípios, 5 produtos com etanol; atraso de 5 a 9 semanas | **candidata** (decisão do usuário) |
 | Preço do etanol na usina | não há na publicação da ANP (só derivados de petróleo e biodiesel) | indicador CEPEA/Esalq tem licença restritiva | — | **descartada** pela política (já prevista no desenho) |
 | Paridade de importação (PPI) publicada pela ANP | página da ANP | dados fornecidos pela S&P Global (terceiro) | — | **descartada**: licença de terceiro, dúvida |
 
@@ -29,7 +45,7 @@ Os arquivos baixados para a triagem ficaram fora do repositório (pasta temporá
 
 ### Decisão pendente
 
-Opções apresentadas ao usuário em 2026-10-14:
+Opções apresentadas ao usuário em 2026-10-14 (a primeira reforçada pelos termos de uso encontrados em 2026-10-15):
 
 1. **Aceitar** como dado aberto de governo, com crédito à ANP, igual à fonte principal (sugestão registrada).
 2. **Perguntar à ANP** (faleconosco@anp.gov.br) e só usar depois da resposta.
