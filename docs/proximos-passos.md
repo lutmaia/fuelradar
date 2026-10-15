@@ -57,8 +57,10 @@ Defeito visto em 2026-10-14 e **corrigido em 2026-10-15**: a linha de referênci
   4. [x] **Teste lido uma vez:** BSS +0,164, mas calibração 0,0504 > 0,05 → **não aprovado**; nada muda no produto. Ver "Verificação do Marco 10" no PLAN e o [cartão do modelo](model-card.md).
 - [ ] **Marcos 10b e 11 — calibração e avaliação ao vivo (pedido em 2026-10-15), em etapas:**
   1. [x] **Protocolo e código testados com dados sintéticos:** [protocolo-ao-vivo.md](estudo/protocolo-ao-vivo.md); só a temperatura das probabilidades é ajustada (um T por horizonte, na validação do Marco 10); registro imutável em `reports/ledger/`, pontuação, placar e decisão com 26 semanas; `/forecasts` com probabilidades experimentais, `/models/scoreboard`, página *Desempenho ao vivo*; migração `0007_live`; 373 testes aprovados.
-  2. [ ] **Commit do protocolo pelo usuário**, antes de ajustar a temperatura e de gerar a primeira previsão.
-  3. [ ] `scripts/run_live.py --fit-calibration` (uma vez) e `scripts/run_live.py` (toda semana, depois de carregar a semana nova da ANP); commit semanal de `reports/ledger/`.
+  2. [x] **Commit do protocolo pelo usuário** (`3614baf`), antes de ajustar a temperatura e de gerar a primeira previsão.
+  3. [x] **Calibração (2026-10-15, uma vez):** T = 1,32 (h=1), 1,39 (h=2), 2,33 (h=4); erro de calibração na própria validação (otimista) 0,037→0,034, 0,050→0,036, 0,114→0,077. Em `reports/modelv2/calibracao.json`.
+  4. [x] **Primeira previsão ao vivo (2026-10-15):** origem 2026-10-04, 837 linhas (279 séries × 3 horizontes) em `reports/ledger/`; pacote do demonstrativo regenerado; 373 testes aprovados.
+  5. [ ] **Toda semana:** carregar a semana nova da ANP, `scripts/run_live.py`, regenerar o pacote e commitar `reports/ledger/`. Decisão quando houver 26 origens conferidas em h=2 (por volta de abril de 2027).
 - [ ] **Enviar ao GitHub:** os commits desde 2026-10-15 estão só locais, a pedido do usuário. O pacote do demonstrativo foi regenerado com a margem; ao enviar, o Streamlit Community Cloud republica sozinho.
 - [x] **Ingestão das fontes aprovadas (2026-10-15):** `external/`, migração `0005`, `scripts/fetch_external.py`, `xlrd` como dependência nova; o dólar fica fora do pacote público.
 

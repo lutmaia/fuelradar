@@ -1,0 +1,30 @@
+{
+  "horizons": {
+    "1": {
+      "ece_after": 0.03421580138096003,
+      "ece_before": 0.036466913913947616,
+      "log_loss_after": 0.8774361364028335,
+      "log_loss_before": 0.8936190878339578,
+      "points": 9569,
+      "temperature": 1.3235158415258024
+    },
+    "2": {
+      "ece_after": 0.03631748204218644,
+      "ece_before": 0.050009511637980585,
+      "log_loss_after": 0.9394101279604267,
+      "log_loss_before": 0.9576579115042055,
+      "points": 8854,
+      "temperature": 1.3931048774149686
+    },
+    "4": {
+      "ece_after": 0.0768368906535913,
+      "ece_before": 0.11394111668442976,
+      "log_loss_after": 1.0338852236125642,
+      "log_loss_before": 1.1239943741375347,
+      "points": 7593,
+      "temperature": 2.327390456252504
+    }
+  },
+  "model": "L2_lightgbm",
+  "source": "validação do Marco 10"
+}

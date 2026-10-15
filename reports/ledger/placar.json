@@ -1,0 +1,13 @@
+{
+  "alert": null,
+  "decision": {
+    "origins_matured": 0,
+    "origins_needed": 26,
+    "status": "pendente"
+  },
+  "horizons": {},
+  "latest_data_week": "2026-10-04",
+  "ledger_origins": [
+    "2026-10-04"
+  ]
+}
