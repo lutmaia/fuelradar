@@ -331,6 +331,76 @@ class RankingsResponse(Freshness):
     items: list[RankingItem] = Field(description="Todos os municípios com dado na janela, por nome.")
 
 
+MARGIN_NOTE = ("Margem bruta de revenda = preço nos postos − preço médio de distribuição (ANP), os dois com "
+               "tributos. Não é lucro: inclui as despesas do posto (aluguel, salários, energia, cartão, perdas).")
+
+
+class MarginPoint(BaseModel):
+    week_start: date
+    retail_median: float | None = Field(None, description="Mediana da pesquisa nos postos na semana.")
+    distribution: float | None = Field(None, description="Preço médio de distribuição da ANP na semana.")
+    margin: float | None = Field(None, description="`retail_median` − `distribution`: margem bruta estimada.")
+    stations: int | None = None
+    reason: Literal["NO_DISTRIBUTION", "NO_RETAIL", "LOW_COVERAGE"] | None = Field(
+        None, description="Por que não há margem na semana.")
+
+
+class MarginsResponse(Freshness):
+    location: Location
+    product: str
+    unit: str
+    note: str = MARGIN_NOTE
+    distribution_latest_week: date | None = Field(
+        None, description="Semana mais recente com preço de distribuição (a ANP publica com 5 a 9 semanas de atraso).")
+    latest: MarginPoint | None = Field(description="Semana mais recente com margem calculada.")
+    items: list[MarginPoint]
+
+
+class MunicipalMargin(BaseModel):
+    location: Location
+    retail_median: float
+    distribution: float
+    margin: float
+    stations: int
+    low_coverage: bool = Field(description="Cobertura baixa nos postos: a mediana pode não representar o município.")
+
+
+class MunicipalMarginsResponse(Freshness):
+    product: str
+    unit: str
+    note: str = MARGIN_NOTE
+    week_start: date | None = Field(description="Semana mais recente com preço de distribuição no estado.")
+    week_end: date | None
+    state: MarginPoint | None
+    items: list[MunicipalMargin]
+
+
+class StationMargin(BaseModel):
+    cnpj: str
+    name: str | None
+    legal_name: str | None
+    brand: str | None
+    address: str | None
+    neighborhood: str | None
+    price: float = Field(description="Preço do posto na semana (média das coletas da semana).")
+    collection_date: date
+    estimated_margin: float = Field(description="`price` − preço médio de distribuição do município: estimativa, "
+                                                "não o custo real de compra do posto.")
+    extreme: bool = Field(description="Algum preço da semana tem aviso `preco_extremo`.")
+
+
+class StationMarginsResponse(Freshness):
+    location: Location
+    product: str
+    unit: str
+    note: str = MARGIN_NOTE
+    week_start: date | None = Field(description="Semana mais recente com preço de distribuição e pesquisa no município.")
+    week_end: date | None
+    distribution: float | None
+    retail_median: float | None
+    items: list[StationMargin]
+
+
 class ForecastPoint(BaseModel):
     horizon: int = Field(description="Semanas à frente da semana de origem (1 a 4).")
     target_week_start: date

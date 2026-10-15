@@ -24,12 +24,13 @@ from psycopg.rows import dict_row  # noqa: E402
 import streamlit as st  # noqa: E402
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
-from tests.test_api import ApiCase, LAST, N_WEEKS, WEEK0, insert_published_model, week  # noqa: E402
+from tests.test_api import (ApiCase, LAST, N_WEEKS, WEEK0, distribution_row, insert_published_model,  # noqa: E402
+                            week)
 from radar_combustiveis import snapshot  # noqa: E402
 from radar_combustiveis.dashboard import views  # noqa: E402
 from radar_combustiveis.dashboard.client import ApiClient, ApiError  # noqa: E402
 from radar_combustiveis.dashboard.snapshot import SnapshotClient  # noqa: E402
-from radar_combustiveis.db.connection import SCHEMA  # noqa: E402
+from radar_combustiveis.db.connection import SCHEMA, connect  # noqa: E402
 from radar_combustiveis.ingestion.normalize import normalize_text  # noqa: E402
 
 logging.getLogger("streamlit").setLevel(logging.ERROR)
@@ -41,7 +42,7 @@ def tearDownModule():
 
 
 PAGES = ("home", "explore", "stations_ranking", "brands_page", "forecasts_page", "anomalies_page", "compare",
-         "regions_page", "study_page", "quality")
+         "regions_page", "margins_page", "study_page", "quality")
 
 
 class PackageUnitTests(unittest.TestCase):
@@ -78,6 +79,14 @@ class SnapshotContractTests(ApiCase):
     def setUpClass(cls):
         super().setUpClass()
         insert_published_model(cls.admin_url)
+        from radar_combustiveis.external import load as external_load
+        rows = ([distribution_row("CAMPINAS", "municipio", n, 5.5) for n in range(9)]
+                + [distribution_row("SP", "uf", n, 5.4) for n in range(9)])
+        record = {"sha256": "d" * 64, "name": "distribuicao.xlsx", "url": "https://www.gov.br/x",
+                  "raw_path": "external/x.xlsx", "retrieved_at": "2026-10-10T12:00:00+00:00",
+                  "first_retrieved_at": "2026-10-10T12:00:00+00:00"}
+        with connect(cls.admin_url) as conn:
+            external_load.load_source(conn, "anp_distribuicao", [(record, rows)])
         with psycopg.connect(cls.admin_url) as conn:  # dois postos sem nome fantasia, como 62% dos reais
             conn.execute("UPDATE dim_station SET trade_name = NULL WHERE trade_name IN ('POSTO 1', 'POSTO 30')")
             cls.unnamed = [r[0] for r in conn.execute(
@@ -144,6 +153,14 @@ class SnapshotContractTests(ApiCase):
                         self.same_error(method, *args)
             self.same("regions", product, 26) if product != "GNV" else self.same_error("regions", product, 26)
             self.same("rankings", product, 26)
+        for product in ("GASOLINA_COMUM", "GNV"):
+            for city in (None, self.name("Campinas"), self.name("Itu")):
+                try:
+                    self.same("margins", product, city, 52)
+                except ApiError:
+                    self.same_error("margins", product, city, 52)
+        self.same("margin_municipalities", "GASOLINA_COMUM")
+        self.same_error("margin_municipalities", "ETANOL_HIDRATADO")
         self.same("ethanol", None, 1)
         self.same("ethanol", self.name("Jundiaí"), 26)
         self.same("station_choice", "GASOLINA_COMUM", self.name("Campinas"))
@@ -175,6 +192,12 @@ class SnapshotContractTests(ApiCase):
                     self.assertIsNone(g["legal_name"])
                     self.assertEqual({k: v for k, v in g.items() if k not in ("cnpj", "legal_name", "name")},
                                      {k: v for k, v in w.items() if k not in ("cnpj", "legal_name", "name")})
+        got = self.snap.margin_stations("GASOLINA_COMUM", self.name("Campinas"))
+        want = self.api.margin_stations("GASOLINA_COMUM", self.name("Campinas"))
+        self.assertEqual([(i["price"], i["estimated_margin"]) for i in got["items"]],
+                         [(i["price"], i["estimated_margin"]) for i in want["items"]])
+        self.assertTrue(got["items"])
+        self.assertTrue(all(i["cnpj"] is None and i["legal_name"] is None for i in got["items"]))
         names = {i["name"] for i in self.snap.stations(self.name("Jundiaí"), "GASOLINA_COMUM")["items"]}
         self.assertIn("Posto bandeira branca", names)  # o POSTO 1, sem nome fantasia
         self.assertIn("POSTO 2", names)

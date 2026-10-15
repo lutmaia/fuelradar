@@ -28,6 +28,7 @@ def main():
              st.Page(views.guarded(views.anomalies_page), title="Variações incomuns", url_path="variacoes", icon="⚠️"),
              st.Page(views.guarded(views.compare), title="Comparar municípios", url_path="comparar", icon="📊"),
              st.Page(views.guarded(views.regions_page), title="Regiões", url_path="regioes", icon="🗺️"),
+             st.Page(views.guarded(views.margins_page), title="Margem dos postos", url_path="margem", icon="💲"),
              st.Page(views.guarded(views.study_page), title="Estudo", url_path="estudo", icon="🔬"),
              st.Page(views.guarded(views.quality), title="Qualidade e metodologia", url_path="qualidade", icon="🧭")]
     st.navigation(pages).run()

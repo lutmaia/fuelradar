@@ -54,6 +54,7 @@ ANOMALIES = "from radar_combustiveis.dashboard import views\nviews.guarded(views
 BRANDS = "from radar_combustiveis.dashboard import views\nviews.guarded(views.brands_page)()"
 REGIONS = "from radar_combustiveis.dashboard import views\nviews.guarded(views.regions_page)()"
 STUDY = "from radar_combustiveis.dashboard import views\nviews.guarded(views.study_page)()"
+MARGINS = "from radar_combustiveis.dashboard import views\nviews.guarded(views.margins_page)()"
 
 
 # -- Formatação -----------------------------------------------------------------------------
@@ -521,6 +522,37 @@ class FakeApi:
                 "unit": "BRL/M3" if product == "GNV" else "BRL/L", "start": "2026-04-05", "end": "2026-09-27",
                 "weeks": 26, "min_weeks": 13, "threshold": 0.70, "min_stations": 5, "tank_liters": 50, "items": items}
 
+    def margins(self, product, municipality=None, weeks=52):
+        if self.over.get("no_margin"):
+            items = [{"week_start": "2026-09-27", "retail_median": 6.39, "distribution": None, "margin": None,
+                      "stations": 25, "reason": "NO_DISTRIBUTION"}]
+        else:
+            items = [{"week_start": w, "retail_median": 6.38, "distribution": 5.45, "margin": 0.93, "stations": 25,
+                      "reason": None} for w in ("2026-08-16", "2026-08-23")]
+            items.append({"week_start": "2026-08-30", "retail_median": 6.39, "distribution": None, "margin": None,
+                          "stations": 25, "reason": "NO_DISTRIBUTION"})
+        with_margin = [i for i in items if i["margin"] is not None]
+        return {"data_as_of": "2026-10-01", "source_retrieved_at": None,
+                "location": {"uf": "SP", "municipality": municipality}, "product": product, "unit": "BRL/L",
+                "note": "Não é lucro.", "distribution_latest_week": "2026-08-23" if with_margin else None,
+                "latest": with_margin[-1] if with_margin else None, "items": items}
+
+    def margin_municipalities(self, product):
+        items = [{"location": {"uf": "SP", "municipality": n}, "retail_median": 6.4, "distribution": 5.4,
+                  "margin": m, "stations": 8, "low_coverage": n == "SANTOS"}
+                 for n, m in (("SANTOS", 1.2), ("CAMPINAS", 0.9))]
+        return {"data_as_of": "2026-10-01", "source_retrieved_at": None, "product": product, "unit": "BRL/L",
+                "note": "", "week_start": "2026-08-23", "week_end": "2026-08-29", "state": None, "items": items}
+
+    def margin_stations(self, product, municipality):
+        items = [{"cnpj": "00000000000191", "name": "POSTO A", "legal_name": "POSTO A LTDA", "brand": "IPIRANGA",
+                  "address": "RUA A", "neighborhood": "CENTRO", "price": 6.09, "collection_date": "2026-08-25",
+                  "estimated_margin": 0.64, "extreme": False}]
+        return {"data_as_of": "2026-10-01", "source_retrieved_at": None,
+                "location": {"uf": "SP", "municipality": municipality}, "product": product, "unit": "BRL/L",
+                "note": "", "week_start": "2026-08-23", "week_end": "2026-08-29", "distribution": 5.45,
+                "retail_median": 6.38, "items": items}
+
     def data_quality(self, week_start=None):
         return {"data_as_of": "2026-10-01", "source_retrieved_at": None,
                 "last_load": self.freshness()["last_load"],
@@ -608,7 +640,7 @@ class RefuelSectionTests(PageCase):
         self.assertFalse(at.exception)
         self.assertEqual({m.label: m.value for m in at.metric}["Mais barato frente à mediana"], "R$ 0,40")
         captions = " ".join(c.value for c in at.caption)
-        self.assertIn("R\$ 20,00 num tanque de 50 L", captions)     # cifrão escapado: não vira fórmula
+        self.assertIn(r"R\$ 20,00 num tanque de 50 L", captions)     # cifrão escapado: não vira fórmula
         self.assertIn("**4,0 vezes**", captions)
         success = " ".join(s.value for s in at.success)
         self.assertIn("Etanol compensa:** custa 68,0%", success)        # a semana mais recente
@@ -899,6 +931,40 @@ class RegionsPageTests(PageCase):
         infos = " ".join(i.value for i in at.info)
         self.assertIn("Nenhum município tem semanas suficientes com preços de etanol", infos)
         self.assertIn("Nenhum município tem semanas suficientes com postos", infos)
+
+
+class MarginsPageTests(PageCase):
+    def test_state_view_shows_the_latest_week_with_both_prices_and_neutral_wording(self):
+        at = self.run_page(MARGINS, FakeApi())
+        self.assertFalse(at.exception)
+        metrics = {m.label: (m.value, m.delta) for m in at.metric}
+        self.assertEqual(metrics["Margem bruta estimada"], ("R$ 0,93", "15% do preço"))
+        self.assertEqual(metrics["Distribuição (média)"][0], "R$ 5,45")
+        markdown = " ".join(m.value for m in at.markdown)
+        self.assertIn("Segundo os dados da ANP, no estado de São Paulo, a margem bruta", markdown)
+        self.assertIn("**não é lucro**", markdown)
+        self.assertNotIn("lucro de", markdown.lower())
+        captions = " ".join(c.value for c in at.caption)
+        self.assertIn("a distribuição vai até 23/08/2026", captions)
+        self.assertIn("Preços de distribuição de combustíveis da ANP", captions)
+        cities = at.dataframe[-1].value
+        self.assertEqual(list(cities["Município"]), ["CAMPINAS", "SANTOS"])
+        self.assertEqual(list(cities["Cobertura"]), ["normal", "baixa"])
+
+    def test_municipality_view_lists_station_estimates(self):
+        at = self.run_page(MARGINS, FakeApi(), {"municipio": "CAMPINAS", "produto": "GASOLINA_COMUM"})
+        self.assertFalse(at.exception)
+        self.assertIn("Segundo os dados da ANP, em CAMPINAS", " ".join(m.value for m in at.markdown))
+        stations = at.dataframe[-1].value
+        self.assertAlmostEqual(stations.iloc[0]["Margem bruta estimada"], 0.64)
+        self.assertEqual(stations.iloc[0]["Bandeira"], "IPIRANGA")
+        self.assertIn("custo real de compra de cada posto não é público", " ".join(c.value for c in at.caption))
+
+    def test_without_distribution_it_says_so_and_gnv_is_not_offered(self):
+        at = self.run_page(MARGINS, FakeApi(no_margin=True), {"produto": "GNV"})
+        self.assertFalse(at.exception)
+        self.assertIn("Sem semana com preço nos postos e de distribuição", " ".join(i.value for i in at.info))
+        self.assertNotIn("GNV", at.selectbox[1].options)
 
 
 class StudyPageTests(PageCase):

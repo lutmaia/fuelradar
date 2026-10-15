@@ -39,7 +39,8 @@ ANP (planilhas semanais) → ingestão (manifesto SHA-256, brutos intactos) → 
 
 - **Dados:** cerca de 800 mil preços em 174 semanas, de 108 municípios. Reexecução sem duplicar, revisões da fonte rastreadas, arquivos com defeito da ANP excluídos com registro ([ADR 0006](docs/decisions/0006-arquivos-da-fonte-excluidos.md)).
 - **API:** endpoints de leitura com `data_as_of`, amostra e cobertura em cada resposta, usuário de banco somente leitura ([guia](docs/api.md)).
-- **Painel:** 10 páginas: município, postos mais baratos, bandeiras, previsões, variações incomuns, comparação, regiões, estudo e qualidade ([guia](docs/dashboard.md)).
+- **Painel:** 11 páginas: município, postos mais baratos, bandeiras, previsões, variações incomuns, comparação, regiões, margem dos postos, estudo e qualidade ([guia](docs/dashboard.md)).
+- **Fontes externas:** dólar do Banco Central e preços de produtores e de distribuição da ANP, com a data em que cada valor ficou disponível, para a modelagem não usar dado do futuro ([ADR 0010](docs/decisions/0010-fontes-externas-e-as-of.md)). Com a distribuição, o painel mostra a **margem bruta de revenda**: quanto o preço nos postos fica acima do preço médio das distribuidoras.
 - **Estudo:** [protocolo](docs/estudo/protocolo.md) commitado antes dos resultados, teste final lacrado em código, IC agrupado por posto, bootstrap em blocos de semanas e correção de Holm.
 - **Testes:** suíte com dados sintéticos de resposta conhecida, contra PostgreSQL real em Docker; os números do painel foram conferidos contra SQL escrito à parte e as telas, no navegador.
 - **Demonstração:** o mesmo painel lendo um pacote de respostas da API ([ADR 0009](docs/decisions/0009-demonstrativo-e-pacote-instantaneo.md)), sem CNPJ nem razão social.
@@ -71,6 +72,7 @@ docker compose up -d --wait                                         # PostgreSQL
 .\.venv\Scripts\python.exe scripts/load_db.py                   # migra e carrega no PostgreSQL (DATABASE_URL)
 .\.venv\Scripts\python.exe scripts/run_forecasts.py              # backtest, decisão e previsões; relatório em reports/forecasting/
 .\.venv\Scripts\python.exe scripts/run_study.py                  # estudo; relatórios em reports/study/
+.\.venv\Scripts\python.exe scripts/fetch_external.py             # dólar (BCB), produtores e distribuição (ANP): baixa, confere e carrega
 .\iniciar.ps1                                                    # sobe banco, API e painel (http://127.0.0.1:8501)
 .\.venv\Scripts\python.exe scripts/build_snapshot.py            # regenera o pacote do demonstrativo (API_DATABASE_URL)
 ```
@@ -79,7 +81,7 @@ Sem `--since`, `fetch_anp.py` baixa todas as semanas desde 2022 (cerca de 300 MB
 
 ## Fonte dos dados
 
-Os preços vêm do **Levantamento de Preços de Combustíveis da ANP** (Agência Nacional do Petróleo, Gás Natural e Biocombustíveis), publicado em dados abertos no portal gov.br/anp. Os arquivos originais **não** estão neste repositório. Medianas, comparações, previsões e demais números são **derivados por este projeto** e não são divulgados pela ANP.
+Os preços vêm do **Levantamento de Preços de Combustíveis da ANP** (Agência Nacional do Petróleo, Gás Natural e Biocombustíveis), e os preços de produtores e de distribuição, das páginas de preços da ANP ([gov.br/anp](https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos)). Os [termos de uso do portal da ANP](https://www.gov.br/anp/pt-br/acesso-a-informacao/termos-de-uso-privacidade-e-seguranca-1) autorizam a reprodução **sem fins lucrativos**, com citação da fonte; este projeto não tem fins lucrativos. O dólar vem do **Banco Central do Brasil** (SGS, série 1), sob a [ODbL](https://opendatacommons.org/licenses/odbl/); ele não entra no pacote público do demonstrativo. Os arquivos originais **não** estão neste repositório. Medianas, comparações, previsões, margens e demais números são **derivados por este projeto** e não são divulgados pela ANP nem pelo BCB.
 
 ## Limites
 
@@ -100,4 +102,4 @@ Os preços vêm do **Levantamento de Preços de Combustíveis da ANP** (Agência
 
 ## Licença
 
-Código sob a licença [MIT](LICENSE). Os dados de origem pertencem à ANP e seguem os termos de uso do portal de dados abertos.
+Código sob a licença [MIT](LICENSE). Os dados de origem e os números derivados deles seguem os termos de cada fonte: os da ANP permitem uso sem fins lucrativos, com citação.

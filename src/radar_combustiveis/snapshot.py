@@ -22,6 +22,7 @@ FORMAT_VERSION = 1
 HISTORY_DAYS = 1095        # o intervalo máximo da API (1.096 dias) cobre a janela de 3 anos do painel
 REGION_WEEKS = 26
 ANOMALY_WEEKS = 12         # o máximo da API; o cliente filtra janelas menores
+MARGIN_WEEKS = 52          # margem bruta (Marco 9); o dólar não entra no pacote (ODbL, ADR 0010)
 _DATETIME = TypeAdapter(datetime)
 
 
@@ -99,10 +100,14 @@ def build(api, conn, uf="SP", now=None):
     for product in products:
         take("regions", product, REGION_WEEKS)
         take("rankings", product, REGION_WEEKS)
+        take("margin_municipalities", product)
         for name in [None, *names]:
             take("latest", product, name)
             take("brands", product, name)
             take("forecasts", product, name)
+            take("margins", product, name, MARGIN_WEEKS)
+            if name is not None:
+                take("margin_stations", product, name, transform=private)
             body = api.history(product, name, start, latest_week)
             history[call_key(product, name)] = {"location": body["location"], "items": body["items"]}
             if name is None:

@@ -205,6 +205,19 @@ def share_by_year_figure(by_year, title):
     return fig
 
 
+def margin_figure(items, label, unit):
+    """Mediana nos postos e preço médio de distribuição por semana; a distância entre as linhas é a margem bruta."""
+    weeks = [i["week_start"] for i in items]
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=weeks, y=[i["retail_median"] for i in items], mode="lines+markers", connectgaps=False,
+                             name="Postos (mediana)", line={"color": PALETTE[0], "width": 2}, marker={"size": 5},
+                             hovertemplate="%{y:,.2f}<extra>postos</extra>"))
+    fig.add_trace(go.Scatter(x=weeks, y=[i["distribution"] for i in items], mode="lines+markers", connectgaps=False,
+                             name="Distribuição (média ANP)", line={"color": PALETTE[1], "width": 2, "dash": "dash"},
+                             marker={"size": 5}, hovertemplate="%{y:,.2f}<extra>distribuição</extra>"))
+    return _layout(fig, f"{label}: preço nos postos e na distribuição", unit)
+
+
 def ethanol_figure(items, threshold):
     """Etanol como % da gasolina por semana, com a linha dos 70%. Semanas sem razão viram lacuna."""
     weeks = [date.fromisoformat(i["week_start"]) for i in items]

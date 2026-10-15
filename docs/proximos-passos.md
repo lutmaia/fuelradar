@@ -1,6 +1,6 @@
 # Próximos passos
 
-Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia este arquivo primeiro** e depois o [PLAN.md](../PLAN.md). Atualizado em 2026-10-15 (registro do trabalho de 2026-10-14).
+Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia este arquivo primeiro** e depois o [PLAN.md](../PLAN.md). Atualizado em 2026-10-15 (fim do Marco 9).
 
 ## Onde paramos
 
@@ -37,7 +37,7 @@ Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia e
 
 1. [x] **Páginas Regiões e Estudo** no painel (parte do Marco 9 que não depende de fonte externa). **Feito em 2026-10-14:** endpoints `/prices/regions` e `/prices/rankings`, regiões em `regions.py` (as mesmas listas do estudo), página Estudo lendo `reports/study/*.json` (ADR 0005, adendo). 309 testes aprovados contra o PostgreSQL do Docker (16 novos); medianas regionais, economia de Araraquara e etanol de Adamantina recalculados em SQL direto no fato e iguais; as duas páginas fotografadas no Edge headless, com três defeitos visuais corrigidos ("None" na tabela, capital e metropolitana com azuis parecidos, rótulo cortado). O Marco 9 continua aberto: faltam as fontes externas.
 2. [x] **Demonstrativo online e README contando a história** (2026-10-14: modo instantâneo, pacote commitado, `demo/streamlit_app.py` e README de estudo de caso prontos; 319 testes aprovados contra o PostgreSQL do Docker (10 novos, entre eles o contrato cliente instantâneo × API e a privacidade do pacote), [ADR 0009](decisions/0009-demonstrativo-e-pacote-instantaneo.md); publicado pelo usuário no Streamlit Community Cloud em 2026-10-14: https://fuelradar-a5kwciypheseufpbfh6ggv.streamlit.app/ ; páginas Início e Regiões conferidas no ar, com os mesmos números do local): adianta parte dos Marcos 12 (hospedagem no Streamlit Community Cloud, pacote instantâneo) e 13 (README de estudo de caso: problema, três achados, um gráfico, link da demo).
-3. [ ] **Fontes externas** (resto do Marco 9: dólar do Banco Central e preço de produtores da ANP), depois o Marco 10. **Triagem feita em 2026-10-14** ([registro](estudo/triagem-fontes-externas.md)): dólar aprovado (ODbL, API testada); produtores com cobertura completa mas **sem licença declarada**, aguardando decisão do usuário; etanol na usina e paridade de importação descartados. Nada foi ingerido.
+3. [x] **Fontes externas** (Marco 9 concluído em 2026-10-15: três fontes carregadas, *as-of*, página *Margem dos postos*; ver "Verificação do Marco 9" no PLAN) (resto do Marco 9: dólar do Banco Central e preço de produtores da ANP), depois o Marco 10. **Triagem feita em 2026-10-14** ([registro](estudo/triagem-fontes-externas.md)): dólar aprovado (ODbL, API testada); produtores com cobertura completa mas **sem licença declarada**, aguardando decisão do usuário; etanol na usina e paridade de importação descartados. Nada foi ingerido.
 
 Motivo: hoje ninguém consegue ver o projeto sem instalar tudo; a demo e um README curto valem mais para quem avalia do que uma análise nova. O guia de estudo das escolhas de método (para entrevistas) **fica fora do repositório**, por decisão do usuário em 2026-10-14.
 
@@ -48,9 +48,11 @@ Defeito antigo visto na conferência de 2026-10-14, ainda não corrigido: a linh
 - [x] **Escopo do Marco 10 reavaliado (2026-10-14): opção B.** A camada L2 fica sem os líderes de Q3, só com os sinais do estado; o resto do desenho não muda. Registrado na tabela de desvios do protocolo. Alternativas consideradas: manter como desenhado, só dados externos (L0 × L1 × L3) e pular para o Marco 11.
 - [x] **Fontes da ANP decididas (2026-10-15): as duas.** Preços de **produtores** (Sudeste, atraso de ~1 a 2 semanas) como sinal de custo para a camada L3 do Marco 10, e preços de **distribuição** (SP e 108 municípios, com etanol) para medir **quanto o posto cobra acima da distribuidora**, por município e por posto. Os termos de uso da ANP (sem fins lucrativos, citação com link) valem para as duas.
 - [x] **Dólar (2026-10-15): solução simples.** Entra como fonte (ODbL), mas a série não vai ao pacote público do demonstrativo; só números e gráficos calculados com ela, com crédito ao Banco Central.
-- [ ] **Diferença posto × distribuidora por posto:** a distribuição é a média ponderada do município, não o custo de compra de cada posto. Definir antes de implementar como chamar e mostrar (decisão 6: sem acusação a postos).
-- [ ] **Rodapé do painel:** acrescentar o link da fonte da ANP, que os termos de uso pedem; README: dizer que os dados da ANP e derivados seguem os termos da ANP (sem fins lucrativos).
-- [ ] **Depois da decisão:** ingestão das fontes aprovadas (`external/`, migração com `available_at`, manifesto e hash, qualidade, alinhamento *as-of*). Os preços de produtores exigiriam uma dependência nova para ler `.xls` (`xlrd`). Se o dólar entrar no pacote do demonstrativo, o pacote passa a ser publicado sob ODbL.
+- [x] **Margem por posto (2026-10-15):** "margem bruta estimada", em tom neutro ("segundo os dados da ANP, a estimativa é de…"), com o aviso de que não é lucro e de que o custo real do posto não é público.
+- [x] **Rodapé do painel e README (2026-10-15):** link da ANP e dos termos de uso no rodapé; README diz que os dados seguem os termos de cada fonte.
+- [ ] **Próximo marco (só por solicitação):** Marco 10, modelagem v2 com a opção B; a camada L3 usa produtores e dólar pelo *as-of*.
+- [ ] **Enviar ao GitHub:** os commits desde 2026-10-15 estão só locais, a pedido do usuário. O pacote do demonstrativo foi regenerado com a margem; ao enviar, o Streamlit Community Cloud republica sozinho.
+- [x] **Ingestão das fontes aprovadas (2026-10-15):** `external/`, migração `0005`, `scripts/fetch_external.py`, `xlrd` como dependência nova; o dólar fica fora do pacote público.
 
 As páginas Regiões e Estudo, a outra parte do Marco 9, estão prontas (2026-10-14).
 

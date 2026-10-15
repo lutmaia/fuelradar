@@ -1,6 +1,7 @@
 # Ambiente reproduzível do projeto (Python 3.14.7, Windows). Gerado de `pip freeze` em 2026-10-12.
 # Dependências diretas, também listadas em pyproject.toml:
-#   openpyxl, psycopg[binary], psycopg-pool, fastapi, uvicorn, streamlit, plotly, pandas, httpx, lightgbm
+#   openpyxl, psycopg[binary], psycopg-pool, fastapi, uvicorn, streamlit, plotly, pandas, httpx, lightgbm,
+#   scipy, xlrd
 # O restante são dependências transitivas fixadas para que dois computadores tenham o mesmo ambiente.
 # Instalar: python -m pip install -r requirements.txt
 altair==6.3.0
@@ -56,4 +57,5 @@ tzdata==2026.5
 urllib3==2.8.0
 uvicorn==0.54.0
 watchdog==6.0.0
+xlrd==2.0.2
 websockets==17.2

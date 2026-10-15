@@ -162,6 +162,50 @@ def region_prices(conn, uf, product_id, start, end, capital, metro, coast):
          "metro": sorted(metro), "coast": sorted(coast)}).fetchall()
 
 
+def distribution_prices(conn, uf, product_code, geo, start, end):
+    """Preço médio de distribuição (ANP) por semana: `geo` é o nome normalizado do município ou a sigla da UF."""
+    return conn.execute("""
+        SELECT period_start AS week_start, value, available_at FROM external_observation
+        WHERE source_id = 'anp_distribuicao' AND uf = %s AND product = %s AND geo = %s
+          AND geo_level = CASE WHEN %s THEN 'uf' ELSE 'municipio' END
+          AND period_start BETWEEN %s AND %s
+        ORDER BY period_start""", (uf, product_code, geo, geo == uf, start, end)).fetchall()
+
+
+def latest_distribution_week(conn, uf, product_code):
+    return conn.execute("""
+        SELECT max(period_start) AS week_start FROM external_observation
+        WHERE source_id = 'anp_distribuicao' AND uf = %s AND product = %s AND geo_level = 'uf'""",
+                        (uf, product_code)).fetchone()["week_start"]
+
+
+def municipal_margins(conn, uf, product_id, product_code, week_start):
+    """Por município, na semana: mediana dos postos (agregação semanal) e preço médio de distribuição."""
+    return conn.execute("""
+        SELECT l.municipality_name, m.price_median, m.station_count, m.quality_flag, d.value AS distribution
+        FROM mart_weekly_city_price m
+        JOIN dim_location l USING (location_id)
+        JOIN external_observation d
+          ON d.source_id = 'anp_distribuicao' AND d.geo_level = 'municipio' AND d.uf = l.uf
+         AND d.geo = l.municipality_name_normalized AND d.product = %(code)s AND d.period_start = m.week_start
+        WHERE l.uf = %(uf)s AND m.product_id = %(product)s AND m.week_start = %(week)s
+        ORDER BY l.municipality_name_normalized""",
+        {"uf": uf, "product": product_id, "code": product_code, "week": week_start}).fetchall()
+
+
+def station_week_prices(conn, location_id, product_id, week_start):
+    """Preço de cada posto na semana (média das coletas da semana, em geral uma só)."""
+    return conn.execute("""
+        SELECT s.cnpj, s.trade_name, s.legal_name, s.brand, s.address, s.neighborhood,
+               round(avg(f.sale_price), 4) AS price, max(f.collection_date) AS collection_date,
+               bool_or('preco_extremo' = ANY (f.quality_flags)) AS extreme
+        FROM fact_price_observation f JOIN dim_station s USING (station_id)
+        WHERE f.is_current_source_revision AND f.location_id = %s AND f.product_id = %s AND f.week_start = %s
+        GROUP BY s.station_id, s.cnpj, s.trade_name, s.legal_name, s.brand, s.address, s.neighborhood
+        ORDER BY price, coalesce(s.trade_name, s.legal_name), s.station_id""",
+        (location_id, product_id, week_start)).fetchall()
+
+
 def compare_rows(conn, location_ids, product_id, week_start):
     return conn.execute("""
         SELECT l.location_id, l.uf, l.municipality_name,

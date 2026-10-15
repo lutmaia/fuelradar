@@ -962,6 +962,89 @@ class RegionAndRankingApiTests(ApiCase):
         self.assertError(self.get("/api/v1/prices/rankings", weeks=157), 422, "VALIDATION_ERROR")
 
 
+def distribution_row(geo, level, n, value, product="GASOLINA_COMUM"):
+    return {"source_id": "anp_distribuicao", "product": product, "geo_level": level, "geo": geo, "uf": "SP",
+            "period_start": week(n), "period_end": week(n) + timedelta(days=6), "value": value, "stddev": None,
+            "unit": "BRL/L"}
+
+
+class MarginApiTests(ApiCase):
+    """Margem bruta (Marco 9): mediana dos postos menos a distribuição, com o atraso da ANP simulado."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        from radar_combustiveis.external import load as external_load
+        rows = ([distribution_row("CAMPINAS", "municipio", n, 5.50 + n / 100) for n in range(9)]
+                + [distribution_row("JUNDIAI", "municipio", n, 5.20) for n in range(N_WEEKS)]
+                + [distribution_row("SP", "uf", n, 5.40) for n in range(9)])
+        record = {"sha256": "c" * 64, "name": "distribuicao.xlsx", "url": "https://www.gov.br/x",
+                  "raw_path": "external/anp_distribuicao/x.xlsx", "retrieved_at": "2026-10-10T12:00:00+00:00",
+                  "first_retrieved_at": "2026-10-10T12:00:00+00:00"}
+        with connect(cls.admin_url) as conn:
+            external_load.load_source(conn, "anp_distribuicao", [(record, rows)])
+
+    def median(self, city, n):
+        return float(summary(self.values(city, "GASOLINA_COMUM", n))["median"])
+
+    def test_city_margin_by_week_with_the_distribution_lag(self):
+        body = self.ok("/api/v1/prices/margins", product="GASOLINA_COMUM", municipality="Campinas", weeks=N_WEEKS)
+        self.assertEqual(len(body["items"]), N_WEEKS)
+        for n, point in enumerate(body["items"]):
+            self.assertAlmostEqual(point["retail_median"], self.median("Campinas", n), places=4)
+            if n < 9:
+                self.assertAlmostEqual(point["margin"], round(self.median("Campinas", n) - (5.50 + n / 100), 4), places=4)
+            else:  # a ANP ainda não publicou a distribuição dessas semanas
+                self.assertEqual((point["margin"], point["reason"]), (None, "NO_DISTRIBUTION"))
+        self.assertEqual(body["latest"]["week_start"], week(8).isoformat())
+        self.assertEqual(body["distribution_latest_week"], week(8).isoformat())
+        self.assertIn("não é lucro", body["note"].lower())
+
+    def test_low_coverage_week_has_no_margin_and_state_uses_the_state_distribution(self):
+        jundiai = self.ok("/api/v1/prices/margins", product="GASOLINA_COMUM", municipality="Jundiaí", weeks=N_WEEKS)
+        self.assertEqual(jundiai["items"][-1]["reason"], "LOW_COVERAGE")  # 2 postos na última semana
+        self.assertEqual(jundiai["latest"]["week_start"], week(N_WEEKS - 2).isoformat())
+        state = self.ok("/api/v1/prices/margins", product="GASOLINA_COMUM", weeks=N_WEEKS)
+        prices = self.state_values("GASOLINA_COMUM", 8)
+        self.assertAlmostEqual(state["latest"]["margin"], round(float(summary(prices)["median"]) - 5.40, 4), places=4)
+        self.assertIsNone(state["location"]["municipality"])
+
+    def test_municipalities_in_the_latest_state_distribution_week(self):
+        body = self.ok("/api/v1/prices/margins/municipalities", product="GASOLINA_COMUM")
+        self.assertEqual(body["week_start"], week(8).isoformat())
+        by_city = {normalize_text(i["location"]["municipality"]): i for i in body["items"]}
+        self.assertEqual(set(by_city), {"CAMPINAS", "JUNDIAI"})  # os outros não têm distribuição
+        self.assertAlmostEqual(by_city["CAMPINAS"]["margin"], round(self.median("Campinas", 8) - 5.58, 4), places=4)
+        self.assertAlmostEqual(by_city["JUNDIAI"]["margin"], round(self.median("Jundiaí", 8) - 5.20, 4), places=4)
+        self.assertEqual(by_city["CAMPINAS"]["stations"], 8)
+        self.assertFalse(by_city["CAMPINAS"]["low_coverage"])
+
+    def test_station_estimates_use_the_municipal_average(self):
+        body = self.ok("/api/v1/prices/margins/stations", product="GASOLINA_COMUM", municipality="Campinas")
+        self.assertEqual((body["week_start"], body["distribution"]), (week(8).isoformat(), 5.58))
+        expected = sorted(float(p) for p in self.values("Campinas", "GASOLINA_COMUM", 8))
+        self.assertEqual([i["price"] for i in body["items"]], expected)
+        for item in body["items"]:
+            self.assertAlmostEqual(item["estimated_margin"], round(item["price"] - 5.58, 4), places=4)
+        jundiai = self.ok("/api/v1/prices/margins/stations", product="GASOLINA_COMUM", municipality="Jundiaí")
+        self.assertEqual((jundiai["week_start"], len(jundiai["items"])), (LAST.isoformat(), 2))
+        nothing = self.ok("/api/v1/prices/margins/stations", product="GASOLINA_COMUM", municipality="Itu")
+        self.assertEqual((nothing["week_start"], nothing["items"]), (None, []))
+
+    def test_margin_errors(self):
+        self.assertError(self.get("/api/v1/prices/margins", product="GNV"), 404, "NO_DATA")
+        self.assertError(self.get("/api/v1/prices/margins/municipalities", product="ETANOL_HIDRATADO"), 404, "NO_DATA")
+        self.assertError(self.get("/api/v1/prices/margins/stations", product="GASOLINA_COMUM"), 422, "VALIDATION_ERROR")
+        self.assertError(self.get("/api/v1/prices/margins", product="GASOLINA_COMUM", municipality="Atlântida"),
+                         404, "LOCATION_NOT_FOUND")
+
+    def test_reader_role_cannot_see_local_paths_of_external_files(self):
+        with psycopg.connect(self.api_url) as conn:
+            self.assertEqual(conn.execute("SELECT count(*) FROM radar.external_observation").fetchone()[0], 30)
+            with self.assertRaises(psycopg.errors.InsufficientPrivilege):
+                conn.execute("SELECT raw_path FROM radar.external_file")
+
+
 class InfrastructureTests(ApiCase):
     def test_unknown_route_and_method_use_the_error_format(self):
         self.assertError(self.get("/api/v1/nao-existe"), 404, "NOT_FOUND")
@@ -973,7 +1056,8 @@ class InfrastructureTests(ApiCase):
             "/health/live", "/health/ready", "/api/v1/metadata/freshness", "/api/v1/products", "/api/v1/locations",
             "/api/v1/prices/latest", "/api/v1/prices/history", "/api/v1/prices/compare", "/api/v1/prices/by-brand",
             "/api/v1/prices/ethanol-vs-gasoline", "/api/v1/prices/station-choice",
-            "/api/v1/prices/regions", "/api/v1/prices/rankings", "/api/v1/stations", "/api/v1/forecasts", "/api/v1/anomalies", "/api/v1/data-quality"})
+            "/api/v1/prices/regions", "/api/v1/prices/rankings", "/api/v1/prices/margins",
+            "/api/v1/prices/margins/municipalities", "/api/v1/prices/margins/stations", "/api/v1/stations", "/api/v1/forecasts", "/api/v1/anomalies", "/api/v1/data-quality"})
         self.assertEqual(self.client.get("/docs").status_code, 200)
 
     def test_forecasts_and_anomalies_say_so_when_no_model_is_published(self):

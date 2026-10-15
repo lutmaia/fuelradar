@@ -25,8 +25,11 @@ SURVEY_NOTICE = (
     "Municípios sem dado não indicam ausência de postos.")
 ATTRIBUTION = (
     "Fonte dos dados: **Levantamento de Preços de Combustíveis da ANP** (Agência Nacional do Petróleo, "
-    "Gás Natural e Biocombustíveis), dados abertos em gov.br/anp. Medianas, comparações, previsões e "
-    "demais números são calculados por este projeto, não divulgados pela ANP.")
+    "Gás Natural e Biocombustíveis), em [gov.br/anp](https://www.gov.br/anp/pt-br/assuntos/"
+    "precos-e-defesa-da-concorrencia/precos), reproduzidos sem fins lucrativos conforme os "
+    "[termos de uso](https://www.gov.br/anp/pt-br/acesso-a-informacao/termos-de-uso-privacidade-e-seguranca-1). "
+    "Medianas, comparações, previsões, margens e demais números são calculados por este projeto, não "
+    "divulgados pela ANP.")
 
 
 # -- Acesso à API ---------------------------------------------------------------------------
@@ -660,6 +663,116 @@ def compare():
                    "Ele mostra a variação relativa, não o nível do preço.")
     else:
         st.info("Os municípios escolhidos não têm nenhuma semana em comum no período; o índice não pode ser calculado.")
+
+
+# -- Margem bruta de revenda (Marco 9) ------------------------------------------------------
+
+MARGIN_PRODUCTS = ("GASOLINA_COMUM", "GASOLINA_ADITIVADA", "ETANOL_HIDRATADO", "DIESEL_S10", "DIESEL_COMUM")
+MARGIN_REASONS = {"NO_DISTRIBUTION": "sem preço de distribuição publicado", "NO_RETAIL": "sem pesquisa nos postos",
+                  "LOW_COVERAGE": "cobertura baixa nos postos"}
+DISTRIBUTION_CREDIT = (
+    "Preço de distribuição: **Preços de distribuição de combustíveis da ANP** "
+    "([gov.br/anp](https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/"
+    "precos-de-distribuicao-de-combustiveis)), média semanal ponderada pelo volume vendido pelas distribuidoras "
+    "no município, com tributos e frete. A ANP publica com 5 a 9 semanas de atraso.")
+MARGIN_EXPLAINED = """
+* **Margem bruta de revenda** = preço nos postos − preço médio de distribuição. É o que sobra ao posto
+  para pagar aluguel, salários, energia, taxas de cartão e perdas; **não é lucro**.
+* O preço de distribuição é uma **média do município**. Cada posto compra pelo seu contrato (os de bandeira,
+  da sua distribuidora; os de bandeira branca, no mercado), então o custo real de cada um é diferente e não
+  é público. Por posto, o número é uma **estimativa** com base nessa média.
+* Margens maiores ou menores não indicam irregularidade: variam com localização, volume, serviços e custos.
+"""
+
+
+def margins_page():
+    st.title("Margem dos postos")
+    st.markdown("Quanto o preço nos postos fica acima do preço médio que as distribuidoras cobram, segundo os "
+                "dados da ANP: a **margem bruta de revenda**, estimada por semana.")
+    locations = fetch("locations")
+    labels, units = product_labels()
+    products = [p for p in MARGIN_PRODUCTS if p in labels]
+    left, right = st.columns(2)
+    with left:
+        choice = pick("Município (SP)", _place_options(locations), "municipio", default=STATE_OPTION,
+                      help="Escolha o estado ou um município.")
+    with right:
+        product = pick("Produto", products, "produto", default=DEFAULT_PRODUCT, format_func=labels.get,
+                       help="A ANP não publica preço de distribuição de GNV.")
+    municipality = None if choice == STATE_OPTION else choice
+    unit = fmt.unit_label(units[product])
+    place = municipality or "Estado de São Paulo"
+    where = f"em {municipality}" if municipality else "no estado de São Paulo"
+
+    body = fetch("margins", product, municipality, 52)
+    freshness_caption(body)
+    point = body["latest"]
+    if point is None:
+        st.info(f"Sem semana com preço nos postos e de distribuição ao mesmo tempo para {place} nas últimas 52 "
+                "semanas.")
+    else:
+        st.caption(f"Semana de **{fmt.week_range_br(point['week_start'])}**, a mais recente com os dois preços "
+                   f"(a distribuição vai até {fmt.date_br(body['distribution_latest_week'])}) · {unit}.")
+        cols = st.columns(3)
+        cols[0].metric("Postos (mediana)", fmt.brl(point["retail_median"]),
+                       help=f"Mediana da pesquisa da ANP na semana, {fmt.number_br(point['stations'])} postos.")
+        cols[1].metric("Distribuição (média)", fmt.brl(point["distribution"]),
+                       help="Preço médio ponderado das distribuidoras, publicado pela ANP.")
+        cols[2].metric("Margem bruta estimada", fmt.brl(point["margin"]),
+                       delta=f"{fmt.percent(point['margin'] / point['retail_median'], 0, signed=False)} do preço",
+                       delta_color="off", delta_arrow="off",
+                       help="Preço nos postos menos o de distribuição. Não é lucro: cobre as despesas do posto.")
+        st.markdown(md(f"Segundo os dados da ANP, {where}, a margem bruta "
+                       f"de revenda de {labels[product].lower()} foi estimada em **{fmt.brl(point['margin'])}** por "
+                       f"{'litro' if units[product] == 'BRL/L' else 'unidade'} na semana de "
+                       f"{fmt.week_range_br(point['week_start'])}."))
+    st.plotly_chart(charts.margin_figure(body["items"], place, unit),
+                    width="stretch")
+    with st.expander("Dados do gráfico"):
+        show_table([{
+            "Semana (início)": tables.to_date(i["week_start"]), "Postos (mediana)": i["retail_median"],
+            "Distribuição": i["distribution"], "Margem bruta": i["margin"], "Postos pesquisados": i["stations"],
+            "Sem margem porque": MARGIN_REASONS.get(i["reason"], "")} for i in reversed(body["items"])],
+            {"Semana (início)": tables.day, "Postos (mediana)": fmt.brl, "Distribuição": fmt.brl,
+             "Margem bruta": fmt.brl, "Postos pesquisados": fmt.number_br}, {"Sem margem porque": ""})
+
+    if municipality:
+        stations = fetch("margin_stations", product, municipality)
+        st.subheader("Margem bruta estimada por posto")
+        if not stations["items"]:
+            st.info("Sem semana com preço de distribuição e postos pesquisados neste município.")
+        else:
+            st.caption(md(f"Semana de **{fmt.week_range_br(stations['week_start'])}** · preço médio de distribuição "
+                          f"no município: **{fmt.brl(stations['distribution'])}**. Estimativa com base nessa "
+                          "média: o custo real de compra de cada posto não é público."))
+            show_table([{
+                "Posto": s["name"] or s["legal_name"], "Bandeira": fmt.brand_label(s["brand"]),
+                "Preço na semana": s["price"], "Margem bruta estimada": s["estimated_margin"],
+                "Data da coleta": tables.to_date(s["collection_date"]),
+                "Endereço": ", ".join(part for part in (s["address"], s["neighborhood"]) if part) or fmt.ND,
+                "Aviso": "preço extremo" if s["extreme"] else ""} for s in stations["items"]],
+                {"Preço na semana": tables.money3, "Margem bruta estimada": fmt.brl, "Data da coleta": tables.day})
+    else:
+        cities = fetch("margin_municipalities", product)
+        st.subheader("Por município")
+        if not cities["items"]:
+            st.info("Sem municípios com preço nos postos e de distribuição na mesma semana.")
+        else:
+            st.caption(f"Semana de **{fmt.week_range_br(cities['week_start'])}**, a mais recente com distribuição "
+                       f"no estado · {len(cities['items'])} municípios com os dois preços. Clique no cabeçalho para "
+                       "ordenar.")
+            show_table([{
+                "Município": i["location"]["municipality"], "Postos (mediana)": i["retail_median"],
+                "Distribuição": i["distribution"], "Margem bruta": i["margin"], "Postos pesquisados": i["stations"],
+                "Cobertura": "baixa" if i["low_coverage"] else "normal"}
+                for i in sorted(cities["items"], key=lambda i: i["location"]["municipality"])],
+                {"Postos (mediana)": fmt.brl, "Distribuição": fmt.brl, "Margem bruta": fmt.brl,
+                 "Postos pesquisados": fmt.number_br})
+            st.caption("Com poucos postos pesquisados ou cobertura baixa, a mediana do município pode não "
+                       "representá-lo.")
+    st.subheader("Como ler")
+    st.markdown(MARGIN_EXPLAINED)
+    st.caption(md(DISTRIBUTION_CREDIT))
 
 
 # -- Regiões --------------------------------------------------------------------------------

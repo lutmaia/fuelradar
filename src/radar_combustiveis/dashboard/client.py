@@ -125,6 +125,15 @@ class ApiClient:
     def rankings(self, product, weeks=26):
         return self._get("/api/v1/prices/rankings", {"product": product, "weeks": weeks})
 
+    def margins(self, product, municipality=None, weeks=52):
+        return self._get("/api/v1/prices/margins", {"product": product, "municipality": municipality, "weeks": weeks})
+
+    def margin_municipalities(self, product):
+        return self._get("/api/v1/prices/margins/municipalities", {"product": product})
+
+    def margin_stations(self, product, municipality):
+        return self._get("/api/v1/prices/margins/stations", {"product": product, "municipality": municipality})
+
     def forecasts(self, product, municipality=None):
         return self._get("/api/v1/forecasts", {"product": product, "municipality": municipality})
 

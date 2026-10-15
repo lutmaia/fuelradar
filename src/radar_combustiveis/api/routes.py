@@ -12,7 +12,9 @@ from ..ingestion.normalize import normalize_text
 from . import queries
 from .errors import ApiError
 from .schemas import (AnomaliesResponse, AnomalyItem, BacktestMetrics, BrandItem, BrandsResponse, ChoiceRank,
-                      EthanolPoint, EthanolRank, EthanolResponse, ForecastPoint, RankingItem, RankingsResponse,
+                      EthanolPoint, EthanolRank, EthanolResponse, ForecastPoint, MarginPoint, MarginsResponse,
+                      MunicipalMargin, MunicipalMarginsResponse, StationMargin, StationMarginsResponse,
+                      RankingItem, RankingsResponse,
                       RegionItem, RegionPoint, RegionsResponse, StationChoiceResponse, StationChoiceWeek,
                       ForecastResponse,
                       ModelBacktest, ModelInfo, CompareItem, CompareReference, CompareResponse, CoverageSummary, DataQualityResponse, ErrorResponse,
@@ -512,6 +514,120 @@ def prices_rankings(conn: Conn, uf: Uf, product: ProductParam = GASOLINE,
                             product=prod["canonical_name"], unit=prod["unit"], start=start, end=end, weeks=weeks,
                             min_weeks=min_weeks, threshold=ETHANOL_PAYS, min_stations=CHOICE_MIN_STATIONS,
                             tank_liters=TANK_LITERS, items=items)
+
+
+# -- Margem bruta de revenda (Marco 9) --------------------------------------------------------
+
+MARGIN_PRODUCTS = {"GASOLINA_COMUM", "GASOLINA_ADITIVADA", "ETANOL_HIDRATADO", "DIESEL_S10", "DIESEL_COMUM"}
+DEFAULT_MARGIN_WEEKS = 52
+
+
+def require_margin_product(conn, product):
+    prod = require_product(conn, product)
+    if prod["canonical_name"] not in MARGIN_PRODUCTS:
+        raise ApiError(404, "NO_DATA", "A ANP não publica preço de distribuição para este produto.")
+    return prod
+
+
+def margin_point(week, retail, distribution):
+    """Margem da semana; sem um dos preços ou com cobertura baixa nos postos, o motivo no lugar do número."""
+    point = MarginPoint(week_start=week, retail_median=retail and retail["price_median"],
+                        distribution=distribution and distribution["value"],
+                        stations=retail and retail["station_count"])
+    if distribution is None:
+        point.reason = "NO_DISTRIBUTION"
+    elif retail is None:
+        point.reason = "NO_RETAIL"
+    elif retail["quality_flag"] == "cobertura_baixa":
+        point.reason = "LOW_COVERAGE"
+    else:
+        point.margin = round(float(retail["price_median"]) - float(distribution["value"]), 4)
+    return point
+
+
+@router.get("/prices/margins", response_model=MarginsResponse, responses=ERRORS, tags=["Margem bruta"],
+            summary="Preço nos postos × preço de distribuição: margem bruta de revenda por semana")
+def prices_margins(conn: Conn, uf: Uf, product: ProductParam, municipality: MunicipalityParam | None = None,
+                   weeks: Annotated[int, Query(ge=1, le=156, description="Semanas até a mais recente.")] = DEFAULT_MARGIN_WEEKS):
+    """Mediana da pesquisa nos postos menos o preço médio de distribuição da ANP (ponderado por volume,
+    com tributos e frete), no município ou no estado. É a **margem bruta de revenda**, não lucro. A
+    distribuição chega com 5 a 9 semanas de atraso, então as semanas mais recentes vêm sem margem."""
+    prod = require_margin_product(conn, product)
+    loc = one_location(conn, uf, municipality)
+    end = queries.dataset_latest_week(conn, uf)
+    if end is None:
+        raise ApiError(404, "NO_DATA", "Não há preços publicados.")
+    start = end - timedelta(weeks=weeks - 1)
+    retail = {r["week_start"]: r for r in series_for(conn, uf, loc, prod["product_id"], start, end)[0]}
+    geo = loc["municipality_name_normalized"] if loc else uf
+    dist = {r["week_start"]: r for r in queries.distribution_prices(conn, uf, prod["canonical_name"], geo, start, end)}
+    items = [margin_point(w, retail.get(w), dist.get(w)) for w in sorted(set(retail) | set(dist))]
+    if not items:
+        raise ApiError(404, "NO_DATA", "Não há preços deste produto no recorte.")
+    with_margin = [p for p in items if p.margin is not None]
+    fresh = queries.series_freshness(conn, uf, prod["product_id"], start, end, [loc["location_id"]] if loc else None)
+    return MarginsResponse(data_as_of=fresh["data_as_of"], source_retrieved_at=fresh["source_retrieved_at"],
+                           location=location_of(uf, loc["municipality_name"] if loc else None),
+                           product=prod["canonical_name"], unit=prod["unit"],
+                           distribution_latest_week=max(dist) if dist else None,
+                           latest=with_margin[-1] if with_margin else None, items=items)
+
+
+@router.get("/prices/margins/municipalities", response_model=MunicipalMarginsResponse, responses=ERRORS,
+            tags=["Margem bruta"], summary="Margem bruta de revenda por município, na semana mais recente com distribuição")
+def prices_margins_municipalities(conn: Conn, uf: Uf, product: ProductParam):
+    """Municípios com pesquisa nos postos e preço de distribuição na semana mais recente que a ANP
+    publicou para o estado. Cobertura baixa nos postos vem marcada (`low_coverage`)."""
+    prod = require_margin_product(conn, product)
+    week = queries.latest_distribution_week(conn, uf, prod["canonical_name"])
+    if week is None:
+        raise ApiError(404, "NO_DATA", "Ainda não há preço de distribuição carregado para este produto.")
+    rows = queries.municipal_margins(conn, uf, prod["product_id"], prod["canonical_name"], week)
+    items = [MunicipalMargin(location=location_of(uf, r["municipality_name"]), retail_median=r["price_median"],
+                             distribution=r["distribution"],
+                             margin=round(float(r["price_median"]) - float(r["distribution"]), 4),
+                             stations=r["station_count"], low_coverage=r["quality_flag"] == "cobertura_baixa")
+             for r in rows]
+    state_retail = queries.state_series(conn, uf, prod["product_id"], week, week)
+    state_dist = queries.distribution_prices(conn, uf, prod["canonical_name"], uf, week, week)
+    state = margin_point(week, state_retail[0] if state_retail else None, state_dist[0] if state_dist else None)
+    fresh = queries.series_freshness(conn, uf, prod["product_id"], week, week)
+    return MunicipalMarginsResponse(data_as_of=fresh["data_as_of"], source_retrieved_at=fresh["source_retrieved_at"],
+                                    product=prod["canonical_name"], unit=prod["unit"], week_start=week,
+                                    week_end=week + timedelta(days=6), state=state, items=items)
+
+
+@router.get("/prices/margins/stations", response_model=StationMarginsResponse, responses=ERRORS,
+            tags=["Margem bruta"], summary="Margem bruta estimada de cada posto pesquisado no município")
+def prices_margins_stations(conn: Conn, uf: Uf, product: ProductParam, municipality: MunicipalityParam):
+    """Preço de cada posto na semana menos o preço **médio** de distribuição do município. É uma
+    estimativa: o custo real de compra de cada posto não é público e varia com o contrato."""
+    prod = require_margin_product(conn, product)
+    loc = one_location(conn, uf, municipality)
+    end = queries.dataset_latest_week(conn, uf)
+    if end is None:
+        raise ApiError(404, "NO_DATA", "Não há preços publicados.")
+    start = end - timedelta(weeks=DEFAULT_MARGIN_WEEKS - 1)
+    retail = {r["week_start"]: r for r in queries.city_series(conn, loc["location_id"], prod["product_id"], start, end)}
+    dist = {r["week_start"]: r for r in queries.distribution_prices(
+        conn, uf, prod["canonical_name"], loc["municipality_name_normalized"], start, end)}
+    common = sorted(set(retail) & set(dist))
+    week = common[-1] if common else None
+    items = []
+    if week is not None:
+        cost = float(dist[week]["value"])
+        items = [StationMargin(cnpj=r["cnpj"], name=r["trade_name"] or r["legal_name"], legal_name=r["legal_name"],
+                               brand=r["brand"], address=r["address"], neighborhood=r["neighborhood"], price=r["price"],
+                               collection_date=r["collection_date"], estimated_margin=round(float(r["price"]) - cost, 4),
+                               extreme=r["extreme"])
+                 for r in queries.station_week_prices(conn, loc["location_id"], prod["product_id"], week)]
+    fresh = queries.series_freshness(conn, uf, prod["product_id"], week or end, week or end, [loc["location_id"]])
+    return StationMarginsResponse(
+        data_as_of=fresh["data_as_of"], source_retrieved_at=fresh["source_retrieved_at"],
+        location=location_of(uf, loc["municipality_name"]), product=prod["canonical_name"], unit=prod["unit"],
+        week_start=week, week_end=week + timedelta(days=6) if week else None,
+        distribution=dist[week]["value"] if week else None,
+        retail_median=retail[week]["price_median"] if week else None, items=items)
 
 
 @router.get("/prices/compare", response_model=CompareResponse, responses=ERRORS, tags=["Preços"],

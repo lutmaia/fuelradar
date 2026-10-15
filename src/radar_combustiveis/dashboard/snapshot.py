@@ -182,6 +182,15 @@ class SnapshotClient:
     def rankings(self, product, weeks=26):
         return self._stored("rankings", product, weeks)
 
+    def margins(self, product, municipality=None, weeks=52):
+        return self._stored("margins", product, municipality, weeks)
+
+    def margin_municipalities(self, product):
+        return self._stored("margin_municipalities", product)
+
+    def margin_stations(self, product, municipality):
+        return self._stored("margin_stations", product, municipality)
+
     def forecasts(self, product, municipality=None):
         return self._stored("forecasts", product, municipality)
 

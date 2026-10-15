@@ -21,6 +21,9 @@ dependencies = [
     "lightgbm==4.7.0",
     # Estudo (Marco 8): distribuições t, F e qui-quadrado. Já vinha com o LightGBM; agora é uso direto.
     "scipy==1.18.1",
+    # Fontes externas (Marco 9): a planilha de preços de produtores da ANP só existe em .xls (formato
+    # antigo), que o openpyxl não lê. Sem dependências próprias.
+    "xlrd==2.0.2",
 ]
 
 # Backend de build e ferramentas serão definidos quando necessários.
