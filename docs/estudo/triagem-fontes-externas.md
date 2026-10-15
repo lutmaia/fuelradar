@@ -19,6 +19,12 @@ A pedido do usuário, revista a página geral de preços da ANP (`gov.br/anp/...
 
 **Consequência para o ODbL do dólar:** a ODbL exige que um banco de dados derivado publicado fique sob ODbL, que permite uso comercial; os dados da ANP não permitem. Para não misturar as duas condições, a série do dólar não deve entrar no pacote público do demonstrativo; números e gráficos calculados com ela podem ser exibidos com o crédito ao BCB.
 
+## Decisões do usuário (2026-10-15)
+
+- **Produtores e distribuição entram**, nos termos de uso da ANP. Produtores como sinal de custo (camada L3 do Marco 10, pelo menor atraso); distribuição para medir quanto o posto cobra acima da distribuidora, por município e por posto.
+- **Dólar entra** como fonte, **fora do pacote público** do demonstrativo (por causa da ODbL); números e gráficos derivados mostram o crédito ao BCB.
+- Envio ao GitHub adiado a pedido do usuário.
+
 ## Resumo (2026-10-14)
 
 | Fonte | Acesso | Licença | Cobertura | Situação |
