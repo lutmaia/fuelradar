@@ -1,6 +1,6 @@
 # Próximos passos
 
-Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia este arquivo primeiro** e depois o [PLAN.md](../PLAN.md). Atualizado em 2026-10-13 (fim do Marco 8).
+Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia este arquivo primeiro** e depois o [PLAN.md](../PLAN.md). Atualizado em 2026-10-15 (registro do trabalho de 2026-10-14).
 
 ## Onde paramos
 
@@ -9,6 +9,7 @@ Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia e
 - **Desenho da versão completa** (estudo de caso, marcos 8 a 13) em [estudo-de-caso.md](estudo-de-caso.md), com as decisões do usuário já incorporadas (as de protocolo em 2026-10-13: Q1 a Q3 enxutas, partição da seção 6.2, gate G1, desfecho primário e regra de decisão mantidos, modo sombra dispensado, demonstrativo no Streamlit Community Cloud). **Desenho aprovado em 2026-10-13.**
 - **Resultado do Marco 8:** Q1 (bandeira branca −5,6%) é achado estável; Q2 e Q3 não. **Gate G1 não passou** (1 de 3). Resumo em `reports/study/resumo.md`.
 - **Marco 8b (descritivo):** etanol × gasolina, economia escolhendo o posto e regiões, em `reports/study/descritivo.md`. No painel desde 2026-10-13: seção *Na hora de abastecer* (município) e veredito do etanol (página inicial).
+- **2026-10-14:** páginas **Regiões** e **Estudo** no painel (parte do Marco 9); **demonstrativo público no ar** em https://fuelradar-a5kwciypheseufpbfh6ggv.streamlit.app/ (pacote instantâneo, [ADR 0009](decisions/0009-demonstrativo-e-pacote-instantaneo.md)) e README reescrito como estudo de caso; escopo do Marco 10 decidido (**opção B**); triagem das fontes externas feita ([registro](estudo/triagem-fontes-externas.md)). 319 testes aprovados contra o PostgreSQL do Docker.
 
 ## Decisões já tomadas (não reabrir sem motivo)
 
@@ -36,7 +37,7 @@ Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia e
 
 1. [x] **Páginas Regiões e Estudo** no painel (parte do Marco 9 que não depende de fonte externa). **Feito em 2026-10-14:** endpoints `/prices/regions` e `/prices/rankings`, regiões em `regions.py` (as mesmas listas do estudo), página Estudo lendo `reports/study/*.json` (ADR 0005, adendo). 309 testes aprovados contra o PostgreSQL do Docker (16 novos); medianas regionais, economia de Araraquara e etanol de Adamantina recalculados em SQL direto no fato e iguais; as duas páginas fotografadas no Edge headless, com três defeitos visuais corrigidos ("None" na tabela, capital e metropolitana com azuis parecidos, rótulo cortado). O Marco 9 continua aberto: faltam as fontes externas.
 2. [x] **Demonstrativo online e README contando a história** (2026-10-14: modo instantâneo, pacote commitado, `demo/streamlit_app.py` e README de estudo de caso prontos; 319 testes aprovados contra o PostgreSQL do Docker (10 novos, entre eles o contrato cliente instantâneo × API e a privacidade do pacote), [ADR 0009](decisions/0009-demonstrativo-e-pacote-instantaneo.md); publicado pelo usuário no Streamlit Community Cloud em 2026-10-14: https://fuelradar-a5kwciypheseufpbfh6ggv.streamlit.app/ ; páginas Início e Regiões conferidas no ar, com os mesmos números do local): adianta parte dos Marcos 12 (hospedagem no Streamlit Community Cloud, pacote instantâneo) e 13 (README de estudo de caso: problema, três achados, um gráfico, link da demo).
-3. **Fontes externas** (resto do Marco 9: dólar do Banco Central e preço de produtores da ANP), depois o Marco 10.
+3. [ ] **Fontes externas** (resto do Marco 9: dólar do Banco Central e preço de produtores da ANP), depois o Marco 10. **Triagem feita em 2026-10-14** ([registro](estudo/triagem-fontes-externas.md)): dólar aprovado (ODbL, API testada); produtores com cobertura completa mas **sem licença declarada**, aguardando decisão do usuário; etanol na usina e paridade de importação descartados. Nada foi ingerido.
 
 Motivo: hoje ninguém consegue ver o projeto sem instalar tudo; a demo e um README curto valem mais para quem avalia do que uma análise nova. O guia de estudo das escolhas de método (para entrevistas) **fica fora do repositório**, por decisão do usuário em 2026-10-14.
 
@@ -44,10 +45,11 @@ Defeito antigo visto na conferência de 2026-10-14, ainda não corrigido: a linh
 
 ## Próximas decisões
 
-- [ ] **Reavaliar o escopo do Marco 10** (G1 não passou). Pelo protocolo, decidir com o usuário antes de seguir: por exemplo, manter a modelagem v2 como desenhada, reduzi-la ou trocar a camada L2 (que dependia de líderes de Q3, achado não estável).
-- [ ] **Marco 9 (fontes externas e páginas de comparação)** começa pela triagem de licença do dólar (Banco Central) e do preço de produtores (ANP); independe do G1. Inclui, a pedido do usuário, as páginas **Regiões** (dados atuais, rankings) e **Estudo** (achados congelados) no painel.
+- [x] **Escopo do Marco 10 reavaliado (2026-10-14): opção B.** A camada L2 fica sem os líderes de Q3, só com os sinais do estado; o resto do desenho não muda. Registrado na tabela de desvios do protocolo. Alternativas consideradas: manter como desenhado, só dados externos (L0 × L1 × L3) e pular para o Marco 11.
+- [ ] **Licença dos preços de produtores da ANP** (pendente desde 2026-10-14): aceitar como dado aberto de governo com crédito à ANP (sugestão), perguntar à ANP (faleconosco@anp.gov.br) ou descartar pela regra da dúvida. Detalhes em [triagem-fontes-externas.md](estudo/triagem-fontes-externas.md).
+- [ ] **Depois da decisão:** ingestão das fontes aprovadas (`external/`, migração com `available_at`, manifesto e hash, qualidade, alinhamento *as-of*). Os preços de produtores exigiriam uma dependência nova para ler `.xls` (`xlrd`). Se o dólar entrar no pacote do demonstrativo, o pacote passa a ser publicado sob ODbL.
 
-O Marco 9 (fontes externas) começa pela triagem de licença e cobertura; fonte que falhar é descartada com o motivo registrado.
+As páginas Regiões e Estudo, a outra parte do Marco 9, estão prontas (2026-10-14).
 
 ## A verificar mais adiante (Marco 12)
 
