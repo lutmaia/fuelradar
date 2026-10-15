@@ -1,6 +1,6 @@
 # Próximos passos
 
-Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia este arquivo primeiro** e depois o [PLAN.md](../PLAN.md). Atualizado em 2026-10-15 (fim do Marco 9).
+Notas de retomada do projeto. **Ao começar uma nova sessão de trabalho, leia este arquivo primeiro** e depois o [PLAN.md](../PLAN.md). Atualizado em 2026-10-15 (fim do Marco 10).
 
 ## Onde paramos
 
@@ -50,11 +50,15 @@ Defeito visto em 2026-10-14 e **corrigido em 2026-10-15**: a linha de referênci
 - [x] **Dólar (2026-10-15): solução simples.** Entra como fonte (ODbL), mas a série não vai ao pacote público do demonstrativo; só números e gráficos calculados com ela, com crédito ao Banco Central.
 - [x] **Margem por posto (2026-10-15):** "margem bruta estimada", em tom neutro ("segundo os dados da ANP, a estimativa é de…"), com o aviso de que não é lucro e de que o custo real do posto não é público.
 - [x] **Rodapé do painel e README (2026-10-15):** link da ANP e dos termos de uso no rodapé; README diz que os dados seguem os termos de cada fonte.
-- [ ] **Marco 10 — modelagem v2 (pedido em 2026-10-15), em etapas:**
+- [x] **Marco 10 — modelagem v2 (pedido em 2026-10-15), em etapas:**
   1. [x] **Protocolo e código testados com dados sintéticos (2026-10-15):** [protocolo-modelagem.md](estudo/protocolo-modelagem.md) (pré-registro), `modelv2/` (alvos, camadas L1 a L3, logística e LightGBM, métricas, *bootstrap*, regra de decisão), migração `0006_holdout_access`, `scripts/run_modelv2.py`; 359 testes aprovados. Sem dependência nova (logística com numpy e scipy). Nenhuma execução sobre dados reais.
-  2. [ ] **Commit do protocolo pelo usuário**: o pré-registro só vale com o commit **antes** da primeira execução real.
-  3. [ ] Validação (`scripts/run_modelv2.py`, sem ler o teste): conferir o resultado e a sanidade antes da leitura única.
-  4. [ ] Leitura única do teste (`--read-test --purpose "..."`), relatório final e, se aprovado, publicação das probabilidades.
+  2. [x] **Commit do protocolo pelo usuário** (`b79188e`), antes da primeira execução real.
+  3. [x] **Validação:** candidato L2 com LightGBM (BSS +0,145); sanidade conferida (semanas sem pontos explicadas, sem vazamento).
+  4. [x] **Teste lido uma vez:** BSS +0,164, mas calibração 0,0504 > 0,05 → **não aprovado**; nada muda no produto. Ver "Verificação do Marco 10" no PLAN e o [cartão do modelo](model-card.md).
+- [ ] **Marcos 10b e 11 — calibração e avaliação ao vivo (pedido em 2026-10-15), em etapas:**
+  1. [x] **Protocolo e código testados com dados sintéticos:** [protocolo-ao-vivo.md](estudo/protocolo-ao-vivo.md); só a temperatura das probabilidades é ajustada (um T por horizonte, na validação do Marco 10); registro imutável em `reports/ledger/`, pontuação, placar e decisão com 26 semanas; `/forecasts` com probabilidades experimentais, `/models/scoreboard`, página *Desempenho ao vivo*; migração `0007_live`; 373 testes aprovados.
+  2. [ ] **Commit do protocolo pelo usuário**, antes de ajustar a temperatura e de gerar a primeira previsão.
+  3. [ ] `scripts/run_live.py --fit-calibration` (uma vez) e `scripts/run_live.py` (toda semana, depois de carregar a semana nova da ANP); commit semanal de `reports/ledger/`.
 - [ ] **Enviar ao GitHub:** os commits desde 2026-10-15 estão só locais, a pedido do usuário. O pacote do demonstrativo foi regenerado com a margem; ao enviar, o Streamlit Community Cloud republica sozinho.
 - [x] **Ingestão das fontes aprovadas (2026-10-15):** `external/`, migração `0005`, `scripts/fetch_external.py`, `xlrd` como dependência nova; o dólar fica fora do pacote público.
 

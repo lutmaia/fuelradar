@@ -20,6 +20,10 @@ def percent1(value):
     return fmt.percent(value, 1, signed=False)
 
 
+def decimal3(value):
+    return fmt.decimal_br(value, 3)
+
+
 def decimal1(value):
     return fmt.decimal_br(value, 1)
 

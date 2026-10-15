@@ -16,6 +16,7 @@ from .schemas import (AnomaliesResponse, AnomalyItem, BacktestMetrics, BrandItem
                       MunicipalMargin, MunicipalMarginsResponse, StationMargin, StationMarginsResponse,
                       RankingItem, RankingsResponse,
                       RegionItem, RegionPoint, RegionsResponse, StationChoiceResponse, StationChoiceWeek,
+                      ClassForecast, ClassPoint, ScoreboardResponse,
                       ForecastResponse,
                       ModelBacktest, ModelInfo, CompareItem, CompareReference, CompareResponse, CoverageSummary, DataQualityResponse, ErrorResponse,
                       FreshnessResponse, Health, HistoryResponse, LatestPrice, Location, LocationItem,
@@ -771,17 +772,53 @@ def forecasts(conn: Conn, uf: Uf, product: ProductParam, municipality: Municipal
     items = queries.forecast_items(conn, model["model_version_id"], uf, location_id, prod["product_id"])
     status = queries.forecast_eligibility(conn, model["model_version_id"], uf, location_id, prod["product_id"])
     fresh = queries.dataset_freshness(conn)
+    classes = class_forecast_of(conn, uf, location_id, prod["product_id"])
     points = [ForecastPoint(horizon=r["horizon"], target_week_start=r["target_week"],
                             target_week_end=r["target_week"] + timedelta(days=6), point=r["point"],
                             lower=r["lower"], upper=r["upper"]) for r in items]
     return ForecastResponse(
         data_as_of=fresh["data_as_of"], source_retrieved_at=fresh["source_retrieved_at"],
         location=location_of(uf, loc["municipality_name"] if loc else None), product=prod["canonical_name"],
-        unit=prod["unit"], model=model_info_of(model), eligible=bool(points),
+        unit=prod["unit"], model=model_info_of(model), classes=classes, eligible=bool(points),
         reasons=list(status["reasons"]) if status and not points else ([] if points else ["sem_previsao_na_origem"]),
         history_weeks=(items[0]["history_weeks"] if items else status["history_weeks"] if status else None),
         origin_week_start=model["origin_week"], interval_level=items[0]["interval_level"] if items else None,
         items=points)
+
+
+def live_status(conn):
+    row = queries.latest_scoreboard(conn)
+    if row is None:
+        return None, None
+    status = row["body"].get("decision", {}).get("status", "pendente")
+    return row, {"pendente": "experimental"}.get(status, status)
+
+
+def class_forecast_of(conn, uf, location_id, product_id):
+    """Probabilidades da origem mais recente; somem do produto se a checagem ao vivo reprovar o modelo."""
+    _, status = live_status(conn)
+    rows = queries.class_forecasts(conn, uf, location_id, product_id)
+    if not rows or status == "reprovado":
+        return None
+    return ClassForecast(status=status or "experimental", model=rows[0]["model"], origin_week_start=rows[0]["origin_week"],
+                         items=[ClassPoint(horizon=r["horizon"], target_week_start=r["target_week"],
+                                           p_down=r["p_down"], p_flat=r["p_flat"], p_up=r["p_up"]) for r in rows])
+
+
+@router.get("/models/scoreboard", response_model=ScoreboardResponse, responses=ERRORS, tags=["Previsões"],
+            summary="Desempenho ao vivo das probabilidades de classe")
+def models_scoreboard(conn: Conn):
+    """Placar das previsões registradas antes de o valor real existir, contra a taxa-base: BSS com IC
+    por horizonte, calibração, alerta de degradação e a situação da decisão (26 origens em h = 2)."""
+    row, status = live_status(conn)
+    if row is None:
+        raise ApiError(404, "NO_SCOREBOARD", "Ainda não há previsões ao vivo pontuadas.")
+    body = row["body"]
+    decision = body.get("decision", {})
+    return ScoreboardResponse(computed_at=row["computed_at"], status=status, horizons=body.get("horizons", {}),
+                              origins_matured=decision.get("origins_matured", 0),
+                              origins_needed=decision.get("origins_needed", 26), alert=body.get("alert"),
+                              decision=decision, ledger_origins=body.get("ledger_origins", []))
 
 
 @router.get("/anomalies", response_model=AnomaliesResponse, responses=ERRORS, tags=["Variações incomuns"],

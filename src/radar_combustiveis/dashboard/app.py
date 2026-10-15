@@ -25,6 +25,7 @@ def main():
                      url_path="postos", icon="⛽"),
              st.Page(views.guarded(views.brands_page), title="Preços por bandeira", url_path="bandeiras", icon="🏷️"),
              st.Page(views.guarded(views.forecasts_page), title="Previsões", url_path="previsoes", icon="🔮"),
+             st.Page(views.guarded(views.live_page), title="Desempenho ao vivo", url_path="ao-vivo", icon="📈"),
              st.Page(views.guarded(views.anomalies_page), title="Variações incomuns", url_path="variacoes", icon="⚠️"),
              st.Page(views.guarded(views.compare), title="Comparar municípios", url_path="comparar", icon="📊"),
              st.Page(views.guarded(views.regions_page), title="Regiões", url_path="regioes", icon="🗺️"),

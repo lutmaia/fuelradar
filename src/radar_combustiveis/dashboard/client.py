@@ -134,6 +134,9 @@ class ApiClient:
     def margin_stations(self, product, municipality):
         return self._get("/api/v1/prices/margins/stations", {"product": product, "municipality": municipality})
 
+    def scoreboard(self):
+        return self._get("/api/v1/models/scoreboard")
+
     def forecasts(self, product, municipality=None):
         return self._get("/api/v1/forecasts", {"product": product, "municipality": municipality})
 

@@ -42,7 +42,7 @@ def tearDownModule():
 
 
 PAGES = ("home", "explore", "stations_ranking", "brands_page", "forecasts_page", "anomalies_page", "compare",
-         "regions_page", "margins_page", "study_page", "quality")
+         "regions_page", "margins_page", "study_page", "quality", "live_page")
 
 
 class PackageUnitTests(unittest.TestCase):

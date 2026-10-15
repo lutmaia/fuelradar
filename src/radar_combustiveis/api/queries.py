@@ -311,6 +311,20 @@ def forecast_eligibility(conn, model_id, uf, location_id, product_id):
         {"model": model_id, "uf": uf, "product": product_id, "location": location_id}).fetchone()
 
 
+def class_forecasts(conn, uf, location_id, product_id):
+    """Probabilidades de classe da origem mais recente registrada (Marcos 10b e 11)."""
+    return conn.execute("""
+        SELECT origin_week, horizon, target_week, p_down, p_flat, p_up, model, temperature
+        FROM forecast_class
+        WHERE uf = %(uf)s AND product_id = %(product)s AND location_id IS NOT DISTINCT FROM %(location)s
+          AND origin_week = (SELECT max(origin_week) FROM forecast_class WHERE uf = %(uf)s)
+        ORDER BY horizon""", {"uf": uf, "product": product_id, "location": location_id}).fetchall()
+
+
+def latest_scoreboard(conn):
+    return conn.execute("SELECT computed_at, body FROM live_scoreboard ORDER BY computed_at DESC LIMIT 1").fetchone()
+
+
 def list_anomalies(conn, model_id, uf, location_id, product_id, since, limit, offset):
     return conn.execute("""
         SELECT l.municipality_name, p.canonical_name AS product, a.week_start, a.observed, a.expected, a.lower,

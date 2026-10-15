@@ -443,17 +443,46 @@ class ModelInfo(BaseModel):
     backtest: ModelBacktest | None
 
 
+class ClassPoint(BaseModel):
+    horizon: int
+    target_week_start: date
+    p_down: float = Field(description="Probabilidade de a mediana cair R$ 0,05 ou mais.")
+    p_flat: float = Field(description="Probabilidade de variar menos de R$ 0,05.")
+    p_up: float = Field(description="Probabilidade de subir R$ 0,05 ou mais.")
+
+
+class ClassForecast(BaseModel):
+    status: Literal["experimental", "oficial"] = Field(
+        description="Experimental até a checagem ao vivo de 26 semanas (docs/estudo/protocolo-ao-vivo.md).")
+    model: str
+    origin_week_start: date
+    items: list[ClassPoint]
+
+
 class ForecastResponse(Freshness):
     location: Location
     product: str
     unit: str
     model: ModelInfo
+    classes: ClassForecast | None = Field(
+        None, description="Probabilidades de queda, estabilidade e alta, quando há previsão registrada.")
     eligible: bool
     reasons: list[str] = Field(description="Por que a série não tem previsão, quando não tem.")
     history_weeks: int | None
     origin_week_start: date | None
     interval_level: float | None
     items: list[ForecastPoint]
+
+
+class ScoreboardResponse(BaseModel):
+    computed_at: datetime
+    status: Literal["experimental", "oficial", "reprovado"]
+    origins_matured: int = Field(description="Origens vencidas em h = 2 (a decisão acontece com 26).")
+    origins_needed: int
+    horizons: dict[str, dict] = Field(description="Por horizonte: origens, pontos, BSS (`estimate`, `ci`) e `ece`.")
+    alert: dict | None = Field(None, description="BSS das 13 origens mais recentes; `degraded` quando abaixo de zero.")
+    decision: dict
+    ledger_origins: list[str]
 
 
 class AnomalyItem(BaseModel):

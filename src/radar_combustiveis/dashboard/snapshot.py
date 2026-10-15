@@ -191,6 +191,9 @@ class SnapshotClient:
     def margin_stations(self, product, municipality):
         return self._stored("margin_stations", product, municipality)
 
+    def scoreboard(self):
+        return self._stored("scoreboard")
+
     def forecasts(self, product, municipality=None):
         return self._stored("forecasts", product, municipality)
 

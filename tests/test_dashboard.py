@@ -55,6 +55,7 @@ BRANDS = "from radar_combustiveis.dashboard import views\nviews.guarded(views.br
 REGIONS = "from radar_combustiveis.dashboard import views\nviews.guarded(views.regions_page)()"
 STUDY = "from radar_combustiveis.dashboard import views\nviews.guarded(views.study_page)()"
 MARGINS = "from radar_combustiveis.dashboard import views\nviews.guarded(views.margins_page)()"
+LIVE = "from radar_combustiveis.dashboard import views\nviews.guarded(views.live_page)()"
 
 
 # -- Formatação -----------------------------------------------------------------------------
@@ -458,7 +459,8 @@ class FakeApi:
                  for h in (1, 2, 3, 4)]
         items[0]["target_week_start"], items[1]["target_week_start"] = "2026-10-11", "2026-10-18"
         items[2]["target_week_start"] = "2026-10-25"
-        return {**base, "eligible": True, "reasons": [], "history_weeks": 160, "items": items}
+        classes = self.over.get("classes")
+        return {**base, "eligible": True, "reasons": [], "history_weeks": 160, "items": items, "classes": classes}
 
     def anomalies(self, product=None, municipality=None, weeks=4):
         rows = [{"location": {"uf": "SP", "municipality": place}, "product": "GASOLINA_COMUM",
@@ -552,6 +554,11 @@ class FakeApi:
                 "location": {"uf": "SP", "municipality": municipality}, "product": product, "unit": "BRL/L",
                 "note": "", "week_start": "2026-08-23", "week_end": "2026-08-29", "distribution": 5.45,
                 "retail_median": 6.38, "items": items}
+
+    def scoreboard(self):
+        if "scoreboard" not in self.over:
+            raise ApiError(404, "NO_SCOREBOARD", "Ainda não há previsões ao vivo pontuadas.")
+        return self.over["scoreboard"]
 
     def data_quality(self, week_start=None):
         return {"data_as_of": "2026-10-01", "source_retrieved_at": None,
@@ -967,6 +974,48 @@ class MarginsPageTests(PageCase):
         self.assertFalse(at.exception)
         self.assertIn("Sem semana com preço nos postos e de distribuição", " ".join(i.value for i in at.info))
         self.assertNotIn("GNV", at.selectbox[1].options)
+
+
+CLASSES = {"status": "experimental", "model": "classe_l2_lightgbm_calibrado", "origin_week_start": "2026-10-04",
+           "items": [{"horizon": h, "target_week_start": w, "p_down": 0.2, "p_flat": 0.5, "p_up": 0.3}
+                     for h, w in ((1, "2026-10-11"), (2, "2026-10-18"), (4, "2026-11-01"))]}
+BOARD = {"computed_at": "2026-10-15T15:00:00Z", "status": "experimental", "origins_matured": 3, "origins_needed": 26,
+         "horizons": {"2": {"origins": 3, "points": 900, "estimate": 0.12, "ci": [-0.05, 0.25], "p": 0.2, "ece": 0.06},
+                      "1": {"origins": 4, "points": 1200, "estimate": 0.08, "ci": [-0.02, 0.18], "p": 0.2, "ece": 0.05}},
+         "alert": None, "decision": {"status": "pendente"}, "ledger_origins": ["2026-10-04"]}
+
+
+class LivePageTests(PageCase):
+    def test_forecast_page_shows_experimental_probabilities(self):
+        at = self.run_page(FORECAST, FakeApi(classes=CLASSES))
+        self.assertFalse(at.exception)
+        self.assertIn("**Experimental.**", " ".join(w.value for w in at.warning))
+        table = at.table[-1].value
+        self.assertEqual(list(table["Ficar estável"]), [0.5, 0.5, 0.5])
+        self.assertIn("Chance de cair, ficar estável ou subir", [h.value for h in at.subheader])
+
+    def test_without_class_forecast_the_section_is_absent(self):
+        at = self.run_page(FORECAST, FakeApi())
+        self.assertNotIn("Chance de cair, ficar estável ou subir", [h.value for h in at.subheader])
+
+    def test_scoreboard_page(self):
+        at = self.run_page(LIVE, FakeApi(scoreboard=BOARD))
+        self.assertFalse(at.exception)
+        metrics = {m.label: m.value for m in at.metric}
+        self.assertEqual(metrics["Situação"], "Experimental")
+        self.assertEqual(metrics["Semanas conferidas (2 semanas à frente)"], "3 de 26")
+        self.assertEqual(metrics["Ganho sobre a referência (2 semanas)"], "+12,0%")
+        self.assertEqual(list(at.table[0].value["Horizonte"]), ["1 semana(s)", "2 semana(s)"])
+        self.assertEqual(len(at.warning), 0)
+        degraded = dict(BOARD, alert={"bss_recent": -0.1, "origins": 13, "degraded": True})
+        st.cache_data.clear()  # a consulta e o cliente ficam em cache entre execuções
+        st.cache_resource.clear()
+        self.assertIn("Alerta", " ".join(w.value for w in self.run_page(LIVE, FakeApi(scoreboard=degraded)).warning))
+
+    def test_no_scoreboard_yet(self):
+        at = self.run_page(LIVE, FakeApi())
+        self.assertFalse(at.exception)
+        self.assertIn("Ainda não há previsões ao vivo conferidas", " ".join(i.value for i in at.info))
 
 
 class StudyPageTests(PageCase):

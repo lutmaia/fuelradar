@@ -1057,7 +1057,8 @@ class InfrastructureTests(ApiCase):
             "/api/v1/prices/latest", "/api/v1/prices/history", "/api/v1/prices/compare", "/api/v1/prices/by-brand",
             "/api/v1/prices/ethanol-vs-gasoline", "/api/v1/prices/station-choice",
             "/api/v1/prices/regions", "/api/v1/prices/rankings", "/api/v1/prices/margins",
-            "/api/v1/prices/margins/municipalities", "/api/v1/prices/margins/stations", "/api/v1/stations", "/api/v1/forecasts", "/api/v1/anomalies", "/api/v1/data-quality"})
+            "/api/v1/prices/margins/municipalities", "/api/v1/prices/margins/stations", "/api/v1/stations", "/api/v1/forecasts", "/api/v1/anomalies", "/api/v1/data-quality",
+            "/api/v1/models/scoreboard"})
         self.assertEqual(self.client.get("/docs").status_code, 200)
 
     def test_forecasts_and_anomalies_say_so_when_no_model_is_published(self):

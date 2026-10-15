@@ -532,6 +532,7 @@ def forecasts_page():
         {"Semana (início)": tables.day, "Previsão": fmt.brl, "Mínimo": fmt.brl, "Máximo": fmt.brl})
     st.caption(md(f"{body['history_weeks']} semanas de histórico · unidade: {unit} · a previsão é da **mediana "
                   "semanal** da pesquisa da ANP, não do preço de um posto."))
+    class_section(body)
 
     st.subheader("Quão confiável é")
     if backtest:
@@ -555,6 +556,76 @@ def forecasts_page():
             st.success("Um modelo de machine learning superou o baseline nos critérios de aprovação.")
     st.caption("Previsões são estimativas estatísticas, não garantias. Mudanças de política, câmbio, petróleo e "
                "impostos não entram no modelo.")
+
+
+# -- Desempenho ao vivo (Marcos 10b e 11) ---------------------------------------------------
+
+LIVE_STATUS = {"experimental": "Experimental", "oficial": "Oficial", "reprovado": "Reprovado"}
+
+
+def class_section(body):
+    """Probabilidades de queda, estabilidade e alta, quando há previsão de classe registrada."""
+    classes = body.get("classes")
+    if not classes:
+        return
+    st.subheader("Chance de cair, ficar estável ou subir")
+    if classes["status"] == "experimental":
+        st.warning("**Experimental.** Estas probabilidades vêm de um modelo ainda em avaliação ao vivo: cada previsão "
+                   "é registrada antes de o preço real sair e conferida depois. Veja *Desempenho ao vivo*.")
+    show_table([{
+        "Horizonte": f"{i['horizon']} semana(s)", "Semana (início)": tables.to_date(i["target_week_start"]),
+        "Cair (−R$ 0,05 ou mais)": i["p_down"], "Ficar estável": i["p_flat"], "Subir (+R$ 0,05 ou mais)": i["p_up"]}
+        for i in classes["items"]],
+        {"Semana (início)": tables.day, "Cair (−R$ 0,05 ou mais)": tables.percent0, "Ficar estável": tables.percent0,
+         "Subir (+R$ 0,05 ou mais)": tables.percent0}, static=True)
+    st.caption(md(f"Previsão feita a partir da semana de {fmt.week_range_br(classes['origin_week_start'])}. "
+                  "\"Estável\" é variar menos de R$ 0,05 na mediana semanal. São probabilidades: um evento de 30% "
+                  "acontece, em média, 3 vezes em 10."))
+
+
+def live_page():
+    st.title("Desempenho ao vivo")
+    st.markdown("As probabilidades de queda, estabilidade e alta são registradas **toda semana, antes de o preço real "
+                "sair**, e conferidas quando a ANP publica a semana. Este placar mostra como elas estão indo, contra "
+                "uma referência simples (a frequência de cada classe no histórico).")
+    try:
+        board = fetch("scoreboard")
+    except ApiError as exc:
+        if exc.code != "NO_SCOREBOARD":
+            raise
+        st.info("Ainda não há previsões ao vivo conferidas. A primeira é conferida quando a ANP publicar a semana "
+                "seguinte à da previsão.")
+        return
+    matured, needed = board["origins_matured"], board["origins_needed"]
+    cols = st.columns(3)
+    cols[0].metric("Situação", LIVE_STATUS.get(board["status"], board["status"]))
+    cols[1].metric("Semanas conferidas (2 semanas à frente)", f"{matured} de {needed}",
+                   help="A decisão de tornar o modelo oficial acontece uma única vez, com 26 semanas conferidas.")
+    h2 = board["horizons"].get("2")
+    cols[2].metric("Ganho sobre a referência (2 semanas)", fmt.percent(h2["estimate"]) if h2 else fmt.ND,
+                   help="Brier skill score: 0% empata com a referência; acima de 0% é melhor.")
+    if board.get("alert") and board["alert"].get("degraded"):
+        st.warning("**Alerta:** nas 13 semanas conferidas mais recentes, o modelo ficou pior que a referência.")
+    rows = [{"Horizonte": f"{h} semana(s)", "Semanas conferidas": r["origins"], "Previsões": r["points"],
+             "Ganho": r["estimate"], "IC 95% (inferior)": r["ci"][0], "IC 95% (superior)": r["ci"][1],
+             "Erro de calibração": r["ece"]} for h, r in sorted(board["horizons"].items(), key=lambda kv: int(kv[0]))]
+    if rows:
+        show_table(rows, {"Semanas conferidas": fmt.number_br, "Previsões": fmt.number_br, "Ganho": fmt.percent,
+                          "IC 95% (inferior)": fmt.percent, "IC 95% (superior)": fmt.percent,
+                          "Erro de calibração": tables.decimal3}, static=True)
+    st.caption(f"Semanas registradas: {len(board['ledger_origins'])} · placar calculado em "
+               f"{fmt.datetime_br(board['computed_at'])}. Com poucas semanas, os intervalos são largos.")
+    st.subheader("Como a decisão é tomada")
+    st.markdown(LIVE_RULE)
+
+
+LIVE_RULE = """
+* O modelo (LightGBM com os sinais do estado, do Marco 10) teve as probabilidades **calibradas** na validação:
+  só a "temperatura" mudou, um número por horizonte. Nada foi ajustado olhando o teste final, que já tinha sido usado.
+* Com **26 semanas conferidas**, ele vira **oficial** se ganhar da referência com intervalo de 95% acima de zero,
+  tiver erro de calibração até 0,05 e não piorar mais de 5% em nenhum produto, porte ou horizonte. Senão, sai do painel.
+* A regra foi escrita e versionada antes da primeira previsão ([protocolo](https://github.com/lutmaia/fuelradar/blob/main/docs/estudo/protocolo-ao-vivo.md)).
+"""
 
 
 # -- Variações incomuns ---------------------------------------------------------------------

@@ -93,6 +93,7 @@ def build(api, conn, uf="SP", now=None):
     products = [p["code"] for p in take("products")]
     names = [loc["municipality"] for loc in take("locations")]
     take("data_quality")
+    take("scoreboard")
     latest_week = fresh["latest_week_start"]
     start = (date.fromisoformat(latest_week) - timedelta(days=HISTORY_DAYS)).isoformat()
 
