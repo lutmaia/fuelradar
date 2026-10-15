@@ -78,6 +78,8 @@ docker compose up -d --wait                                         # PostgreSQL
 .\.venv\Scripts\python.exe scripts/build_snapshot.py            # regenera o pacote do demonstrativo (API_DATABASE_URL)
 ```
 
+**Toda semana**, depois que a ANP publica: `.\atualizar.ps1` baixa, ingere, confere, carrega, atualiza as fontes externas, as previsões, a previsão ao vivo (`scripts/run_live.py`) e o pacote, só se houver semana nova; para na primeira falha e diz em qual etapa. `.\atualizar.ps1 --dry-run` só diz se há semana nova.
+
 Sem `--since`, `fetch_anp.py` baixa todas as semanas desde 2022 (cerca de 300 MB); use `--dry-run` para ver o que seria baixado. O usuário somente leitura da API é criado por `scripts/create_api_role.py` ([docs/api.md](docs/api.md)). Testes: `.\.venv\Scripts\python.exe -m unittest discover -s tests -t .`, e com `RADAR_TEST_DATABASE_URL` rodam também os de banco, API e integração.
 
 ## Fonte dos dados
