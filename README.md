@@ -27,6 +27,7 @@ xychart-beta
 ## O que não funcionou (e está publicado assim mesmo)
 
 - **Machine learning não superou o óbvio.** Um LightGBM para prever a mediana semanal de 1 a 4 semanas ficou **7,9% pior** que "repetir o último valor" num backtest com 24.481 previsões. A previsão publicada é a do método simples, e o [cartão do modelo](docs/model-card.md) explica por quê.
+- **A segunda tentativa de previsão ficou perto, mas não passou.** Prevendo se a mediana vai cair, ficar ou subir em 2 semanas, o melhor modelo (LightGBM com sinais do estado) superou a taxa-base em **16%** no teste final, lido uma única vez ([relatório](reports/modelv2/final.md)). Mas a regra pré-registrada também exige probabilidades bem calibradas (erro até 0,05), e ele teve **0,0504**. Não foi aprovado, e nada mudou no produto. O que ajudou foram os sinais do estado; a própria série e o dólar/preço de produtores não acrescentaram ganho.
 - **Duas das três hipóteses do estudo não se sustentaram.** "O preço sobe mais do que cai" (Q2) e "os reajustes começam nas cidades grandes" (Q3) não sobreviveram aos subperíodos. Pelo protocolo, o gate que liberaria a modelagem mais ambiciosa **não passou** (1 de 3), e nada foi refeito para passar.
 
 ## Como foi feito

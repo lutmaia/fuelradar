@@ -95,3 +95,4 @@ Cada camada acrescenta informação à anterior; todas são comparadas nos mesmo
 
 | Data | Mudança | Motivo | Antes ou depois de resultados |
 |---|---|---|---|
+| 2026-10-15 | **Inconsistência de texto, sem mudança de regra:** a tabela da seção 2 diz que a validação faz "checagens (a) e (d)", mas a seção 6 só aplica (a) na seleção e (d) no teste; o código seguiu a seção 6. | Encontrada ao escrever o relatório final. Conferido que não muda a decisão: com (d) também na validação, nenhum dos seis modelos passaria (o melhor, `L2_lightgbm`, teve erro de calibração 0,050010 > 0,05), não haveria candidato e o resultado seria o mesmo ("não aprovado"). | **Depois** da leitura do teste; registrada sem alterar nada. |

@@ -30,6 +30,18 @@ Séries com menos de 52 semanas de histórico, dados em menos de 80% das semanas
 - O backtest cobre nov/2022 a out/2026 e semanas ausentes na fonte aparecem como lacunas.
 - Resultado de uma configuração fixa; não houve busca de hiperparâmetros.
 
+## Modelagem v2 (Marco 10): classe da mudança, não aprovada
+
+Pré-registro em [protocolo-modelagem.md](estudo/protocolo-modelagem.md); números em [reports/modelv2/final.md](../reports/modelv2/final.md).
+
+- **Pergunta:** a mediana vai **cair, ficar ou subir** (limiar de R$ 0,05) em 1, 2 e 4 semanas? Desfecho primário: *Brier skill* em 2 semanas contra a taxa-base por produto e mês.
+- **Camadas:** L1 (a própria série), L2 (+ sinais do estado: variação estadual e fração de municípios que subiram ou caíram), L3 (+ dólar e preço de produtores, só o que já estava publicado na data). Logística multinomial e LightGBM em cada camada, parâmetros fixos.
+- **Candidato escolhido na validação** (jul/2025 a mar/2026): **L2 com LightGBM**, BSS +0,145 (IC 95% +0,081 a +0,195).
+- **Teste final** (abr a out/2026, 25 origens, lido uma vez): BSS **+0,164** (IC +0,104 a +0,208), sem piora em nenhum produto, porte ou horizonte, reprodutível. **Erro de calibração 0,0504**, acima do limite pré-registrado de 0,05: **não aprovado**. O produto não mudou e a previsão de valor publicada continua "último valor".
+- **O que cada camada trouxe** (teste, Holm): a própria série, nada significativo (+0,031); os sinais do estado, **+0,133** (p < 0,001); dólar e produtores, nada (−0,012).
+- **Valor (secundário):** o LightGBM da L2 teve MAE 6,3% menor que "último valor", mas sem significância depois da correção (p de Holm 1,0).
+- **Limitações:** probabilidades um pouco mal calibradas (o próximo passo natural seria uma etapa explícita de calibração, num novo protocolo); o período de teste teve mais quedas (39%) do que a validação (16%); o preço de produtores é do Sudeste e não há etanol nele.
+
 ## Variações incomuns
 
 São semanas em que a mediana saiu da faixa de 99% de variação semanal esperada, com diferença de pelo menos R$ 0,15 e ao menos 3 postos. É um **sinal estatístico**, não indica irregularidade de postos nem de preço.
