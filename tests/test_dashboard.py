@@ -870,7 +870,7 @@ class ComparePageTests(PageCase):
     def test_compare_table_ranks_and_reference_row(self):
         at = self.run_page(COMPARE, FakeApi(), {"produto": "GASOLINA_COMUM"})
         self.assertFalse(at.exception)
-        table = at.dataframe[0].value
+        table = at.table[0].value
         self.assertEqual(list(table["Município"])[-1], "ESTADO DE SP (referência)")
         self.assertEqual([int(v) for v in list(table["Posição"])[:3]], [1, 2, 3])
         self.assertEqual(len(at.get("plotly_chart")), 2)  # absoluto e índice
@@ -878,9 +878,11 @@ class ComparePageTests(PageCase):
 
     def test_low_coverage_city_has_no_rank_and_a_warning(self):
         at = self.run_page(COMPARE, FakeApi(low_city="CAMPINAS"), {"produto": "GASOLINA_COMUM"})
-        table = at.dataframe[0].value
+        table = at.table[0].value
         row = table[table["Município"] == "CAMPINAS"].iloc[0]
         self.assertTrue(pd.isna(row["Posição"]))  # sem posição; a tela mostra "—"
+        html = at.table[0].proto.html if hasattr(at.table[0].proto, "html") else ""
+        self.assertNotIn(">None<", html)
         self.assertEqual(row["Cobertura"], "Cobertura baixa")
         self.assertIn("cobertura baixa", " ".join(w.value for w in at.warning).lower())
 
@@ -1074,7 +1076,7 @@ class DashboardIntegrationTests(ApiCase):
             at.run()
             at.multiselect[0].set_value(names).run()
         self.assertFalse(at.exception)
-        table = at.dataframe[0].value
+        table = at.table[0].value
         by_name = {r["Município"]: r for _, r in table.iterrows()}
         self.assertTrue(pd.isna(by_name[names[1]]["Posição"]))
         self.assertEqual(sorted(int(by_name[n]["Posição"]) for n in (names[0], names[2])), [1, 2])

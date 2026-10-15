@@ -124,9 +124,16 @@ def coverage_notice(sample):
                 "cobertura não pôde ser avaliada.")
 
 
-def show_table(rows, formats=None, na_rep=None):
-    """Tabela com valores tipados: clicar no cabeçalho ordena por data ou número, não por texto."""
-    st.dataframe(tables.styled(rows, formats, na_rep), hide_index=True, width="stretch")
+def show_table(rows, formats=None, na_rep=None, static=False):
+    """Tabela com valores tipados: clicar no cabeçalho ordena por data ou número, não por texto.
+
+    `static=True` desenha uma tabela fixa (`st.table`), sem ordenação, mas com o texto de vazio
+    (`na_rep`): o `st.dataframe` mostra "None" em qualquer célula vazia. Para tabelas pequenas."""
+    styled = tables.styled(rows, formats, na_rep)
+    if static:
+        st.table(styled.hide(axis="index"))
+    else:
+        st.dataframe(styled, hide_index=True, width="stretch")
 
 
 # -- Início ---------------------------------------------------------------------------------
@@ -648,7 +655,7 @@ def compare():
     st.subheader(f"{labels[product]} — semana de {fmt.week_range_br(week)}")
     show_table(rows, {"Posição": tables.rank, "Mediana": fmt.brl, "Diferença p/ estado": fmt.signed_brl,
                       "Variação semanal": fmt.percent, "Postos": fmt.number_br, "Observações": fmt.number_br},
-               {"Posição": "—", "Diferença p/ estado": "—"})
+               {"Posição": "—", "Diferença p/ estado": "—", "Variação semanal": "—"}, static=True)
     st.caption("A posição ordena pela menor mediana e só inclui municípios com dados e cobertura normal ou sem "
                "histórico; cobertura baixa fica de fora do ranking. Empates dividem a posição.")
     if any(i["sample"]["coverage_status"] == "low" for i in body["items"]):
