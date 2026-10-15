@@ -117,7 +117,7 @@ class MigrationTests(DatabaseCase):
             self.assertEqual(apply_migrations(conn), [])
         versions = [r[0] for r in self.query("SELECT version FROM schema_migration ORDER BY version")]
         self.assertEqual(versions, ["0001_schema.sql", "0002_marts.sql", "0003_api_reader.sql", "0004_forecasts.sql",
-                                    "0005_external.sql"])
+                                    "0005_external.sql", "0006_holdout_access.sql"])
 
     def test_changed_applied_migration_is_rejected(self):
         copy = Path(tempfile.mkdtemp())
