@@ -155,6 +155,15 @@ class WeeklyXlsxTests(IngestionCase):
         self.assertEqual(len(self.manifest()["files"]), 1)
         self.assertEqual(len(read_csv(output)), 2)
 
+    def test_external_sources_folder_is_not_scanned(self):
+        self.make_weekly()
+        external = self.raw / "external" / "anp_distribuicao" / "retrieved_at=x"
+        external.mkdir(parents=True)
+        write_xlsx(external / "combustiveis-liquidos-estados.xlsx", ["ESTADO", "PRODUTO"], [["SP", "GASOLINA"]])
+        report = self.run_ingestion()
+        self.assertEqual(report["errors"], [])
+        self.assertEqual([f["paths"] for f in self.manifest()["files"]], [["revendas_lpc_2026-09-20_2026-09-26.xlsx"]])
+
     def test_changed_content_with_same_name_is_new_revision(self):
         self.make_weekly()
         self.run_ingestion()

@@ -37,3 +37,6 @@ dist/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Estado cifrado da rotina semanal (scripts/state.py): vai para a release "estado", nunca para o Git.
+*.tar.enc

@@ -6,7 +6,9 @@ import io
 import json
 import os
 from pathlib import Path
+import shutil
 import sys
+import tarfile
 import tempfile
 import unittest
 from unittest import mock
@@ -14,7 +16,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from scripts import weekly_refresh  # noqa: E402
+from scripts import state, weekly_refresh  # noqa: E402
 from radar_combustiveis import weekly  # noqa: E402
 from radar_combustiveis.ingestion.download import DownloadError  # noqa: E402
 from tests.test_download import PAGE_SNIPPET  # noqa: E402
@@ -54,6 +56,14 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(report["status"], "concluído")
         self.assertEqual([r["stage"] for r in report["stages"]], [s.name for s in weekly.STAGES])
         self.assertEqual(weekly.STAGES[-1].script, "build_snapshot.py")  # "em dia" depende de o pacote ser o último
+
+    def test_injected_failure_skips_the_stage(self):
+        calls = []
+        report = weekly.run(weekly.STAGES, lambda s: calls.append(s.name) or 0, clock=lambda: 0,
+                            inject="previsão ao vivo e placar")
+        self.assertNotIn("previsão ao vivo e placar", calls)
+        self.assertEqual(report["failed_stage"], "previsão ao vivo e placar")
+        self.assertTrue(report["stages"][-1]["injected"])
 
     def test_stage_scripts_exist(self):
         for stage in weekly.STAGES:
@@ -156,10 +166,110 @@ class ScriptTests(unittest.TestCase):
         self.assertEqual((code, self.ran), (1, []))
         self.assertIn("API_DATABASE_URL", output)
 
+    def test_injected_failure_then_recovery(self):
+        write_snapshot(self.snapshot, "2026-09-13")
+        code, output = self.main(env={**ENV, "RADAR_INJECT_FAILURE": "pacote do demonstrativo"})
+        self.assertEqual(code, 1)
+        self.assertIn("Falha injetada", output)
+        self.assertNotIn("pacote do demonstrativo", self.ran)
+        self.assertTrue(self.runs()[-1]["stages"][-1]["injected"])
+
+        def runner(stage):
+            if stage.script == "build_snapshot.py":
+                write_snapshot(self.snapshot, "2026-09-20")
+            return 0
+
+        self.assertEqual(self.main(runner=runner)[0], 0)
+        self.assertEqual(self.runs()[-1]["status"], "concluído")
+        code, output = self.main(env={**ENV, "RADAR_INJECT_FAILURE": "etapa inexistente"}, argv=["--force"])
+        self.assertEqual(code, 1)
+
+    def test_github_output(self):
+        write_snapshot(self.snapshot, "2026-09-20")
+        output = self.dir / "github_output"
+        self.main(argv=["--dry-run"], env={"GITHUB_OUTPUT": str(output)})
+        self.assertEqual(output.read_text(encoding="utf-8"), "new_week=false\npage_week=2026-09-20\n")
+
     def test_force_runs_even_when_up_to_date(self):
         write_snapshot(self.snapshot, "2026-09-20")
         self.main(argv=["--force"])
         self.assertEqual(self.ran, [s.name for s in weekly.STAGES])
+
+
+KEY = {"RADAR_STATE_KEY": "k" * 40}
+
+
+@unittest.skipUnless(shutil.which("openssl"), "openssl indisponível: testes do estado cifrado ignorados")
+class StateTests(unittest.TestCase):
+    """Estado cifrado com banco falso: o pg_dump vira um arquivo qualquer e o restauro só o lê."""
+
+    def setUp(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.dir = Path(folder.name)
+        self.source, self.target = self.dir / "origem", self.dir / "destino"
+        processed = self.source / "data" / "processed"
+        (processed / "observations").mkdir(parents=True)
+        (processed / "observations" / "a.csv").write_text("cnpj,preco\n00000000000191,6.29\n", encoding="utf-8")
+        (processed / "manifest.json").write_text('{"files": []}', encoding="utf-8")
+        (processed / "staging").mkdir()
+        (processed / "staging" / "observations.csv").write_text("regenerado pela qualidade", encoding="utf-8")
+        (self.source / "data" / "quarantine").mkdir(parents=True)
+        (self.source / "data" / "quarantine" / "x_rejected.csv").write_text("motivo\n", encoding="utf-8")
+        (self.source / "data" / "raw").mkdir()
+        (self.source / "data" / "raw" / "revendas.xlsx").write_bytes(b"bruto da ANP")
+        (self.source / "snapshot").mkdir()
+        write_snapshot(self.source / "snapshot" / "radar-sp.json.gz", "2026-10-04")
+        self.restored = []
+
+    def dump(self, container, path):
+        Path(path).write_bytes(b"PGDMP falso")
+
+    def restore(self, container, path):
+        self.restored.append(Path(path).read_bytes())
+
+    def pack(self):
+        output = self.dir / "estado.tar.enc"
+        with mock.patch.dict(os.environ, KEY):
+            info = state.pack("pg", output, root=self.source, dump=self.dump)
+        return output, info
+
+    def test_round_trip(self):
+        output, info = self.pack()
+        self.assertEqual(info["snapshot_week"], "2026-10-04")
+        self.assertNotIn(b"00000000000191", output.read_bytes())  # cifrado: o CNPJ não aparece
+        with mock.patch.dict(os.environ, KEY):
+            restored = state.unpack("pg", output, root=self.target, restore=self.restore)
+        self.assertEqual(restored["snapshot_week"], "2026-10-04")
+        self.assertEqual(self.restored, [b"PGDMP falso"])
+        observations = self.target / "data" / "processed" / "observations" / "a.csv"
+        self.assertIn("00000000000191", observations.read_text(encoding="utf-8"))
+        self.assertTrue((self.target / "data" / "quarantine" / "x_rejected.csv").exists())
+        self.assertFalse((self.target / "data" / "raw").exists())  # brutos da ANP nunca entram
+        self.assertFalse((self.target / "data" / "processed" / "staging").exists())
+
+    def test_wrong_key_and_short_key(self):
+        output, _ = self.pack()
+        with mock.patch.dict(os.environ, {"RADAR_STATE_KEY": "z" * 40}), self.assertRaises(state.StateError):
+            state.unpack("pg", output, root=self.target, restore=self.restore)
+        self.assertEqual(self.restored, [])
+        with mock.patch.dict(os.environ, {"RADAR_STATE_KEY": "curta"}), self.assertRaises(state.StateError):
+            state.pack("pg", self.dir / "outro.enc", root=self.source, dump=self.dump)
+
+    def test_refuses_to_overwrite_existing_history(self):
+        output, _ = self.pack()
+        with mock.patch.dict(os.environ, KEY), self.assertRaisesRegex(state.StateError, "--force"):
+            state.unpack("pg", output, root=self.source, restore=self.restore)
+
+    def test_rejects_unexpected_paths(self):
+        plain, output = self.dir / "mau.tar.gz", self.dir / "mau.enc"
+        (self.dir / "x.txt").write_text("x", encoding="utf-8")
+        with tarfile.open(plain, "w:gz") as tar:
+            tar.add(self.dir / "x.txt", "src/radar_combustiveis/x.py")
+        with mock.patch.dict(os.environ, KEY):
+            state.openssl("-salt", "-in", str(plain), "-out", str(output))
+            with self.assertRaisesRegex(state.StateError, "inesperados"):
+                state.unpack("pg", output, root=self.target, restore=self.restore)
 
 
 if __name__ == "__main__":

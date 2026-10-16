@@ -1,0 +1,112 @@
+# Atualização semanal sem intervenção (Marco 12, etapas B4 e B5; ADR 0011).
+# Roda todo dia: se a ANP não publicou semana nova, termina em segundos. Se publicou: abre o estado
+# cifrado (banco + histórico processado de SP, anexo da release "estado"), roda a rotina semanal num
+# PostgreSQL efêmero, guarda o estado novo (o anterior vira estado-anterior) e commita o registro
+# das previsões e o pacote do demonstrativo, que o Streamlit Community Cloud republica sozinho.
+# Uma falha deixa o estado e o repositório como estavam; a execução do dia seguinte tenta de novo.
+name: Atualização semanal
+
+on:
+  schedule:
+    - cron: "0 22 * * *"  # 19h de Brasília; a ANP costuma publicar na sexta, às vezes na segunda ou terça
+  workflow_dispatch:
+    inputs:
+      forcar:
+        description: "Rodar mesmo com o pacote em dia"
+        type: boolean
+        default: false
+      falha:
+        description: "Teste de falha: nome da etapa que deve falhar (vazio = execução normal)"
+        type: string
+        default: ""
+
+permissions:
+  contents: write  # commit do registro e do pacote, e anexos da release "estado"
+
+concurrency:
+  group: weekly
+  cancel-in-progress: false
+
+jobs:
+  weekly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    services:
+      postgres:
+        image: postgres:16.15-bookworm
+        env:
+          POSTGRES_USER: radar
+          POSTGRES_DB: radar
+          POSTGRES_PASSWORD: ci-efemero
+          POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U radar -d radar"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PYTHONUTF8: "1"
+      DATABASE_URL: postgresql://radar:ci-efemero@127.0.0.1:5432/radar
+      PG_CONTAINER: ${{ job.services.postgres.id }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Instalar dependências
+        run: python -m pip install -r requirements.txt
+
+      - name: Há semana nova na ANP?
+        id: check
+        run: python scripts/weekly_refresh.py --dry-run ${{ inputs.forcar && '--force' || '' }}
+
+      - name: Abrir o estado cifrado
+        if: steps.check.outputs.new_week == 'true'
+        env:
+          RADAR_STATE_KEY: ${{ secrets.STATE_KEY }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/anterior"
+          gh release download estado --pattern estado.tar.enc --dir "$RUNNER_TEMP/anterior"
+          python scripts/state.py unpack --container "$PG_CONTAINER" --input "$RUNNER_TEMP/anterior/estado.tar.enc"
+
+      - name: Rotina semanal
+        if: steps.check.outputs.new_week == 'true'
+        env:
+          RADAR_INJECT_FAILURE: ${{ inputs.falha }}
+        run: |
+          RADAR_API_PASSWORD="$(openssl rand -hex 24)"
+          echo "::add-mask::$RADAR_API_PASSWORD"
+          export RADAR_API_PASSWORD
+          python scripts/create_api_role.py
+          export API_DATABASE_URL="postgresql://radar_api:${RADAR_API_PASSWORD}@127.0.0.1:5432/radar"
+          python scripts/weekly_refresh.py ${{ inputs.forcar && '--force' || '' }}
+
+      - name: Guardar o estado novo
+        if: steps.check.outputs.new_week == 'true'
+        env:
+          RADAR_STATE_KEY: ${{ secrets.STATE_KEY }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/novo"
+          python scripts/state.py pack --container "$PG_CONTAINER" --output "$RUNNER_TEMP/novo/estado.tar.enc"
+          mv "$RUNNER_TEMP/anterior/estado.tar.enc" "$RUNNER_TEMP/anterior/estado-anterior.tar.enc"
+          gh release upload estado "$RUNNER_TEMP/anterior/estado-anterior.tar.enc" --clobber
+          gh release upload estado "$RUNNER_TEMP/novo/estado.tar.enc" --clobber
+
+      - name: Commit do registro e do pacote
+        if: steps.check.outputs.new_week == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/ledger snapshot
+          if git diff --cached --quiet; then
+            echo "Nada a commitar."
+            exit 0
+          fi
+          git commit -m "Atualização semanal: semana ${{ steps.check.outputs.page_week }} da ANP"
+          git pull --rebase
+          git push

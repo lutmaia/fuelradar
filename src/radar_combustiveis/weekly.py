@@ -53,13 +53,20 @@ def snapshot_week(path):
         return None
 
 
-def run(stages, runner, clock=time.monotonic):
-    """Roda as etapas em ordem com `runner(stage) -> código de saída`; para na primeira falha."""
+INJECTED_FAILURE = 97
+
+
+def run(stages, runner, clock=time.monotonic, inject=None):
+    """Roda as etapas em ordem com `runner(stage) -> código de saída`; para na primeira falha.
+
+    `inject` (nome de etapa) simula a falha dessa etapa sem rodá-la: é o teste de que a falha é
+    detectada e de que a execução seguinte se recupera (Marco 12, etapa B5)."""
     results = []
     for stage in stages:
         start = clock()
-        code = runner(stage)
-        results.append({"stage": stage.name, "code": code, "seconds": round(clock() - start, 1)})
+        code = INJECTED_FAILURE if stage.name == inject else runner(stage)
+        results.append({"stage": stage.name, "code": code, "seconds": round(clock() - start, 1),
+                        **({"injected": True} if stage.name == inject else {})})
         if code != 0:
             break
     failed = next((r["stage"] for r in results if r["code"] != 0), None)

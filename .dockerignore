@@ -1,0 +1,9 @@
+# Fora da imagem: ambiente local, segredos, dados (montados como volume quando precisa) e o Git.
+.venv/
+venv/
+.env
+.env.*
+.git/
+data/
+**/__pycache__/
+*.py[cod]

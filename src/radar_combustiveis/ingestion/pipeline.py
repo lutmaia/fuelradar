@@ -17,6 +17,8 @@ from .observations import NORMALIZATION_VERSION, OBSERVATION_COLUMNS, REJECTED_C
 from .readers import SourceFormatError, iter_tables, sha256
 
 SUPPORTED_SUFFIXES = {".csv", ".xlsx", ".zip"}
+# Subpastas de raw que não são da pesquisa de preços: as fontes externas (Marco 9) têm a própria leitura.
+OTHER_SOURCES = {"external"}
 
 
 def _now():
@@ -33,6 +35,8 @@ def scan_raw(raw_dir):
     found = []
     for path in sorted(raw_dir.rglob("*")):
         if not path.is_file() or path.name.startswith(".") or path.suffix.lower() not in SUPPORTED_SUFFIXES:
+            continue
+        if path.relative_to(raw_dir).parts[0] in OTHER_SOURCES:
             continue
         stat = path.stat()
         found.append({"path": path.relative_to(raw_dir).as_posix(), "absolute": path,

@@ -1,6 +1,19 @@
-# Serviços de desenvolvimento. Hoje só o banco; API e painel entram nos Marcos 5 e 6.
-# Uso: docker compose up -d --wait   (exige POSTGRES_PASSWORD no .env, que o Git ignora)
+# Serviços do projeto. Sem perfil, sobe só o banco (é o que iniciar.ps1 e atualizar.ps1 usam).
+# Uso (exige o .env com POSTGRES_PASSWORD; copie de .env.example):
+#   docker compose up -d --wait                       # só o banco
+#   docker compose --profile demo up --build demo     # painel com o pacote commitado, sem banco: http://127.0.0.1:8501
+#   docker compose --profile completo up --build      # banco + API + painel (precisa de RADAR_API_PASSWORD no .env)
+#   docker compose --profile pipeline run --build --rm pipeline   # rotina semanal (dados em ./data)
+# Todas as portas ficam só no loopback: nada fica exposto na rede.
 name: radar-combustiveis
+
+x-app: &app
+  build: .
+  image: radar-combustiveis:local
+
+x-database: &database
+  DATABASE_URL: postgresql://radar:${POSTGRES_PASSWORD}@postgres:5432/radar
+  API_DATABASE_URL: postgresql://radar_api:${RADAR_API_PASSWORD:-}@postgres:5432/radar
 
 services:
   postgres:
@@ -23,6 +36,64 @@ services:
       timeout: 3s
       retries: 12
     restart: unless-stopped
+
+  # Demonstrativo: o mesmo painel do Streamlit Community Cloud, lendo snapshot/radar-sp.json.gz.
+  demo:
+    <<: *app
+    profiles: [demo]
+    command: python -m streamlit run demo/streamlit_app.py --server.address 0.0.0.0 --server.port 8501
+             --server.headless true --browser.gatherUsageStats false
+    ports:
+      - "127.0.0.1:8501:8501"
+
+  # Migrações e usuário somente leitura da API; roda e termina antes da API e da rotina.
+  setup:
+    <<: *app
+    profiles: [completo, pipeline]
+    command: sh -c "python scripts/load_db.py --migrate-only && python scripts/create_api_role.py"
+    environment:
+      <<: *database
+      RADAR_API_PASSWORD: ${RADAR_API_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *app
+    profiles: [completo]
+    command: python scripts/run_api.py --host 0.0.0.0
+    environment: *database
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+
+  dashboard:
+    <<: *app
+    profiles: [completo]
+    command: python scripts/run_dashboard.py --host 0.0.0.0
+    environment:
+      RADAR_API_URL: http://api:8000
+    ports:
+      - "127.0.0.1:8501:8501"
+    depends_on:
+      - api
+
+  # Rotina semanal (scripts/weekly_refresh.py). Dados brutos e processados ficam em ./data, no
+  # computador; o registro e o pacote voltam para ./reports e ./snapshot, para commitar.
+  pipeline:
+    <<: *app
+    profiles: [pipeline]
+    command: python scripts/weekly_refresh.py
+    environment: *database
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+      - ./snapshot:/app/snapshot
+    depends_on:
+      setup:
+        condition: service_completed_successfully
 
 volumes:
   pgdata:

@@ -82,8 +82,8 @@ def footer():
     st.caption(ATTRIBUTION)
     if snapshot_mode():
         st.caption(f"**Demonstrativo:** os números vêm de um pacote gerado em "
-                   f"{fmt.datetime_br(_api().built_at)} a partir dos dados da ANP; ainda não há atualização "
-                   "automática. Sem CNPJ nem razão social: postos sem nome fantasia aparecem pela bandeira.")
+                   f"{fmt.datetime_br(_api().built_at)} a partir dos dados da ANP e atualizado sozinho quando a ANP publica uma "
+                   "semana nova (em geral às sextas). Sem CNPJ nem razão social: postos sem nome fantasia aparecem pela bandeira.")
 
 
 # -- Auxiliares de tela ---------------------------------------------------------------------

@@ -63,4 +63,4 @@ Em modo instantâneo, o rodapé avisa que é demonstrativo e quando o pacote foi
 
 ## Não existe ainda
 
-Autenticação e atualização automática do pacote (Marco 12).
+Autenticação. A atualização do pacote é automática desde o Marco 12 ([ADR 0011](decisions/0011-rotina-semanal-no-ci.md)).

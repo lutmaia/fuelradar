@@ -5,7 +5,8 @@ Lê a página da ANP; se o pacote do demonstrativo já tem a semana mais recente
 Senão roda, em ordem: baixar a ANP, ingerir, qualidade, carregar, fontes externas, previsões de valor,
 previsão ao vivo e pacote. Para na primeira falha. Exige DATABASE_URL e API_DATABASE_URL (o
 atualizar.ps1 prepara as duas). Histórico das execuções em data/processed/weekly_runs.jsonl.
-Retorno 0 quando conclui ou já está em dia; 1 quando algo falha.
+Retorno 0 quando conclui ou já está em dia; 1 quando algo falha. Com RADAR_INJECT_FAILURE=<etapa>,
+essa etapa falha de propósito (teste de detecção e recuperação). No CI, grava new_week em GITHUB_OUTPUT.
 """
 
 import argparse
@@ -62,7 +63,11 @@ def main(argv=None):
         return finish({"status": "falhou", "failed_stage": "ler a página da ANP", "stages": []})
     current = weekly.snapshot_week(SNAPSHOT)
     print(f"Semana mais recente na ANP: {page_week} · no pacote: {current or 'nenhuma'}")
-    if current == page_week and not args.force:
+    new_week = current != page_week or args.force
+    if os.environ.get("GITHUB_OUTPUT"):  # no CI, os passos seguintes só rodam se houver semana nova
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as stream:
+            stream.write(f"new_week={'true' if new_week else 'false'}\npage_week={page_week}\n")
+    if not new_week:
         print("Em dia: nada a fazer.")
         if not args.dry_run:
             weekly.record(LOG, {"status": "em dia", "page_week": page_week})
@@ -75,7 +80,13 @@ def main(argv=None):
         print(f"Faltam variáveis: {', '.join(missing)} (use .\\atualizar.ps1).", file=sys.stderr)
         return finish({"status": "falhou", "failed_stage": "configuração", "page_week": page_week, "stages": []})
 
-    report = weekly.run(weekly.STAGES, run_script)
+    inject = os.environ.get("RADAR_INJECT_FAILURE") or None
+    if inject:
+        if inject not in {stage.name for stage in weekly.STAGES}:
+            print(f"RADAR_INJECT_FAILURE não é uma etapa: {inject!r}", file=sys.stderr)
+            return 1
+        print(f"Falha injetada de propósito na etapa: {inject}")
+    report = weekly.run(weekly.STAGES, run_script, inject=inject)
     built = weekly.snapshot_week(SNAPSHOT)
     if report["status"] == "concluído" and built != page_week:
         report.update(status="falhou", failed_stage=f"conferência final (pacote em {built}, ANP em {page_week})")

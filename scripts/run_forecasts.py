@@ -41,6 +41,7 @@ def main(argv=None):
     parser.add_argument("--no-store", action="store_true", help="não grava no banco; só o relatório")
     parser.add_argument("--report-dir", type=Path, default=ROOT / "reports" / "forecasting")
     args = parser.parse_args(argv)
+    args.report_dir = args.report_dir.resolve()  # o resumo final mostra o caminho relativo à raiz
 
     started = time.time()
     with connect(database_url()) as conn:
