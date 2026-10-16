@@ -31,7 +31,7 @@ import streamlit as st  # noqa: E402
 from radar_combustiveis.dashboard import charts, exports, formatting as fmt, tables, views  # noqa: E402
 from radar_combustiveis.dashboard.client import (ApiClient, ApiError, ApiUnavailable,  # noqa: E402
                                                  EXPORT_ROW_LIMIT, PAGE_SIZE)
-from tests.test_api import ApiCase, LAST, LAST_COLLECTION, week  # noqa: E402
+from tests.test_api import ApiCase, LAST, LAST_COLLECTION  # noqa: E402
 
 # O Streamlit avisa a cada AppTest que não há runtime; é esperado fora do servidor.
 logging.getLogger("streamlit").setLevel(logging.ERROR)

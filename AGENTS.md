@@ -1,11 +1,13 @@
 # Orientações de trabalho
 
-- No início de cada sessão, leia `docs/proximos-passos.md` (estado atual, decisões já tomadas e pendências) e depois `PLAN.md`.
-- Antes de mudanças grandes, leia `PROJECT.md` e a parte relevante de `docs/architecture.md`, a principal especificação.
-- Limite cada tarefa ao marco solicitado em `PLAN.md`; não avance automaticamente.
-- Preserve arquivos brutos da ANP integralmente, sem editar, sobrescrever ou apagar; não os envie ao GitHub.
-- Mantenha SP como cobertura inicial e preserve a possibilidade de expansão por UF. Não inclua agentes de IA, chat, RAG ou sistemas multiagentes no produto.
-- Explique brevemente cada dependência nova e só a adicione quando necessária ao marco.
-- Execute verificações apropriadas antes de afirmar que algo funciona; diferencie estrutura validada de execução funcional e não invente resultados dos dados.
-- Atualize `PLAN.md` somente quando um marco estiver realmente concluído.
-- Explique mudanças e limitações em linguagem clara; mantenha a implementação pequena e compreensível.
+Regras para quem desenvolve neste repositório, inclusive assistentes de IA.
+
+- Antes de começar, leia `PLAN.md` (marcos, evidências e o que está em andamento em "Limite da tarefa atual") e, para operar o que já está no ar, `docs/operacao.md`. Para mudanças grandes, leia antes o escopo (`PROJECT.md`), a especificação (`docs/architecture.md`, `docs/estudo-de-caso.md`) e os ADRs em `docs/decisions/`.
+- Trabalhe um marco por vez, só o que foi pedido; não avance sozinho para o próximo.
+- Os arquivos brutos das fontes são intocáveis: não edite, sobrescreva nem apague, e não os envie ao repositório.
+- Pré-registro vale: protocolos são versionados antes de qualquer resultado, e o teste final só é lido uma vez. Desvios são registrados no próprio protocolo.
+- Resultados são relatados como saíram, inclusive os negativos; diferencie o que foi executado e conferido do que é só estrutura ou hipótese.
+- Privacidade: nada público traz CNPJ nem razão social (que pode ser o nome de uma pessoa); nenhuma tela associa postos a irregularidade.
+- Dependência nova só quando necessária, com o motivo explicado.
+- O produto não inclui agentes de IA, chat ou RAG.
+- Mantenha a implementação pequena e compreensível; explique mudanças e limitações em linguagem clara.

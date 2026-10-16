@@ -2,7 +2,6 @@
 
 from datetime import date, timedelta
 import json
-import os
 from pathlib import Path
 import sys
 import tempfile
@@ -101,6 +100,20 @@ class LedgerAndScoreboardTests(unittest.TestCase):
         self.assertEqual(bad["decision"]["status"], "reprovado")
         self.assertTrue(bad["alert"]["degraded"])
 
+    def test_decision_does_not_change_after_the_26th_origin(self):
+        h2 = ledger_rows(26)
+        h4 = ledger_rows(26, horizon=4, seed=5)
+        cutoff = h2["target_week"].max()
+        decided = live.scoreboard(pd.concat([h2, h4[h4["target_week"] <= cutoff]]), reps=200)
+        # Duas semanas depois: as previsões de 4 semanas das últimas origens vencem, e são ruins.
+        bad = ledger_rows(26, horizon=4, seed=5, good=False)
+        h4_later = pd.concat([h4[h4["target_week"] <= cutoff], bad[bad["target_week"] > cutoff]])
+        later = live.scoreboard(pd.concat([ledger_rows(28), h4_later]), reps=200)
+        self.assertEqual(later["decision"], decided["decision"])  # o que vence depois não entra
+        self.assertNotEqual(live.decide(pd.concat([h2, h4_later]), reps=200)["groups"],
+                            decided["decision"]["groups"])  # se entrasse, a decisão mudaria
+        self.assertEqual(len(live.decision_points(h4, [0, 25])), 0)  # sem h = 2 conferido, nada decide
+
     def test_calibrated_and_correct_model_becomes_official(self):
         rows = ledger_rows(30)
         rng = np.random.default_rng(4)  # probabilidades calibradas: a classe sai sorteada delas
@@ -134,7 +147,7 @@ class EndToEndLiveTests(unittest.TestCase):
 
 # -- API e painel -------------------------------------------------------------------------------
 
-from tests.test_api import ApiCase, LAST, insert_published_model, week  # noqa: E402
+from tests.test_api import ApiCase, LAST, insert_published_model  # noqa: E402
 
 
 class LiveApiTests(ApiCase):

@@ -183,8 +183,17 @@ def scoreboard(scored, **bootstrap):
         board["alert"] = {"bss_recent": _bss(recent, **bootstrap)["estimate"], "origins": ALERT_ORIGINS}
         board["alert"]["degraded"] = board["alert"]["bss_recent"] < 0
     if len(origins) >= DECISION_ORIGINS:
-        board["decision"] = decide(scored[scored["origin"].isin(origins[:DECISION_ORIGINS])], **bootstrap)
+        board["decision"] = decide(decision_points(scored, origins[:DECISION_ORIGINS]), **bootstrap)
     return board
+
+
+def decision_points(scored, chosen):
+    """Os pontos da checagem única: as origens escolhidas, só com o que já estava conferido quando a última
+    delas venceu em h = 2. Os horizontes mais longos dessas origens que vencem depois ficam fora, para a
+    decisão não mudar nas semanas seguintes (protocolo ao vivo, seção 5, esclarecimento de 2026-10-16)."""
+    h2 = scored[(scored["horizon"] == PRIMARY_HORIZON) & (scored["origin"] == chosen[-1])]
+    cutoff = h2["target_week"].max()
+    return scored[scored["origin"].isin(chosen) & (scored["target_week"] <= cutoff)]
 
 
 def decide(scored, **bootstrap):

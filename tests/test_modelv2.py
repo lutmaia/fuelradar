@@ -6,9 +6,7 @@ decisão e o lacre do teste no banco.
 """
 
 from datetime import date, timedelta
-import os
 from pathlib import Path
-import re
 import sys
 import unittest
 

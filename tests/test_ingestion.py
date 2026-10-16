@@ -155,6 +155,17 @@ class WeeklyXlsxTests(IngestionCase):
         self.assertEqual(len(self.manifest()["files"]), 1)
         self.assertEqual(len(read_csv(output)), 2)
 
+    def test_excluded_unreadable_file_is_skipped(self):
+        self.make_weekly()
+        bad = self.raw / "revendas_lpc_2022-12-04_2022-12-10.xlsx"
+        bad.write_bytes(b"PK\x03\x04 planilha que o leitor nao abre")
+        self.assertTrue(self.run_ingestion()["errors"])  # sem a lista, vira erro a cada execução
+        sha = hashlib.sha256(bad.read_bytes()).hexdigest()
+        report = run_ingestion(self.raw, self.out, self.quarantine, ("SP",), {sha: {"reason": "ilegivel"}})
+        self.assertEqual(report["errors"], [])
+        self.assertEqual(report["excluded"], [{"path": bad.name, "reason": "ilegivel"}])
+        self.assertNotIn(sha, {f["sha256"] for f in self.manifest()["files"]})
+
     def test_external_sources_folder_is_not_scanned(self):
         self.make_weekly()
         external = self.raw / "external" / "anp_distribuicao" / "retrieved_at=x"

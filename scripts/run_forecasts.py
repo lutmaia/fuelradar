@@ -66,7 +66,7 @@ def main(argv=None):
         if not args.no_store:
             stored = publish(conn, result, args.uf)
             print(f"Gravado: versão {stored['version']} ({stored['forecasts']} previsões, {stored['anomalies']} variações)")
-        print(f"Relatórios: {', '.join(str(p.relative_to(ROOT)) for p in paths)} | {time.time() - started:.0f}s")
+        print(f"Relatórios: {', '.join(str(p.resolve().relative_to(ROOT) if p.resolve().is_relative_to(ROOT) else p) for p in paths)} | {time.time() - started:.0f}s")
     return 0
 
 

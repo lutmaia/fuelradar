@@ -111,7 +111,3 @@ def normalize_identifier(value, width):
     if re.fullmatch(r"[0-9]+(?:[.,][0-9]+)?[eE][+-]?[0-9]+", text) or re.fullmatch(r"[0-9]+[.,][0-9]+", text):
         return None, "ambiguous_numeric_text"
     return None, "invalid"
-
-
-def normalize_cnpj(value):
-    return normalize_identifier(value, 14)[0]

@@ -39,7 +39,8 @@ $env:API_DATABASE_URL = "postgresql://radar_api:$($env:RADAR_API_PASSWORD)@127.0
 | GET | `/api/v1/prices/margins` | preço nos postos × preço médio de distribuição da ANP por semana e a margem bruta de revenda, no estado ou município (`product`; `municipality` opcional; `weeks` 1 a 156, padrão 52) |
 | GET | `/api/v1/prices/margins/municipalities` | margem bruta de cada município na semana mais recente com distribuição no estado (`product`) |
 | GET | `/api/v1/prices/margins/stations` | margem bruta **estimada** de cada posto do município: preço do posto na semana menos a média de distribuição do município (`product` e `municipality`) |
-| GET | `/api/v1/forecasts` | previsão de 1 a 4 semanas com intervalo, modelo publicado e desempenho no backtest (`product`; `municipality` opcional) |
+| GET | `/api/v1/forecasts` | previsão de 1 a 4 semanas com intervalo, modelo publicado e desempenho no backtest (`product`; `municipality` opcional); em `classes`, as probabilidades **experimentais** de cair, ficar estável ou subir em 1, 2 e 4 semanas (Marco 11), escondidas se o modelo ao vivo for reprovado |
+| GET | `/api/v1/models/scoreboard` | placar ao vivo das probabilidades: semanas conferidas, ganho sobre a referência com intervalo, erro de calibração, alerta de degradação e situação da decisão ([protocolo](estudo/protocolo-ao-vivo.md)) |
 | GET | `/api/v1/anomalies` | variações incomuns recentes (`weeks` 1 a 12; `product` e `municipality` opcionais) |
 | GET | `/api/v1/stations` | postos pesquisados, com o último preço do produto (`order=price_asc\|price_desc` e `only_latest_week=true`, ambos exigem `product`) |
 | GET | `/api/v1/data-quality` | cobertura da semana, avisos e quarentena |
@@ -102,6 +103,7 @@ Formato único, com o mesmo `request_id` do cabeçalho `X-Request-ID`:
 |---|---|---|
 | 404 | `LOCATION_NOT_FOUND`, `PRODUCT_NOT_FOUND` | município ou produto fora da cobertura publicada (GLP incluído) |
 | 404 | `NO_DATA` | recorte válido, sem preços |
+| 404 | `NO_SCOREBOARD` | ainda não há placar ao vivo calculado |
 | 404 / 405 | `NOT_FOUND`, `METHOD_NOT_ALLOWED` | rota inexistente ou método não permitido |
 | 422 | `VALIDATION_ERROR` | parâmetro ausente ou malformado (`details` lista os campos) |
 | 422 | `UF_NOT_PUBLISHED` | `uf` fora de `TARGET_UFS` |

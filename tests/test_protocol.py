@@ -1,6 +1,6 @@
 """Protocolo do estudo (Marco 8): as janelas em código são as do pré-registro e o lacre funciona."""
 
-from datetime import date, timedelta
+from datetime import timedelta
 from pathlib import Path
 import re
 import sys
@@ -32,21 +32,6 @@ class WindowTests(unittest.TestCase):
         (a_start, a_end), (b_start, b_end) = pr.SUBPERIODS
         self.assertEqual((a_start, b_end), (pr.STUDY_START, pr.STUDY_END))
         self.assertEqual(b_start, a_end + WEEK)
-
-    def test_window_of(self):
-        self.assertEqual(pr.window_of(pr.DEV_START), "dev")
-        self.assertEqual(pr.window_of(pr.DEV_END), "dev")
-        self.assertEqual(pr.window_of(pr.VALID_START), "valid")
-        self.assertEqual(pr.window_of(pr.VALID_END), "valid")
-        self.assertEqual(pr.window_of(pr.TEST_START), "test")
-        self.assertEqual(pr.window_of(date(2030, 1, 6)), "test")
-        with self.assertRaises(ValueError):
-            pr.window_of(pr.DEV_START - WEEK)
-
-    def test_study_weeks_drop_the_holdout_and_keep_order(self):
-        weeks = [pr.TEST_START, pr.VALID_END, pr.DEV_START, pr.DEV_START - WEEK, pr.TEST_START + WEEK]
-        self.assertEqual(pr.study_weeks(weeks), [pr.VALID_END, pr.DEV_START])
-        pr.assert_no_holdout(pr.study_weeks(weeks))
 
     def test_holdout_week_is_refused(self):
         pr.assert_no_holdout([pr.DEV_START, pr.VALID_END])

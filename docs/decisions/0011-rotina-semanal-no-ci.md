@@ -1,7 +1,7 @@
 # 0011 — Rotina semanal no GitHub Actions com estado cifrado
 
-- **Status:** proposta, em verificação (Marco 12, 2026-10-15). Passa a aceita depois da primeira execução semanal completa no CI.
-- **Contexto:** o [desenho](../estudo-de-caso.md) (seção 9) prevê a atualização semanal no CI gratuito, com banco efêmero e custo zero. O teste das fontes (etapa B2, 2026-10-15) mostrou que a ANP e o Banco Central aceitam downloads a partir do GitHub: semana da ANP em 6 s, fontes externas em 66 s. Mas o CI começa do zero a cada execução, e a carga no banco é por instantâneo: precisa de todo o histórico de SP já processado (cerca de 520 MB de CSV), que traz CNPJ e razão social. Os arquivos brutos da ANP não podem ir ao GitHub (AGENTS.md), e anexo de release de repositório público é público.
+- **Status:** aceita (Marco 12, 2026-10-16), depois de duas execuções no GitHub: falha injetada na qualidade detectada sem tocar estado nem repositório (execução #2) e recuperação completa a partir do mesmo estado (execução #3, 11 min 44 s, commit do robô `8154fe4`, release com `estado` e `estado-anterior`). Falta só a primeira execução agendada com semana nova da ANP.
+- **Contexto:** o [desenho](../estudo-de-caso.md) (seção 9) prevê a atualização semanal no CI gratuito, com banco efêmero e custo zero. O teste das fontes (etapa B2, 2026-10-15) mostrou que a ANP e o Banco Central aceitam downloads a partir do GitHub: semana da ANP em 6 s, fontes externas em 66 s (o workflow e o script desse teste foram retirados depois de cumprir o papel; estão no commit `36b00fb`). Mas o CI começa do zero a cada execução, e a carga no banco é por instantâneo: precisa de todo o histórico de SP já processado (cerca de 520 MB de CSV), que traz CNPJ e razão social. Os arquivos brutos da ANP não podem ir ao GitHub (AGENTS.md), e anexo de release de repositório público é público.
 
 ## Decisão
 
@@ -23,5 +23,10 @@
 
 - **Chave:** se ela se perder, o estado vira lixo. A recuperação é refazer o estado no PC (banco local + `state.py pack`) e subir de novo; a chave fica em dois lugares.
 - **Banco local:** depois que o CI assume, o banco do PC fica parado. Ele pode ser atualizado com `state.py unpack` num banco vazio, ou continuar com `.\atualizar.ps1` depois de um `git pull`; o pacote em dia evita duas execuções para a mesma semana.
-- **Limites gratuitos (a conferir na etapa B7):** minutos ilimitados para repositório público em executores padrão; job de até 6 h; anexos de release de até 2 GiB; workflows agendados desativados depois de 60 dias sem atividade no repositório (os commits semanais do robô contam como atividade); o horário agendado pode atrasar em momentos de fila.
+- **Limites gratuitos (etapa B7, 2026-10-16):**
+  - **Workflows agendados** são desativados depois de 60 dias sem atividade num repositório público (conferido na documentação do GitHub). Os commits semanais do robô contam como atividade, mas uma pausa longa da ANP (ou do workflow) pode desativá-lo; reativar é um clique em Actions.
+  - **Minutos:** ilimitados para repositório público em executores padrão; a execução completa usa cerca de 12 min, e os dias sem semana nova, menos de 1 min.
+  - **Job de até 6 h** e **anexos de release de até 2 GiB cada**: folga grande (12 min; estado de cerca de 140 MB).
+  - **Horário agendado** pode atrasar em momentos de fila; não importa para uma rotina diária.
+  - **Streamlit Community Cloud:** gratuito para app público, cerca de 1 GB de memória (o pacote tem 3 MB) e o app dorme sem visitas. O plano B registrado no ADR 0009 (Hugging Face Spaces) parece não oferecer mais Streamlit no plano gratuito; se o Streamlit mudar, sobram a execução local (`docker compose --profile demo up demo`) e as capturas de tela do README.
 - **Integridade:** o `openssl enc` não autentica o conteúdo, mas só o dono do repositório pode trocar o anexo, e o `.tar.gz` confere a própria integridade (CRC); a extração aceita só caminhos esperados.

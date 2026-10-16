@@ -51,8 +51,6 @@ def check(source_id, rows, retrieved_on):
             "warnings": warnings[:MAX_LISTED], "warnings_total": len(warnings)}
 
 
-def lag_days(latest, retrieved_on):
-    return None if latest is None else (retrieved_on - latest).days
 
 
 def week_of(day):

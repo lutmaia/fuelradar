@@ -6,7 +6,7 @@ Preços de combustível pesquisados pela ANP em São Paulo, organizados para res
 
 ## O problema
 
-A ANP publica toda semana o preço de cerca de 4 mil postos paulistas, em planilhas soltas, com lacunas e mudanças de formato. Dá para consultar um arquivo, mas não para perguntar "quanto economizo escolhendo o posto na minha cidade?" ou "a bandeira branca é mesmo mais barata?". Este projeto junta três anos dessas planilhas, cuida da qualidade e responde com a fonte, a data e o tamanho da amostra sempre à vista.
+A ANP publica toda semana o preço de cerca de 1.200 postos paulistas (4 mil diferentes em três anos), em planilhas soltas, com lacunas e mudanças de formato. Dá para consultar um arquivo, mas não para perguntar "quanto economizo escolhendo o posto na minha cidade?" ou "a bandeira branca é mesmo mais barata?". Este projeto junta três anos dessas planilhas, cuida da qualidade e responde com a fonte, a data e o tamanho da amostra sempre à vista.
 
 ## O que os dados mostram
 
@@ -40,7 +40,9 @@ ANP (planilhas semanais) → ingestão (manifesto SHA-256, brutos intactos) → 
 
 - **Dados:** cerca de 800 mil preços em 174 semanas, de 108 municípios. Reexecução sem duplicar, revisões da fonte rastreadas, arquivos com defeito da ANP excluídos com registro ([ADR 0006](docs/decisions/0006-arquivos-da-fonte-excluidos.md)).
 - **API:** endpoints de leitura com `data_as_of`, amostra e cobertura em cada resposta, usuário de banco somente leitura ([guia](docs/api.md)).
-- **Painel:** 11 páginas: município, postos mais baratos, bandeiras, previsões, variações incomuns, comparação, regiões, margem dos postos, estudo e qualidade ([guia](docs/dashboard.md)).
+- **Painel:** 12 páginas: início, município, postos mais baratos, bandeiras, previsões, desempenho ao vivo, variações incomuns, comparação, regiões, margem dos postos, estudo e qualidade ([guia](docs/dashboard.md)).
+- **Avaliação ao vivo:** toda semana, antes de o preço sair, as probabilidades de queda, estabilidade e alta são gravadas num registro que não se altera; o placar confere quando a ANP publica, e a decisão sobre o modelo sai com 26 semanas conferidas ([protocolo](docs/estudo/protocolo-ao-vivo.md)).
+- **Operação:** testes a cada push e atualização semanal sozinha no GitHub Actions, num banco temporário aberto a partir de um estado cifrado, sem custo ([ADR 0011](docs/decisions/0011-rotina-semanal-no-ci.md)). [Ficha do conjunto de dados](docs/ficha-dados.md) e `scripts/reproduce.py`, que refaz e confere os relatórios.
 - **Fontes externas:** dólar do Banco Central e preços de produtores e de distribuição da ANP, com a data em que cada valor ficou disponível, para a modelagem não usar dado do futuro ([ADR 0010](docs/decisions/0010-fontes-externas-e-as-of.md)). Com a distribuição, o painel mostra a **margem bruta de revenda**: quanto o preço nos postos fica acima do preço médio das distribuidoras.
 - **Estudo:** [protocolo](docs/estudo/protocolo.md) commitado antes dos resultados, teste final lacrado em código, IC agrupado por posto, bootstrap em blocos de semanas e correção de Holm.
 - **Testes:** suíte com dados sintéticos de resposta conhecida, contra PostgreSQL real em Docker; os números do painel foram conferidos contra SQL escrito à parte e as telas, no navegador.
@@ -50,7 +52,7 @@ Decisões em [docs/decisions/](docs/decisions/), marcos e evidências em [PLAN.m
 
 ## Rodar localmente
 
-Requisitos: Python 3.12+ (o ambiente fixado usa 3.14) e Docker. No PowerShell, a partir da raiz:
+Requisitos: Python 3.14 (a versão testada, aqui e no GitHub Actions) e Docker. No PowerShell, a partir da raiz:
 
 ```powershell
 python -m venv .venv
@@ -95,13 +97,14 @@ Os preços vêm do **Levantamento de Preços de Combustíveis da ANP** (Agência
 
 ## Organização
 
-- `src/radar_combustiveis/`: ingestão, qualidade, banco, API (`api/`), painel (`dashboard/`), previsão (`forecasting/`) e estudo (`study/`).
-- `scripts/`: pontos de entrada (download, ingestão, qualidade, carga, previsões, estudo, API, painel e pacote).
+- `src/radar_combustiveis/`: ingestão, qualidade, banco, API (`api/`), painel (`dashboard/`), previsão (`forecasting/`), estudo (`study/`), fontes externas (`external/`), modelagem v2 e avaliação ao vivo (`modelv2/`) e rotina semanal (`weekly.py`).
+- `scripts/`: pontos de entrada (download, ingestão, qualidade, carga, previsões, estudo, API, painel, pacote, rotina semanal, estado cifrado e reprodução).
 - `migrations/`: esquema do PostgreSQL em SQL versionado.
-- `reports/`: relatórios reproduzíveis do backtest, do estudo e do perfil dos dados.
+- `reports/`: relatórios reproduzíveis do backtest, do estudo, da modelagem v2, da ficha dos dados e do perfil inicial; `reports/ledger/` é o registro imutável das previsões ao vivo e o placar.
 - `snapshot/` e `demo/`: pacote e ponto de entrada do demonstrativo.
 - `docs/`: arquitetura, [desenho do estudo de caso](docs/estudo-de-caso.md), contratos, guias e decisões.
 - `tests/`: testes com dados sintéticos.
+- `.github/workflows/`: testes e validação dos workflows a cada push; atualização semanal.
 
 ## Licença
 

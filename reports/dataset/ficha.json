@@ -1,0 +1,285 @@
+{
+  "brands": {
+    "other_share": 0.0038,
+    "top": [
+      {
+        "brand": "BRANCA",
+        "observations": 290778,
+        "share": 0.3627
+      },
+      {
+        "brand": "IPIRANGA",
+        "observations": 191555,
+        "share": 0.2389
+      },
+      {
+        "brand": "RAIZEN",
+        "observations": 158202,
+        "share": 0.1973
+      },
+      {
+        "brand": "VIBRA",
+        "observations": 142692,
+        "share": 0.178
+      },
+      {
+        "brand": "ALE",
+        "observations": 9734,
+        "share": 0.0121
+      },
+      {
+        "brand": "NEXTA",
+        "observations": 5772,
+        "share": 0.0072
+      }
+    ]
+  },
+  "by_product": [
+    {
+      "municipalities": 108,
+      "observations": 208553,
+      "product": "GASOLINA_COMUM",
+      "stations": 3983,
+      "weeks": 174
+    },
+    {
+      "municipalities": 108,
+      "observations": 206123,
+      "product": "ETANOL_HIDRATADO",
+      "stations": 3987,
+      "weeks": 174
+    },
+    {
+      "municipalities": 108,
+      "observations": 163696,
+      "product": "GASOLINA_ADITIVADA",
+      "stations": 3248,
+      "weeks": 174
+    },
+    {
+      "municipalities": 108,
+      "observations": 139030,
+      "product": "DIESEL_S10",
+      "stations": 3133,
+      "weeks": 174
+    },
+    {
+      "municipalities": 108,
+      "observations": 74941,
+      "product": "DIESEL_COMUM",
+      "stations": 1771,
+      "weeks": 174
+    },
+    {
+      "municipalities": 54,
+      "observations": 9467,
+      "product": "GNV",
+      "stations": 166,
+      "weeks": 174
+    }
+  ],
+  "by_year": [
+    {
+      "observations": 7588,
+      "weeks": 2,
+      "year": 2022
+    },
+    {
+      "observations": 192881,
+      "weeks": 40,
+      "year": 2023
+    },
+    {
+      "observations": 223751,
+      "weeks": 48,
+      "year": 2024
+    },
+    {
+      "observations": 193335,
+      "weeks": 44,
+      "year": 2025
+    },
+    {
+      "observations": 184255,
+      "weeks": 40,
+      "year": 2026
+    }
+  ],
+  "coverage": {
+    "first_week": "2022-11-13",
+    "gaps": [
+      [
+        "2022-11-27",
+        "2022-11-27",
+        "sem_arquivo"
+      ],
+      [
+        "2022-12-04",
+        "2022-12-18",
+        "defeito"
+      ],
+      [
+        "2022-12-25",
+        "2022-12-25",
+        "sem_arquivo"
+      ],
+      [
+        "2023-01-01",
+        "2023-01-01",
+        "defeito"
+      ],
+      [
+        "2023-01-08",
+        "2023-01-08",
+        "sem_arquivo"
+      ],
+      [
+        "2023-02-26",
+        "2023-03-26",
+        "defeito"
+      ],
+      [
+        "2023-04-02",
+        "2023-04-02",
+        "sem_arquivo"
+      ],
+      [
+        "2023-04-09",
+        "2023-04-09",
+        "defeito"
+      ],
+      [
+        "2023-04-16",
+        "2023-04-30",
+        "sem_arquivo"
+      ],
+      [
+        "2023-12-31",
+        "2023-12-31",
+        "sem_arquivo"
+      ],
+      [
+        "2024-03-03",
+        "2024-03-03",
+        "sem_arquivo"
+      ],
+      [
+        "2024-04-14",
+        "2024-04-14",
+        "sem_arquivo"
+      ],
+      [
+        "2024-05-12",
+        "2024-05-12",
+        "sem_arquivo"
+      ],
+      [
+        "2024-12-22",
+        "2024-12-22",
+        "sem_arquivo"
+      ],
+      [
+        "2025-06-29",
+        "2025-06-29",
+        "defeito"
+      ],
+      [
+        "2025-10-19",
+        "2025-11-30",
+        "sem_arquivo"
+      ]
+    ],
+    "last_week": "2026-10-04",
+    "municipalities": 108,
+    "stations": 4009,
+    "uf": "SP",
+    "weeks_in_range": 204,
+    "weeks_with_data": 174
+  },
+  "external": [
+    {
+      "first_period": "2020-08-23",
+      "last_period": "2026-08-29",
+      "license": "Termos de uso do portal da ANP: reprodução sem fins lucrativos, com citação da fonte",
+      "publisher": "ANP",
+      "rows": 170755,
+      "source_id": "anp_distribuicao"
+    },
+    {
+      "first_period": "2012-12-31",
+      "last_period": "2026-10-04",
+      "license": "Termos de uso do portal da ANP: reprodução sem fins lucrativos, com citação da fonte",
+      "publisher": "ANP",
+      "rows": 15089,
+      "source_id": "anp_produtores"
+    },
+    {
+      "first_period": "2022-11-01",
+      "last_period": "2026-10-14",
+      "license": "ODbL (Open Database License)",
+      "publisher": "Banco Central do Brasil",
+      "rows": 992,
+      "source_id": "bcb_sgs_1"
+    }
+  ],
+  "observations": {
+    "current": 801810,
+    "flags": {
+      "preco_extremo": 8653
+    },
+    "quarantined": {
+      "conflito_de_preco_mesma_chave": 8
+    },
+    "superseded_by_revision": 114204,
+    "warning_share": 0.0108,
+    "with_warning": 8653
+  },
+  "regions": {
+    "Capital": {
+      "municipalities": 1,
+      "weeks_median": 174
+    },
+    "Interior": {
+      "municipalities": 81,
+      "weeks_median": 160
+    },
+    "Litoral": {
+      "municipalities": 8,
+      "weeks_median": 170
+    },
+    "Região metropolitana": {
+      "municipalities": 18,
+      "weeks_median": 172
+    }
+  },
+  "sample": {
+    "municipality_weeks": 85249,
+    "stations_median": 8,
+    "stations_p10": 3,
+    "stations_p90": 15,
+    "thin_cells_lt3": 8279,
+    "thin_share": 0.0971
+  },
+  "source_files": [
+    {
+      "files": 176,
+      "kinds": "retail_observation",
+      "revised": 0
+    },
+    {
+      "files": 4,
+      "kinds": "monthly_aggregate",
+      "revised": 0
+    },
+    {
+      "files": 3,
+      "kinds": "sem_tabela",
+      "revised": 0
+    },
+    {
+      "files": 3,
+      "kinds": "weekly_aggregate",
+      "revised": 0
+    }
+  ]
+}

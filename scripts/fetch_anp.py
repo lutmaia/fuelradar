@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # Sem instalação do pacote, o script enxerga `src` por este caminho (docs/decisions/0001).
 sys.path.insert(0, str(ROOT / "src"))
 
-from radar_combustiveis.config import load_target_ufs  # noqa: E402
+from radar_combustiveis.config import load_excluded_sources, load_target_ufs  # noqa: E402
 from radar_combustiveis.ingestion.download import (  # noqa: E402
     ALLOWED_HOST_SUFFIX, DEFAULT_PAGE, DownloadError, WeeklyLink, download_links, fetch_to_file,
     known_files, needs_fetch, parse_iso_date, parse_weekly_links, read_log, select_links,
@@ -95,7 +95,8 @@ def main(argv=None):
 
     code = 1 if report["errors"] else 0
     if args.ingest:
-        ingestion = run_ingestion(args.raw, args.out, args.quarantine, load_target_ufs())
+        ingestion = run_ingestion(args.raw, args.out, args.quarantine, load_target_ufs(),
+                                  load_excluded_sources(ROOT / "config" / "excluded_sources.json"))
         for event in ingestion["events"]:
             print(f"  {event['event']}: {event['paths'][0]} (revisão {event['revision']})")
         for item in ingestion["ingested"]:

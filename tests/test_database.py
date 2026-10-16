@@ -13,7 +13,6 @@ ignorados e a suíte continua válida.
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-import json
 import os
 from pathlib import Path
 import shutil
@@ -25,7 +24,7 @@ import uuid
 try:
     import psycopg
     from psycopg import errors
-    from psycopg.conninfo import conninfo_to_dict, make_conninfo
+    from psycopg.conninfo import make_conninfo
 except ImportError:  # pragma: no cover - dependência opcional para quem não usa o banco
     psycopg = None
 

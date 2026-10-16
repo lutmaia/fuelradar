@@ -120,7 +120,9 @@ def ingest_file(entry, source, target_ufs, run_id, out_dir, quarantine_dir):
             "output": f"observations/{file_id}.csv", "quarantine": f"{file_id}_rejected.csv"}
 
 
-def run_ingestion(raw_dir, out_dir, quarantine_dir, target_ufs):
+def run_ingestion(raw_dir, out_dir, quarantine_dir, target_ufs, excluded=None):
+    """`excluded`: {sha256: item} da lista de exclusão (ADR 0006). Arquivo novo excluído não é lido nem
+    registrado: só aparece em report["excluded"], com o motivo."""
     raw_dir, out_dir, quarantine_dir = (Path(p).resolve() for p in (raw_dir, out_dir, quarantine_dir))
     if not raw_dir.is_dir():
         raise ValueError(f"Pasta raw inexistente: {raw_dir}")
@@ -132,12 +134,16 @@ def run_ingestion(raw_dir, out_dir, quarantine_dir, target_ufs):
     manifest_path = out_dir / "manifest.json"
     manifest = load_manifest(manifest_path)
     report = {"run_id": run_id, "started_at": started, "target_ufs": list(target_ufs),
-              "raw_dir": str(raw_dir), "events": [], "ingested": [], "errors": []}
+              "raw_dir": str(raw_dir), "events": [], "ingested": [], "errors": [], "excluded": []}
+    excluded = excluded or {}
 
     found = scan_raw(raw_dir)
     known = {e["sha256"] for e in manifest["files"]}
     registrable = []
     for item in found:
+        if item["sha256"] not in known and item["sha256"] in excluded:
+            report["excluded"].append({"path": item["path"], "reason": excluded[item["sha256"]]["reason"]})
+            continue
         if item["sha256"] not in known:
             try:
                 item["kinds"] = detect_kinds(item["absolute"])

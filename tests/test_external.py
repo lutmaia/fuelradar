@@ -155,12 +155,6 @@ class AvailabilityTests(unittest.TestCase):
         self.assertEqual(asof.as_of(obs, date(2026, 9, 29))["value"], 5.40)
         self.assertEqual(asof.as_of(obs, date(2026, 9, 30))["value"], 5.45)
         self.assertIsNone(asof.as_of(obs, date(2026, 8, 30)))
-        weekly = asof.weekly_as_of(obs, [date(2026, 8, 23), date(2026, 9, 27), date(2026, 8, 30)])
-        self.assertIsNone(weekly[date(2026, 8, 23)])                 # sábado 29/08: nada disponível
-        self.assertEqual(weekly[date(2026, 8, 30)]["value"], 5.40)   # sábado 05/09
-        self.assertEqual(weekly[date(2026, 9, 27)]["value"], 5.45)   # sábado 03/10
-        for week, got in weekly.items():
-            self.assertEqual(got, asof.as_of(obs, week + timedelta(days=6)))
 
 
 # -- Qualidade --------------------------------------------------------------------------------

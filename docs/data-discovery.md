@@ -4,7 +4,7 @@
 
 Análise local em 2026-09-29 dos nove arquivos recebidos em `data/raw/`, preservados byte a byte. Resultados da leitura completa de 21 planilhas, sem presumir conteúdo pelos nomes. URLs individuais e datas de download não foram fornecidas nem verificadas. Não houve download automático.
 
-Artefatos: [script](../scripts/profile_anp_data.py), [JSON detalhado](../reports/data-profile/profile.json), [resumo gerado](../reports/data-profile/summary.md), [contrato](data-contract.md) e [testes sintéticos](../tests/test_profile_anp_data.py).
+Registro histórico do Marco 1. O perfilador (`scripts/profile_anp_data.py`), seus testes e os relatórios gerados (`reports/data-profile/`) foram retirados em 2026-10-16, substituídos pela [ficha do conjunto de dados](ficha-dados.md), que é gerada do banco; continuam no histórico do Git (último commit em que existem: `8154fe4`). Contrato resultante: [data-contract.md](data-contract.md).
 
 ## Inventário
 
@@ -173,7 +173,7 @@ O arquivo regional que continua em `data/raw/` não possui UF nem identificaçã
 
 Colunas originais, em ordem: `Regiao - Sigla`, `Estado - Sigla`, `Municipio`, `Revenda`, `CNPJ da Revenda`, `Nome da Rua`, `Numero Rua`, `Complemento`, `Bairro`, `Cep`, `Produto`, `Data da Coleta`, `Valor de Venda`, `Valor de Compra`, `Unidade de Medida`, `Bandeira`.
 
-O [relatório atual](../reports/data-profile/historical-validation/profile.json) contém tipos, nomes originais, mapeamentos, ausências, hashes e comparação entre fontes. O [resumo](../reports/data-profile/historical-validation/summary.md) é regenerável pelo script.
+O relatório atual (retirado) contém tipos, nomes originais, mapeamentos, ausências, hashes e comparação entre fontes. O resumo (retirado) é regenerável pelo script.
 
 ### Medidas de São Paulo
 

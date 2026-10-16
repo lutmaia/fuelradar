@@ -56,7 +56,7 @@ def main(argv=None):
                 weeks_with_data=int(obs["week_start"].nunique()))
     if args.descritivo:
         paths = write_descriptive(meta, descriptive.analyze(obs, city, state, q3.sizes(city)), args.report_dir)
-        print(f"Relatórios: {', '.join(str(p.relative_to(ROOT)) for p in paths)} | {time.time() - started:.0f}s")
+        print(f"Relatórios: {', '.join(str(p.resolve().relative_to(ROOT) if p.resolve().is_relative_to(ROOT) else p) for p in paths)} | {time.time() - started:.0f}s")
         return 0
 
     results = {}
@@ -69,7 +69,7 @@ def main(argv=None):
     verdict = gate.g1(results)
     paths = write_reports(meta, results, verdict, args.report_dir)
     print(f"G1: {'passou' if verdict['passed'] else 'não passou'} (estáveis: {', '.join(verdict['stable']) or 'nenhum'})")
-    print(f"Relatórios: {', '.join(str(p.relative_to(ROOT)) for p in paths)} | {time.time() - started:.0f}s")
+    print(f"Relatórios: {', '.join(str(p.resolve().relative_to(ROOT) if p.resolve().is_relative_to(ROOT) else p) for p in paths)} | {time.time() - started:.0f}s")
     return 0
 
 

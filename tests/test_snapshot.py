@@ -8,7 +8,6 @@ pacote. Também confere o painel inteiro em modo instantâneo.
 
 from datetime import date, timedelta
 import gzip
-import json
 import logging
 import os
 from pathlib import Path
@@ -27,7 +26,6 @@ from streamlit.testing.v1 import AppTest  # noqa: E402
 from tests.test_api import (ApiCase, LAST, N_WEEKS, WEEK0, distribution_row, insert_published_model,  # noqa: E402
                             week)
 from radar_combustiveis import snapshot  # noqa: E402
-from radar_combustiveis.dashboard import views  # noqa: E402
 from radar_combustiveis.dashboard.client import ApiClient, ApiError  # noqa: E402
 from radar_combustiveis.dashboard.snapshot import SnapshotClient  # noqa: E402
 from radar_combustiveis.db.connection import SCHEMA, connect  # noqa: E402
@@ -203,7 +201,8 @@ class SnapshotContractTests(ApiCase):
         self.assertIn("POSTO 2", names)
 
     def test_package_has_no_cnpj_nor_legal_name_of_unnamed_stations(self):
-        raw = gzip.open(self.path).read().decode("utf-8")
+        with gzip.open(self.path) as stream:
+            raw = stream.read().decode("utf-8")
         self.assertTrue(self.unnamed)
         for legal_name in self.unnamed:
             self.assertNotIn(f'"{legal_name}"', raw)

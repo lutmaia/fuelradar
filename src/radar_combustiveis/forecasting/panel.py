@@ -6,7 +6,7 @@ Tudo aqui é determinístico: a mesma entrada produz o mesmo painel e o mesmo `d
 """
 
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import timedelta
 import hashlib
 
 import numpy as np
@@ -102,7 +102,3 @@ def eligibility(panel, s, i):
     if panel.low[s, max(0, i + 1 - RECENT_COVERAGE_WEEKS): i + 1].any():
         reasons.append("cobertura_baixa_recente")
     return not reasons, reasons
-
-
-def week_label(week):
-    return week.isoformat() if isinstance(week, date) else str(week)

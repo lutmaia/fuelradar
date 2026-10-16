@@ -19,3 +19,8 @@
 - Uma entrada cujo hash não corresponde a nenhum arquivo do manifesto é simplesmente inerte (não é erro).
 - A exclusão vale para a etapa de qualidade, que alimenta a carga. A ingestão ainda lê e registra o arquivo (e rejeita as linhas), por isso a saída de `ingest_local.py` continua mostrando as 2.101 rejeições dele.
 - O defeito foi encontrado a partir de uma carga em massa do histórico; outros defeitos de fonte devem aparecer do mesmo modo (bloqueio da qualidade) e passar por esta revisão.
+
+## Adendo (2026-10-16, Marco 13)
+
+- **13 planilhas ilegíveis entram na lista.** Os arquivos semanais de 04/09/2022 a 15/04/2023 que o `openpyxl` não abre (referência externa sem `id`, `TypeError`) estavam fora desde 2026-10-12, mas como erro da ingestão a cada execução. Com a rotina semanal em um comando (ADR 0011), isso fazia o `atualizar.ps1` falhar toda semana no PC (no CI esses brutos não existem). Agora cada um está na lista, com o SHA-256 e o motivo, e a ingestão **pula** arquivo novo que esteja na lista: não lê, não registra no manifesto e o lista em `report["excluded"]`. O bruto continua intacto.
+- **A causa de cada lacuna fica visível.** A ficha do conjunto de dados (`docs/ficha-dados.md`) separa as semanas sem arquivo na página da ANP das semanas com arquivo da ANP com defeito (11 dentro do período coberto).

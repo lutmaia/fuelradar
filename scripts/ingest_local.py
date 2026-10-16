@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # Sem instalação do pacote, o script enxerga `src` por este caminho (docs/decisions/0001).
 sys.path.insert(0, str(ROOT / "src"))
 
-from radar_combustiveis.config import load_target_ufs  # noqa: E402
+from radar_combustiveis.config import load_excluded_sources, load_target_ufs  # noqa: E402
 from radar_combustiveis.ingestion.pipeline import run_ingestion  # noqa: E402
 
 
@@ -23,7 +23,8 @@ def main(argv=None):
     parser.add_argument("--quarantine", type=Path, default=ROOT / "data" / "quarantine")
     args = parser.parse_args(argv)
     try:
-        report = run_ingestion(args.raw, args.out, args.quarantine, load_target_ufs())
+        report = run_ingestion(args.raw, args.out, args.quarantine, load_target_ufs(),
+                                  load_excluded_sources(ROOT / "config" / "excluded_sources.json"))
     except (ValueError, RuntimeError) as exc:
         print(f"ERRO: {exc}", file=sys.stderr)
         return 2
@@ -36,6 +37,8 @@ def main(argv=None):
               f"chaves repetidas {item['duplicate_keys']}")
     for error in report["errors"]:
         print(f"  ERRO ({error['stage']}) {error['path']}: {error['error']}", file=sys.stderr)
+    if report["excluded"]:
+        print(f"  {len(report['excluded'])} arquivo(s) da lista de exclusão ignorado(s) (config/excluded_sources.json)")
     print(f"Raw inalterado: {report['raw_unchanged']} | manifesto gravado: {report['manifest_written']}")
     return 1 if report["errors"] else 0
 

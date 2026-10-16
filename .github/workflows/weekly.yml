@@ -100,6 +100,8 @@ jobs:
 
       - name: Commit do registro e do pacote
         if: steps.check.outputs.new_week == 'true'
+        env:
+          PAGE_WEEK: ${{ steps.check.outputs.page_week }}  # dado externo: por variável, nunca colado no comando
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -108,6 +110,6 @@ jobs:
             echo "Nada a commitar."
             exit 0
           fi
-          git commit -m "Atualização semanal: semana ${{ steps.check.outputs.page_week }} da ANP"
+          git commit -m "Atualização semanal: semana ${PAGE_WEEK} da ANP"
           git pull --rebase
           git push

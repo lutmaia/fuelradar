@@ -55,11 +55,16 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--read-test", action="store_true", help="lê o teste final (uma vez; fica registrado)")
     parser.add_argument("--purpose", help="finalidade da leitura do teste, gravada em holdout_access")
+    parser.add_argument("--report-dir", type=Path, default=REPORTS, help="só a validação (scripts/reproduce.py)")
+    parser.add_argument("--points-dir", type=Path, default=POINTS)
     args = parser.parse_args(argv)
+    if args.read_test and (args.report_dir != REPORTS or args.points_dir != POINTS):
+        parser.error("--read-test grava só nas pastas padrão: a leitura do teste é única")
+    reports, points = args.report_dir, args.points_dir
     if args.read_test and not args.purpose:
         parser.error("--read-test exige --purpose")
-    REPORTS.mkdir(parents=True, exist_ok=True)
-    POINTS.mkdir(parents=True, exist_ok=True)
+    reports.mkdir(parents=True, exist_ok=True)
+    points.mkdir(parents=True, exist_ok=True)
     started = time.monotonic()
     with connect(database_url()) as conn:
         apply_migrations(conn)
@@ -71,11 +76,11 @@ def main(argv=None):
         print(f"Validação: {len(valid_origins)} origens, {len(panel.keys)} séries", flush=True)
         valid = experiment.run_window(panel, features, valid_origins, index_of(panel, protocol.VALID_END),
                                       index_of(panel, protocol.DEV_END), progress=progress)
-        valid.to_csv(POINTS / "validacao.csv.gz", index=False)
+        valid.to_csv(points / "validacao.csv.gz", index=False)
         selection = decision.select_candidate(valid)
         summary = report.validation_summary(valid, selection, meta_of(rows, panel))
-        (REPORTS / "validacao.json").write_text(report.dumps(summary), encoding="utf-8")
-        (REPORTS / "validacao.md").write_text(report.validation_markdown(summary), encoding="utf-8")
+        (reports / "validacao.json").write_text(report.dumps(summary), encoding="utf-8")
+        (reports / "validacao.md").write_text(report.validation_markdown(summary), encoding="utf-8")
         print(f"Candidato na validação: {selection['candidate']} ({time.monotonic() - started:.0f} s)")
         if not args.read_test:
             return 0

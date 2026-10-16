@@ -4,5 +4,83 @@
     "sha256": "36eeb715d70b7c90e6bc22ba12651ea1457a459c2f531239d8eceaa335888eee",
     "reason": "planilha da ANP com 2.101 linhas de resumo (média e desvio por produto, sem posto nem UF) sob o cabeçalho de postos; todas as linhas são rejeitadas por UF ausente e nenhuma é observação individual",
     "registered_on": "2026-10-12"
+  },
+  {
+    "file": "revendas_lpc_2022-09-04_2022-09-10.xlsx",
+    "sha256": "018ff3e4e8f4cd55a53106e9cb8d593875e1f33b3249fa0cf80f5a59f62da53a",
+    "reason": "planilha da ANP que o leitor XLSX (openpyxl) não abre: referência externa sem 'id' (TypeError em ExternalReference); fica fora até a ANP republicar ou o leitor aceitar o arquivo",
+    "registered_on": "2026-10-16"
+  },
+  {
+    "file": "revendas_lpc_2022-09-11_2022-09-17.xlsx",
+    "sha256": "1c3eb9ebc4abb4aea47ff67916ea18c76891c5d422ef79927619f0168c56c306",
+    "reason": "planilha da ANP que o leitor XLSX (openpyxl) não abre: referência externa sem 'id' (TypeError em ExternalReference); fica fora até a ANP republicar ou o leitor aceitar o arquivo",
+    "registered_on": "2026-10-16"
+  },
+  {
+    "file": "revendas_lpc_2022-09-25_2022-10-01.xlsx",
+    "sha256": "41314974f26e9dfc0dcec1748eaebbfcdb01fe2f0a85e3675dc2aeba2c381349",
+    "reason": "planilha da ANP que o leitor XLSX (openpyxl) não abre: referência externa sem 'id' (TypeError em ExternalReference); fica fora até a ANP republicar ou o leitor aceitar o arquivo",
+    "registered_on": "2026-10-16"
+  },
+  {
+    "file": "revendas_lpc_2022-12-04_2022-12-10.xlsx",
+    "sha256": "fbee930406f74969545629330e61239fe441f21eb9146995fb38c2c199fd688d",
+    "reason": "planilha da ANP que o leitor XLSX (openpyxl) não abre: referência externa sem 'id' (TypeError em ExternalReference); fica fora até a ANP republicar ou o leitor aceitar o arquivo",
+    "registered_on": "2026-10-16"
+  },
+  {
+    "file": "revendas_lpc_2022-12-11_2022-12-17.xlsx",
+    "sha256": "27ce6460d8a54c966d9364746e6331d5ceaa6a2b1a00b754ac79141e606f7bf7",
+    "reason": "planilha da ANP que o leitor XLSX (openpyxl) não abre: referência externa sem 'id' (TypeError em ExternalReference); fica fora até a ANP republicar ou o leitor aceitar o arquivo",
+    "registered_on": "2026-10-16"
+  },
+  {
+    "file": "revendas_lpc_2022-12-18_2022-12-24.xlsx",
+    "sha256": "67d5c7b5875f40386fd8398f7358f35f28d58d3713b8307074218a702b63f4cd",
+    "reason": "planilha da ANP que o leitor XLSX (openpyxl) não abre: referência externa sem 'id' (TypeError em ExternalReference); fica fora até a ANP republicar ou o leitor aceitar o arquivo",
+    "registered_on": "2026-10-16"
+  },
+  {
+    "file": "revendas_lpc_2023-01-01_2023-01-07.xlsx",
+    "sha256": "71fc5c0427960800fb28bff623d8715285ec69813172e3010f8fc9f578ff9744",
+    "reason": "planilha da ANP que o leitor XLSX (openpyxl) não abre: referência externa sem 'id' (TypeError em ExternalReference); fica fora até a ANP republicar ou o leitor aceitar o arquivo",
+    "registered_on": "2026-10-16"
+  },
+  {
+    "file": "revendas_lpc_2023-02-26_2023-03-04.xlsx",
+    "sha256": "5b620ea90dfa86f23cd33a771bdc599f400b428823ec18d2dbd0bb1db76064ad",
+    "reason": "planilha da ANP que o leitor XLSX (openpyxl) não abre: referência externa sem 'id' (TypeError em ExternalReference); fica fora até a ANP republicar ou o leitor aceitar o arquivo",
+    "registered_on": "2026-10-16"
+  },
+  {
+    "file": "revendas_lpc_2023-03-05_2023-03-11.xlsx",
+    "sha256": "30373725b1c8b86c5d9d898bf77ae145ef816c2b4de4d68be307fba86aca1e01",
+    "reason": "planilha da ANP que o leitor XLSX (openpyxl) não abre: referência externa sem 'id' (TypeError em ExternalReference); fica fora até a ANP republicar ou o leitor aceitar o arquivo",
+    "registered_on": "2026-10-16"
+  },
+  {
+    "file": "revendas_lpc_2023-03-12_2023-03-18.xlsx",
+    "sha256": "c7d09512e855b1e2451e2a21c93aa457f08803523bc8d0dae7020649d7e807b9",
+    "reason": "planilha da ANP que o leitor XLSX (openpyxl) não abre: referência externa sem 'id' (TypeError em ExternalReference); fica fora até a ANP republicar ou o leitor aceitar o arquivo",
+    "registered_on": "2026-10-16"
+  },
+  {
+    "file": "revendas_lpc_2023-03-19_2023-03-25.xlsx",
+    "sha256": "1cea554e90737a09ba932e732800677064d416ab2fe4bcac01816364b3124e7f",
+    "reason": "planilha da ANP que o leitor XLSX (openpyxl) não abre: referência externa sem 'id' (TypeError em ExternalReference); fica fora até a ANP republicar ou o leitor aceitar o arquivo",
+    "registered_on": "2026-10-16"
+  },
+  {
+    "file": "revendas_lpc_2023-03-26_2023-04-01.xlsx",
+    "sha256": "f8178613e57faabf86981e6f8cbfa60ff758c44e277be5c8dca4a2eafad5027d",
+    "reason": "planilha da ANP que o leitor XLSX (openpyxl) não abre: referência externa sem 'id' (TypeError em ExternalReference); fica fora até a ANP republicar ou o leitor aceitar o arquivo",
+    "registered_on": "2026-10-16"
+  },
+  {
+    "file": "revendas_lpc_2023-04-09_2023-04-15.xlsx",
+    "sha256": "fc5e44967b443390594a1f2bf9bac94c792984237e2426bfcc17a94724689289",
+    "reason": "planilha da ANP que o leitor XLSX (openpyxl) não abre: referência externa sem 'id' (TypeError em ExternalReference); fica fora até a ANP republicar ou o leitor aceitar o arquivo",
+    "registered_on": "2026-10-16"
   }
 ]

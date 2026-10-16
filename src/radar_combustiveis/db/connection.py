@@ -11,7 +11,7 @@ def database_url(environ=None):
     environ = os.environ if environ is None else environ
     url = environ.get("DATABASE_URL")
     if not url:
-        raise ValueError("DATABASE_URL não definida (ex.: postgresql://usuario:senha@localhost:5432/radar)")
+        raise ValueError("DATABASE_URL não definida (ex.: postgresql://usuario:senha@127.0.0.1:54329/radar)")
     return url
 
 

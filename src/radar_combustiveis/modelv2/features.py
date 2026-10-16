@@ -16,7 +16,6 @@ from .spec import EVENT_THRESHOLD, MOVE_THRESHOLD, PRODUCER_OF, SIZE_LARGE, SIZE
 
 L2_NAMES = ["state_d1", "state_d4", "share_up", "share_down"]
 L3_NAMES = ["usd_d1", "usd_d4", "prod_d1", "prod_d4", "prod_event", "prod_weeks_since"]
-CALENDAR = ["target_week_of_year", "target_month"]
 LAYER_COLUMNS = {"L1": L1_NAMES, "L2": L1_NAMES + L2_NAMES, "L3": L1_NAMES + L2_NAMES + L3_NAMES}
 
 

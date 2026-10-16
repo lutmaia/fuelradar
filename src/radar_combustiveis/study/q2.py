@@ -97,7 +97,7 @@ def spells(obs, threshold=THRESHOLD):
     station, product = df["station_id"].to_numpy(), df["product"].to_numpy()
     week, price = df["week"].to_numpy(), df["price"].to_numpy()
     rows = []
-    start = None
+    start = direction = None  # direction é definida junto com start
     for i in range(len(df)):
         new_series = i == 0 or station[i] != station[i - 1] or product[i] != product[i - 1]
         if new_series or week[i] - week[i - 1] != 1:

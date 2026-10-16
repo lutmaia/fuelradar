@@ -31,6 +31,7 @@
 - **Checagem única** quando houver **26 origens vencidas em h = 2** (cerca de seis meses). Não há decisão antes disso, para não parar no primeiro número bom.
 - Passa a oficial se, nessas 26 origens: BSS em h = 2 maior que zero **com limite inferior do IC de 95% maior que zero**; erro de calibração **até 0,05**; nenhum produto, porte ou horizonte com BSS abaixo de **−0,05** (grupos com pelo menos 200 pontos). Senão, as probabilidades saem do produto e o resultado é publicado.
 - Previsões geradas depois da semana em que se completam as 26 origens continuam no placar, mas não mudam a decisão.
+- **Esclarecimento (2026-10-16, antes da primeira previsão conferida):** "nessas 26 origens" usa só o que já estava conferido quando a 26ª origem venceu em h = 2. As previsões de 4 semanas das últimas origens vencem depois e ficariam de fora do grupo por horizonte nessa data; contá-las mudaria a decisão nas semanas seguintes, contra a checagem única. Função `decision_points` em `modelv2/live.py`.
 
 ## 5. Limitações já conhecidas
 

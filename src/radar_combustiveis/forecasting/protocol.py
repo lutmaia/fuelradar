@@ -28,22 +28,6 @@ class HoldoutViolation(RuntimeError):
     """Uma semana do teste final chegou a um caminho de código que não pode vê-la."""
 
 
-def window_of(week_start):
-    """'dev', 'valid' ou 'test' para uma semana; antes do início dos dados é um erro."""
-    if week_start < DEV_START:
-        raise ValueError(f"semana {week_start} anterior ao início dos dados ({DEV_START})")
-    if week_start <= DEV_END:
-        return "dev"
-    if week_start <= VALID_END:
-        return "valid"
-    return "test"
-
-
-def study_weeks(weeks):
-    """Mantém só as semanas do estudo exploratório (até `STUDY_END`), na ordem recebida."""
-    return [w for w in weeks if STUDY_START <= w <= STUDY_END]
-
-
 def assert_no_holdout(weeks):
     """Falha se alguma semana pertence ao teste final. Usado na saída dos carregadores do estudo."""
     leaked = sorted({w for w in weeks if w >= TEST_START})
