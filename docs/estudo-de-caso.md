@@ -217,7 +217,7 @@ agendamento semanal (GitHub Actions, repositório público)
 
 ## 11. Marcos propostos
 
-Substituem os antigos Marcos 8 e 9 do [PLAN.md](../PLAN.md); ordem de execução igual à numeração.
+Ordem de execução igual à numeração.
 
 | Marco | Entrega | Aceite |
 |---|---|---|

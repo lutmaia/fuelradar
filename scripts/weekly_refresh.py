@@ -1,4 +1,4 @@
-"""Rotina semanal em um comando (Marco 12, etapa B3).
+"""Rotina semanal em um comando.
 
 Uso: python scripts/weekly_refresh.py [--dry-run] [--force]
 Lê a página da ANP; se o pacote do demonstrativo já tem a semana mais recente, sai sem fazer nada.

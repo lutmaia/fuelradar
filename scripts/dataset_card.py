@@ -1,4 +1,4 @@
-"""Ficha do conjunto de dados (Marco 13), em português e inglês, a partir do banco.
+"""Ficha do conjunto de dados, em português e inglês, a partir do banco.
 
 Uso: python scripts/dataset_card.py [--report-dir reports/dataset] [--docs docs]
 Lê com DATABASE_URL. Grava reports/dataset/ficha.json e fontes.csv (arquivos de origem com SHA-256)

@@ -1,6 +1,6 @@
 """Alvos de classe e variáveis por camada (protocolo, seções 3 e 4). Tudo olha só para trás.
 
-L1: variáveis da própria série (as do Marco 7). L2: sinais do estado no mesmo produto. L3: dólar
+L1: variáveis da própria série (as do backtest de valor). L2: sinais do estado no mesmo produto. L3: dólar
 e preço de produtores, só com valores já disponíveis (`available_at`) no sábado da semana de origem.
 """
 

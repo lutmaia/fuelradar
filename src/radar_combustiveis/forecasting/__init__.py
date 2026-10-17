@@ -1,1 +1,1 @@
-"""Previsão de preços (Marco 7): painel, baselines, candidato LightGBM, backtest e publicação."""
+"""Previsão de preços: painel, baselines, candidato LightGBM, backtest e publicação."""

@@ -1,8 +1,8 @@
 """Páginas do painel (arquitetura, seção 16). Cada página é uma função sem argumentos de dados.
 
 Toda informação vem da API por `fetch`, com cache curto. O painel não calcula preços: formata,
-destaca limites (cobertura, amostra, datas) e desenha. Previsões e variações incomuns entram no
-Marco 7; não há página nem texto que as simule.
+destaca limites (cobertura, amostra, datas) e desenha. Previsões e variações incomuns vêm prontas da
+API; não há página nem texto que as simule.
 """
 
 from datetime import date, timedelta
@@ -308,7 +308,7 @@ def explore():
                             f"postos_{slug}.csv", "text/csv", help="Último preço de cada posto, em CSV para Excel.")
 
 
-# -- Na hora de abastecer (Marco 8b) ---------------------------------------------------------
+# -- Na hora de abastecer --------------------------------------------------------------------
 
 
 def fetch_or_none(method, *args):
@@ -558,7 +558,7 @@ def forecasts_page():
                "impostos não entram no modelo.")
 
 
-# -- Desempenho ao vivo (Marcos 10b e 11) ---------------------------------------------------
+# -- Desempenho ao vivo ----------------------------------------------------------------------
 
 LIVE_STATUS = {"experimental": "Experimental", "oficial": "Oficial", "reprovado": "Reprovado"}
 
@@ -620,7 +620,7 @@ def live_page():
 
 
 LIVE_RULE = """
-* O modelo (LightGBM com os sinais do estado, do Marco 10) teve as probabilidades **calibradas** na validação:
+* O modelo (LightGBM com os sinais do estado, da modelagem v2) teve as probabilidades **calibradas** na validação:
   só a "temperatura" mudou, um número por horizonte. Nada foi ajustado olhando o teste final, que já tinha sido usado.
 * Com **26 semanas conferidas**, ele vira **oficial** se ganhar da referência com intervalo de 95% acima de zero,
   tiver erro de calibração até 0,05 e não piorar mais de 5% em nenhum produto, porte ou horizonte. Senão, sai do painel.
@@ -743,7 +743,7 @@ def compare():
         st.info("Os municípios escolhidos não têm nenhuma semana em comum no período; o índice não pode ser calculado.")
 
 
-# -- Margem bruta de revenda (Marco 9) ------------------------------------------------------
+# -- Margem bruta de revenda -----------------------------------------------------------------
 
 MARGIN_PRODUCTS = ("GASOLINA_COMUM", "GASOLINA_ADITIVADA", "ETANOL_HIDRATADO", "DIESEL_S10", "DIESEL_COMUM")
 MARGIN_REASONS = {"NO_DISTRIBUTION": "sem preço de distribuição publicado", "NO_RETAIL": "sem pesquisa nos postos",

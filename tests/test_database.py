@@ -1,4 +1,4 @@
-"""Banco PostgreSQL (Marco 4): migrações, carga, revisão, precedência, integridade e agregações.
+"""Banco PostgreSQL: migrações, carga, revisão, precedência, integridade e agregações.
 
 Exige um servidor real. Defina RADAR_TEST_DATABASE_URL com uma URL de superusuário/criador de
 bancos; cada teste cria e remove o próprio banco (`radar_test_*`), sem tocar no banco `radar`.

@@ -1,4 +1,4 @@
-"""Ficha do conjunto de dados (Marco 13): lacunas, causas e textos, sem banco."""
+"""Ficha do conjunto de dados: lacunas, causas e textos, sem banco."""
 
 from datetime import date
 import json

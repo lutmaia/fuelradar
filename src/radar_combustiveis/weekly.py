@@ -1,4 +1,4 @@
-"""Rotina semanal em um comando (Marco 12, etapa B3): decide se há semana nova e roda as etapas em ordem.
+"""Rotina semanal em um comando: decide se há semana nova e roda as etapas em ordem.
 
 Cada etapa é um script já existente e idempotente; a rotina para na primeira falha e diz qual foi.
 "Em dia" quer dizer que o pacote do demonstrativo, último passo, já tem a semana mais recente da
@@ -31,7 +31,7 @@ STAGES = (
     Stage("qualidade", "check_quality.py"),
     Stage("carregar no banco", "load_db.py"),
     Stage("fontes externas", "fetch_external.py"),
-    # O relatório do backtest commitado (reports/forecasting) é o registro do Marco 7 e fica parado.
+    # O relatório do backtest commitado (reports/forecasting) é o registro do backtest e fica parado.
     Stage("previsões de valor e variações incomuns", "run_forecasts.py", ("--report-dir", str(FORECAST_REPORTS))),
     Stage("previsão ao vivo e placar", "run_live.py"),
     Stage("pacote do demonstrativo", "build_snapshot.py"),
@@ -60,7 +60,7 @@ def run(stages, runner, clock=time.monotonic, inject=None):
     """Roda as etapas em ordem com `runner(stage) -> código de saída`; para na primeira falha.
 
     `inject` (nome de etapa) simula a falha dessa etapa sem rodá-la: é o teste de que a falha é
-    detectada e de que a execução seguinte se recupera (Marco 12, etapa B5)."""
+    detectada e de que a execução seguinte se recupera."""
     results = []
     for stage in stages:
         start = clock()

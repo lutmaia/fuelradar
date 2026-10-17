@@ -68,7 +68,7 @@ Window 2022-11-13 to 2026-03-29: 147 weeks with data and 675,834 observations. P
 
 ## 6. Forecasting (Q4)
 
-**Weekly median value, Milestone 7** ([report](../../reports/forecasting/backtest.md), ADR 0007). Rolling-origin backtest every 4 weeks, 22 evaluated origins and 24,481 forecasts common to all four models, 1 to 4 weeks ahead:
+**Weekly median value** ([report](../../reports/forecasting/backtest.md), ADR 0007). Rolling-origin backtest every 4 weeks, 22 evaluated origins and 24,481 forecasts common to all four models, 1 to 4 weeks ahead:
 
 | Model | MAE (R$/L) | Station-weighted MAE | 80% interval coverage |
 |---|---|---|---|
@@ -77,9 +77,9 @@ Window 2022-11-13 to 2026-03-29: 147 weeks with data and 675,834 observations. P
 | Same week last year | 0.4051 | 0.3800 | 73.8% |
 | Global LightGBM (candidate) | 0.1120 | 0.0876 | 76.6% |
 
-The rule required a 5% improvement in weighted MAE; the candidate was **7.9% worse** and worse in several groups. **Published: last value.** This stage had no formal pre-registration: the 5% minimum gain and no-regression-by-group rule come from the specification written at the start of the project ([architecture.md](../architecture.md), section 14.8), but the bias and coverage limits were chosen during Milestone 7, and Git does not show whether before or after the backtest. Neither of those two limits decided the outcome: the candidate failed the specification's criteria.
+The rule required a 5% improvement in weighted MAE; the candidate was **7.9% worse** and worse in several groups. **Published: last value.** This stage had no formal pre-registration: the 5% minimum gain and no-regression-by-group rule come from the specification written at the start of the project ([architecture.md](../architecture.md), section 14.8), but the bias and coverage limits were chosen during that stage, and Git does not show whether before or after the backtest. Neither of those two limits decided the outcome: the candidate failed the specification's criteria.
 
-**Direction of change, Milestone 10** ([protocol](../estudo/protocolo-modelagem.md), [validation](../../reports/modelv2/validacao.md), [final](../../reports/modelv2/final.md)). Target: whether the median h weeks ahead falls, stays or rises, with a R$ 0.05 threshold. Primary outcome: Brier skill score (BSS) at h = 2 against the base rate by product and month. Three information layers, each with a multinomial logistic model and a LightGBM with fixed parameters:
+**Direction of change (modelling v2)** ([protocol](../estudo/protocolo-modelagem.md), [validation](../../reports/modelv2/validacao.md), [final](../../reports/modelv2/final.md)). Target: whether the median h weeks ahead falls, stays or rises, with a R$ 0.05 threshold. Primary outcome: Brier skill score (BSS) at h = 2 against the base rate by product and month. Three information layers, each with a multinomial logistic model and a LightGBM with fixed parameters:
 
 | Layer | Information | Validation BSS (best model) | Test BSS (best model) |
 |---|---|---|---|
@@ -97,7 +97,7 @@ The rule required a 5% improvement in weighted MAE; the candidate was **7.9% wor
 
 Pre-registered in [protocolo-ao-vivo.md](../estudo/protocolo-ao-vivo.md), committed before any forecast.
 
-- **What changes:** calibration only. One temperature parameter per horizon, fitted once on Milestone 10's validation: T = 1.32 (h = 1), 1.39 (h = 2) and 2.33 (h = 4). On that same validation, the calibration error at h = 2 went from 0.050 to 0.036; the number is optimistic because it is the fitting sample. Milestone 10's final test is not used.
+- **What changes:** calibration only. One temperature parameter per horizon, fitted once on the modelling v2 validation: T = 1.32 (h = 1), 1.39 (h = 2) and 2.33 (h = 4). On that same validation, the calibration error at h = 2 went from 0.050 to 0.036; the number is optimistic because it is the fitting sample. The modelling v2 final test is not used.
 - **Immutable ledger:** every week, before ANP publishes prices, the probabilities for each eligible series go to `reports/ledger/<origin>.csv`, with its SHA-256 in the manifest, and the GitHub commit serves as the timestamp. First origin: 2026-10-04, 837 forecasts (279 series × 3 horizons).
 - **One-time decision** at 26 matured origins at h = 2: the probabilities become official if BSS at h = 2 has a CI lower bound above zero, calibration error is at most 0.05 and no group is below −0.05. Otherwise they leave the product and the result is published. Until then they are labelled experimental.
 - **Dates:** degradation alert from 13 matured origins (around Jan/2027); decision around Apr/2027.
@@ -109,7 +109,7 @@ Pre-registered in [protocolo-ao-vivo.md](../estudo/protocolo-ao-vivo.md), commit
 - **Gross retail margin:** station price minus the average distributor price, by state, municipality and station, in neutral wording; it is not profit, and a station's real cost is not public.
 - **Tests:** 378, with synthetic data of known answer and, for database, API and integration, against a real PostgreSQL in Docker. Screens were checked in a browser.
 - **Zero-cost operations** (ADR 0011, [manual](operations.md)): tests on every push; a daily GitHub Actions routine that, when there is a new week, restores an encrypted state into a temporary PostgreSQL, refreshes everything and commits the ledger and package. Injected failure and recovery were demonstrated on GitHub. The public demo reads a package with no CNPJ or company name (ADR 0009).
-- **Reproduction:** `scripts/reproduce.py` regenerates every report in a temporary folder and compares: 14 of 16 checks identical and 2 warnings (same numbers, different observation hash, probably because Milestone 8 ran on a database with different internal station ids). The final test is checked from the points of the single read, with no new access. **From scratch on another machine** (macOS arm64, clean clone, everything downloaded from ANP, without the project's state): the same 801,810 observations, the Q1 to Q3 study identical including the data hash, and the dataset card equal in all counts (it differs only by files received by hand at the start, which are not on ANP's page). LightGBM numbers change slightly between Windows x86-64 and Mac arm64 with the same data and version (validation L2 +0.140 vs +0.145; backtest +11.0% worse vs +7.9%), without changing any decision: they only reproduce exactly on the same architecture. Details in [PLAN.md](../../PLAN.md) (in Portuguese).
+- **Reproduction:** `scripts/reproduce.py` regenerates every report in a temporary folder and compares: 14 of 16 checks identical and 2 warnings (same numbers, different observation hash, probably because the study ran on a database with different internal station ids). The final test is checked from the points of the single read, with no new access. **From scratch on another machine** (macOS arm64, clean clone, everything downloaded from ANP, without the project's state): the same 801,810 observations, the Q1 to Q3 study identical including the data hash, and the dataset card equal in all counts (it differs only by files received by hand at the start, which are not on ANP's page). LightGBM numbers change slightly between Windows x86-64 and Mac arm64 with the same data and version (validation L2 +0.140 vs +0.145; backtest +11.0% worse vs +7.9%), without changing any decision: they only reproduce exactly on the same architecture.
 
 ## 9. Where each number lives
 
@@ -118,7 +118,7 @@ Pre-registered in [protocolo-ao-vivo.md](../estudo/protocolo-ao-vivo.md), commit
 | Data coverage and quality | [dataset-card.md](dataset-card.md) | `reports/dataset/ficha.json` |
 | Q1 to Q3 and gate G1 | [summary](../../reports/study/resumo.md) | `reports/study/resultados.json` |
 | Consumer descriptives | [descriptives](../../reports/study/descritivo.md) | `reports/study/descritivo.json` |
-| Value forecast (Milestone 7) | [backtest](../../reports/forecasting/backtest.md) | `reports/forecasting/backtest.json` |
+| Value forecast | [backtest](../../reports/forecasting/backtest.md) | `reports/forecasting/backtest.json` |
 | Modelling v2: validation and test | [validation](../../reports/modelv2/validacao.md), [final](../../reports/modelv2/final.md) | `reports/modelv2/validacao.json`, `final.json` |
 | Calibration | — | `reports/modelv2/calibracao.json` |
 | Live evaluation | *Desempenho ao vivo* page | `reports/ledger/placar.json` |

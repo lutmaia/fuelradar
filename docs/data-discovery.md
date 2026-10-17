@@ -143,7 +143,7 @@ Ao concluir o Marco 1, os históricos recebidos eram agregados e ainda faltava o
 
 As fixtures cobrem cabeçalho com preâmbulo, colunas obrigatórias ausentes, moeda com vírgula, UF, SP/SAO PAULO, produtos, datas, município, CNPJ, unidades, duplicatas, GLP separado, ausências/preços inválidos, extremos, agregados sem CNPJ, região sem UF, arquivo vazio, coluna sem cabeçalho, CSV UTF-8/CP1252, ZIP CSV/XLSX, conteúdo ZIP inesperado e execução de ponta a ponta do **perfil** com preservação do original. Não são testes de um pipeline de ingestão.
 
-Preservação adicional: comparados hashes dos nove arquivos antes da exploração com os hashes ao final. Nenhum repositório Git foi inicializado; nenhum dado foi publicado. Somente Marcos 0 e 1 estão concluídos em [PLAN.md](../PLAN.md).
+Preservação adicional: comparados hashes dos nove arquivos antes da exploração com os hashes ao final. Nenhum repositório Git foi inicializado; nenhum dado foi publicado.
 
 ## Aprendizado deste marco
 

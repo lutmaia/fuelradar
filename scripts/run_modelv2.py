@@ -1,4 +1,4 @@
-"""Modelagem v2 (Marco 10): validação e, com --read-test, a leitura única do teste final.
+"""Modelagem v2: validação e, com --read-test, a leitura única do teste final.
 
 Uso: python scripts/run_modelv2.py [--read-test --purpose "texto"]
 Lê o banco com DATABASE_URL (a leitura do teste grava em holdout_access). Relatórios em

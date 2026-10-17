@@ -15,7 +15,7 @@
 8. **Download em CSV** do histórico e dos postos, com `;`, vírgula decimal e BOM (Excel em português). Limite de 2.000 linhas, avisado quando atinge (seção 24: limitar exportações). Sem endpoint novo na API.
 9. **Cache de 2 minutos** (`st.cache_data`) nas consultas: os dados mudam no máximo uma vez por semana, e isso evita repetir chamadas a cada interação.
 10. **Falhas legíveis:** API fora do ar ou erro da API viram uma mensagem com o código e o `request_id`, nunca uma pilha.
-11. **Tabelas tipadas.** Cada coluna guarda o valor de verdade (`date`, número) e um formatador cuida só da exibição em pt-BR (`dashboard/tables.py`, com o `Styler` do pandas). Assim, clicar no cabeçalho ordena pelo calendário ou pelo número, não pelo texto: uma coluna `31/08/2026` como texto ordena pelo dia antes do mês e colocava 31/08 antes de 30/09. Isso foi achado em uso e corrigido; ver `PLAN.md`.
+11. **Tabelas tipadas.** Cada coluna guarda o valor de verdade (`date`, número) e um formatador cuida só da exibição em pt-BR (`dashboard/tables.py`, com o `Styler` do pandas). Assim, clicar no cabeçalho ordena pelo calendário ou pelo número, não pelo texto: uma coluna `31/08/2026` como texto ordena pelo dia antes do mês e colocava 31/08 antes de 30/09. Isso foi achado em uso e corrigido.
 12. **Mais baratos e mais caros só com preço da semana mais recente.** Pedido de uso: ordenar o "último preço" de *Explorar município* punha em primeiro um posto com preço de três meses atrás, que parecia o mais barato justamente por não ter sido reajustado. A página *Postos* usa `GET /stations?only_latest_week=true&order=price_asc|price_desc&page_size=5`: a regra (semana mais recente do estado para o produto, via `mart_weekly_state_price`) e a ordenação ficam na API, não no painel. "Atual" é a semana da ANP (domingo a sábado), a mesma unidade do restante do painel, e não uma janela de dias arbitrária. Preço com aviso `preco_extremo` não é excluído (seria decidir sozinho o que é erro); aparece marcado e explicado.
 13. **Dependências novas (justificadas):** `streamlit==1.65.0`, `plotly==7.1.0`, `httpx==0.28.1` e `pandas==3.0.6`, que já vinha com o Streamlit e passou a ser usado diretamente.
 
@@ -34,7 +34,7 @@
 - **"Atual" é a semana mais recente do estado, não a do município.** Um município cuja última coleta foi na semana anterior fica com lista vazia, e a página avisa. Isso é correto para o objetivo (não comparar preços de datas diferentes), mas pode esvaziar cidades pequenas em semanas em que a ANP não pesquisou lá.
 - **Os nomes aparecem como a ANP publica** (caixa alta, sem acento).
 - **Postos:** a lista inclui postos que já tiveram preço do produto em qualquer semana, não só os da semana atual; cada preço traz sua data.
-- **Testes sem navegador** usam o `AppTest` do Streamlit; a renderização visual foi conferida à parte, em Edge headless (ver `PLAN.md`), e não há teste automatizado de aparência.
+- **Testes sem navegador** usam o `AppTest` do Streamlit; a renderização visual foi conferida à parte, em Edge headless, e não há teste automatizado de aparência.
 - **Aviso conhecido:** o `TestClient` do Starlette 1.7 marca o uso com `httpx` como obsoleto (recomenda `httpx2`). Funciona e as versões estão fixadas; reavaliar ao atualizar o FastAPI.
 - **Não verificado:** uso em celular real, leitores de tela e contraste medido com ferramenta; só se conferiu o layout em 1.400, 1.000 e 600 px de largura (sem rolagem horizontal).
 

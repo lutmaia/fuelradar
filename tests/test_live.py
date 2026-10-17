@@ -1,4 +1,4 @@
-"""Calibração e avaliação ao vivo (Marcos 10b e 11), com dados sintéticos de resposta conhecida."""
+"""Calibração e avaliação ao vivo, com dados sintéticos de resposta conhecida."""
 
 from datetime import date, timedelta
 import json

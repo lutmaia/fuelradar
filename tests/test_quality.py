@@ -1,4 +1,4 @@
-"""Qualidade (Marco 3) com manifesto e observações sintéticas; não dependem de data/."""
+"""Qualidade com manifesto e observações sintéticas; não dependem de data/."""
 
 import csv
 from datetime import date, timedelta

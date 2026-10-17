@@ -2,7 +2,7 @@
 
 Só são rejeitadas (e enviadas a data/quarantine) linhas cuja UF, preço de venda ou data não
 podem ser interpretados. Preço não positivo, produto/unidade desconhecidos e CNPJ inválido
-seguem na observação, com o valor normalizado vazio, para o Marco 3 avaliar.
+seguem na observação, com o valor normalizado vazio, para a qualidade avaliar.
 """
 
 import hashlib

@@ -1,4 +1,4 @@
-"""Painel (Marco 6): formatação, cliente, gráficos, exportação e páginas.
+"""Painel: formatação, cliente, gráficos, exportação e páginas.
 
 As páginas rodam com o `AppTest` do Streamlit, sem navegador: primeiro contra uma API falsa (casos de
 borda, erros e textos), depois contra a API real sobre um PostgreSQL de teste (mesmos dados sintéticos
@@ -646,7 +646,7 @@ class HomePageTests(PageCase):
 
 
 class RefuelSectionTests(PageCase):
-    """Marco 8b: economia de escolher o posto e etanol × gasolina, na página do município e na inicial."""
+    """Descritivo: economia de escolher o posto e etanol × gasolina, na página do município e na inicial."""
 
     def test_saving_tank_comparison_and_ethanol_verdict(self):
         at = self.run_page(EXPLORE, FakeApi(ethanol_ratios=[0.66, 0.68]),

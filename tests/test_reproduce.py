@@ -1,4 +1,4 @@
-"""Comparação da reprodução (Marco 13): ignora só commit e horário; números com tolerância mínima."""
+"""Comparação da reprodução: ignora só commit e horário; números com tolerância mínima."""
 
 import json
 from pathlib import Path

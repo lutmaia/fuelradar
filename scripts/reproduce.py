@@ -1,4 +1,4 @@
-"""Reprodução dos números publicados (Marco 13): refaz cada relatório numa pasta temporária e compara.
+"""Reprodução dos números publicados: refaz cada relatório numa pasta temporária e compara.
 
 Uso: python scripts/reproduce.py [--only ficha,estudo,descritivo,validacao,teste,backtest]
 Lê com DATABASE_URL. Não grava nada em reports/ nem no banco: cada etapa roda o script oficial com
@@ -117,7 +117,7 @@ def run_step(name, folder):
 
 
 def check_test():
-    """Decisão do Marco 10 recalculada dos pontos da leitura única, sem novo acesso ao teste."""
+    """Decisão da modelagem v2 recalculada dos pontos da leitura única, sem novo acesso ao teste."""
     points_file = ROOT / "data" / "processed" / "modelv2" / "teste.csv.gz"
     if not points_file.exists():
         return [("teste", "final.json", None, "aviso: pontos da leitura única não estão neste computador")]

@@ -2,7 +2,7 @@
 deduplicação entre fontes, cobertura e relatório (arquitetura, seção 12).
 
 Lê só as saídas da ingestão (manifesto e observações das revisões atuais). Uma falha crítica
-bloqueia a publicação e mantém a saída anterior. Sem banco: a saída é CSV, para o Marco 4.
+bloqueia a publicação e mantém a saída anterior. Sem banco: a saída é CSV, carregada depois no PostgreSQL.
 """
 
 from collections import Counter, defaultdict

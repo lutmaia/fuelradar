@@ -1,4 +1,4 @@
-"""Regiões de SP usadas no estudo descritivo (Marco 8b) e na página Regiões do painel.
+"""Regiões de SP usadas no estudo descritivo e na página Regiões do painel.
 
 Capital, metropolitana (os outros municípios da RMSP), litoral e interior. Nomes como a ANP publica
 (caixa alta, sem acento, `municipality_name_normalized`); as listas foram escritas à mão.

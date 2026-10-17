@@ -22,7 +22,7 @@ FORMAT_VERSION = 1
 HISTORY_DAYS = 1095        # o intervalo máximo da API (1.096 dias) cobre a janela de 3 anos do painel
 REGION_WEEKS = 26
 ANOMALY_WEEKS = 12         # o máximo da API; o cliente filtra janelas menores
-MARGIN_WEEKS = 52          # margem bruta (Marco 9); o dólar não entra no pacote (ODbL, ADR 0010)
+MARGIN_WEEKS = 52          # margem bruta; o dólar não entra no pacote (ODbL, ADR 0010)
 _DATETIME = TypeAdapter(datetime)
 
 

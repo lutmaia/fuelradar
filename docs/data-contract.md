@@ -1,6 +1,6 @@
 # Contrato de dados proposto — versão 0.5
 
-Validado exploratoriamente nos nove XLSX do Marco 1 e no CSV histórico por revenda recebido em 2026-10-01, descritos em [data-discovery.md](data-discovery.md). Este é um contrato dos formatos observados. A versão 0.3 acrescentou a [saída da ingestão local](#saída-da-ingestão-local-marco-2-etapa-2) a 0.4, as [regras de qualidade e a saída publicada](#qualidade-e-saída-publicada-marco-3) e a 0.5, o [modelo no PostgreSQL](#banco-de-dados-marco-4). O perfil do Marco 1 (perfil do Marco 1, retirado; ver data-discovery.md) preserva o diagnóstico inicial; a validação histórica atual (perfil do Marco 1, retirado; ver data-discovery.md) contém o CSV e a nova comparação com as três semanas. A [arquitetura](architecture.md) permanece a especificação principal.
+Validado exploratoriamente nos nove XLSX da descoberta inicial e no CSV histórico por revenda recebido em 2026-10-01, descritos em [data-discovery.md](data-discovery.md). Este é um contrato dos formatos observados. A versão 0.3 acrescentou a [saída da ingestão local](#saída-da-ingestão-local), a 0.4, as [regras de qualidade e a saída publicada](#qualidade-e-saída-publicada) e a 0.5, o [modelo no PostgreSQL](#banco-de-dados). O diagnóstico inicial e a validação do CSV histórico estão em [data-discovery.md](data-discovery.md). A [arquitetura](architecture.md) permanece a especificação principal.
 
 ## Granularidades e limites
 
@@ -65,7 +65,7 @@ CNPJ/CEP em H são textos completos com máscara e zeros já preservados; não p
 
 Texto curto, notação científica textual, texto decimal e float são **ambíguos**: o normalizador retorna nulo com status, sem adivinhar zeros ou dígitos. Sinal, pontuação malformada e tamanho excessivo são inválidos. A fonte original permanece acessível sem alteração. O perfil registra contagens de status, inclusive SP, e até dez posições de registros ambíguos. CNPJ ambíguo não entra na contagem de postos únicos nem na comparação de chaves completas; a linha permanece na contagem total.
 
-Essa validação de representação não verifica existência cadastral nem do CEP. O dígito verificador do CNPJ é conferido na qualidade (Marco 3).
+Essa validação de representação não verifica existência cadastral nem do CEP. O dígito verificador do CNPJ é conferido na qualidade.
 
 `dimensions` mantém domínios originais. `normalization_pairs` registra separadamente `original`, `normalized` e contagem para UF, município, produto, unidade e bandeira; não substitui o original nem exporta uma cópia das linhas. `canonical_mapping` liga cada campo ao nome exato da coluna recebida.
 
@@ -150,7 +150,7 @@ Em H há seis repetições exatas/chaves repetidas no arquivo completo, nenhuma 
 
 O JSON registra versões Python/openpyxl e compara SHA-256 antes/depois. Falha de leitura/esquema retorna código não zero com arquivo/planilha. Colunas extras nomeadas são perfiladas; valores sem cabeçalho causam erro. Nenhuma fonte é regravada.
 
-## Saída da ingestão local (Marco 2, etapa 2)
+## Saída da ingestão local
 
 `scripts/ingest_local.py` lê `data/raw/` (somente leitura), mantém um manifesto e grava as observações individuais das UFs de `TARGET_UFS` (padrão `["SP"]`). Detalhes da decisão em [ADR 0001](decisions/0001-manifesto-revisoes-e-saida-csv.md).
 
@@ -159,7 +159,7 @@ O JSON registra versões Python/openpyxl e compara SHA-256 antes/depois. Falha d
 **Observações** (`data/processed/observations/<source_file_id>.csv`, UTF-8, `
 `): `uf`, `region`, `municipality_original`, `municipality_normalized`, `legal_name`, `trade_name`, `brand`, `cnpj`, `cnpj_status`, `address`, `address_number`, `address_complement`, `neighborhood`, `cep`, `cep_status`, `product_original`, `product`, `product_category` (`automotivo`, `glp` ou `desconhecido`), `unit_original`, `unit`, `collection_date` (ISO), `sale_price` e `purchase_price` (decimal como texto), `row_key` (chave candidata acima, vazia se incompleta) e a auditoria (`source_file_id`, `source_sha256`, `source_member`, `source_sheet`, `source_row_number`, `source_row_hash`, `ingestion_run_id`). A saída preserva a ordem do arquivo de origem, mantém GLP e **não** remove duplicatas nem extremos.
 
-**Rejeição técnica** (`data/quarantine/<source_file_id>_rejected.csv`): só linhas de UF, preço de venda ou data de coleta ausentes ou não interpretáveis, com o motivo e os valores originais. Preço zero ou negativo, produto ou unidade desconhecidos e CNPJ/CEP inválidos ou ambíguos **permanecem** na observação (campo normalizado vazio e status), para as regras do Marco 3. Vale `rows_read = rows_accepted + rows_out_of_scope + rows_rejected`.
+**Rejeição técnica** (`data/quarantine/<source_file_id>_rejected.csv`): só linhas de UF, preço de venda ou data de coleta ausentes ou não interpretáveis, com o motivo e os valores originais. Preço zero ou negativo, produto ou unidade desconhecidos e CNPJ/CEP inválidos ou ambíguos **permanecem** na observação (campo normalizado vazio e status), para as regras de qualidade. Vale `rows_read = rows_accepted + rows_out_of_scope + rows_rejected`.
 
 **Origem e download** (`scripts/fetch_anp.py`, [ADR 0001](decisions/0001-manifesto-revisoes-e-saida-csv.md)): `data/processed/downloads.jsonl` registra cada tentativa (`url`, `retrieved_at`, `action` = `saved`, `duplicate` ou `error`, `sha256`, `size_bytes`, `http_status`, `raw_path`, `page_updated_on`, `error`). Arquivos novos ficam em `data/raw/downloads/retrieved_at=<UTC>/`. No manifesto, `source_url` vem de um download salvo ou idêntico; `retrieved_at` só de um arquivo que nós baixamos. Arquivos recebidos à mão e idênticos à fonte têm URL, mas `retrieved_at` nulo.
 
@@ -169,9 +169,9 @@ Linhas de outras UFs são contadas (`rows_out_of_scope`), mas não gravadas; o r
 
 ## Evidência e pendência
 
-Comandos, contagens e testes estão em [data-discovery.md](data-discovery.md). Já há fonte histórica individual CSV e três semanas por revenda suficientes para iniciar a implementação local da ingestão desses formatos. ZIP mantém teste sintético; nenhum ZIP real foi recebido. Há lacuna de julho/agosto e começo de setembro entre os microdados disponíveis, e a equivalência DIESEL/S500 continua pendente. Agregados não suprem essas lacunas. A ingestão local e o download das semanas por revenda foram executados sobre os arquivos reais (evidências em [PLAN.md](../PLAN.md)). Com as semanas de 28/06 a 03/10, a lacuna de julho a início de setembro deixou de existir: de 01/01 a 02/10/2026, 76 dos 79 dias sem observações em SP são fins de semana e três são sextas-feiras (26/06, 24/07 e 04/09), a avaliar no Marco 3. Considerando só combustíveis automotivos, são quatro sextas-feiras sem coleta (26/06, 24/07, 04/09 e 18/09; em 18/09 há só duas linhas de GLP). As regras de qualidade estão na seção seguinte.
+Comandos, contagens e testes estão em [data-discovery.md](data-discovery.md). Já há fonte histórica individual CSV e três semanas por revenda suficientes para iniciar a implementação local da ingestão desses formatos. ZIP mantém teste sintético; nenhum ZIP real foi recebido. Há lacuna de julho/agosto e começo de setembro entre os microdados disponíveis, e a equivalência DIESEL/S500 continua pendente. Agregados não suprem essas lacunas. A ingestão local e o download das semanas por revenda foram executados sobre os arquivos reais. Com as semanas de 28/06 a 03/10, a lacuna de julho a início de setembro deixou de existir: de 01/01 a 02/10/2026, 76 dos 79 dias sem observações em SP são fins de semana e três são sextas-feiras (26/06, 24/07 e 04/09), avaliadas na qualidade. Considerando só combustíveis automotivos, são quatro sextas-feiras sem coleta (26/06, 24/07, 04/09 e 18/09; em 18/09 há só duas linhas de GLP). As regras de qualidade estão na seção seguinte.
 
-## Qualidade e saída publicada (Marco 3)
+## Qualidade e saída publicada
 
 `scripts/check_quality.py` lê o manifesto e as observações das revisões atuais (nunca `data/raw`). Decisões e limites em [ADR 0002](decisions/0002-qualidade-quarentena-e-precedencia.md).
 
@@ -182,7 +182,7 @@ Comandos, contagens e testes estão em [data-discovery.md](data-discovery.md). J
 
 Uma mudança de regra de normalização aumenta `NORMALIZATION_VERSION` (em `ingestion/observations.py`); a ingestão refaz uma vez as observações registradas com versão anterior, lendo o raw sem alterá-lo, e grava `normalization_version` no manifesto. A versão 2 trouxe `DIESEL_COMUM`.
 
-## Banco de dados (Marco 4)
+## Banco de dados
 
 `scripts/load_db.py` aplica `migrations/*.sql` e carrega a saída publicada no esquema `radar`. Decisões em [ADR 0003](decisions/0003-banco-postgresql.md) e operação em [local-database.md](local-database.md).
 
@@ -200,4 +200,4 @@ Uma mudança de regra de normalização aumenta `NORMALIZATION_VERSION` (em `ing
 
 Regras: a carga só aceita saída com decisão `publicar` ou `publicar_com_aviso` e contagens iguais às do relatório; linhas que deixam de pertencer ao conjunto publicado (revisão nova da fonte, precedência, regra de qualidade) ficam com `is_current_source_revision = false` e nunca são apagadas; consultas de produto devem filtrar `is_current_source_revision` (as agregações já filtram). As estatísticas de preço são arredondadas a 4 casas.
 
-**Leitura pela API (Marco 5).** A migração `0003_api_reader.sql` cria o papel `radar_reader` (sem login), com `SELECT` só nas tabelas e colunas que a API usa: ficam de fora `source_file.storage_uri`, `ingestion_run.error_summary`, `ingestion_run.code_sha`, `quarantine_observation.original` e `schema_migration`. Também cria os índices `ix_mart_city_series` e `ix_fact_current_collection_date`. A API conecta como `radar_api` (membro de `radar_reader`) e não escreve. Contrato das respostas em [api.md](api.md) e no OpenAPI.
+**Leitura pela API.** A migração `0003_api_reader.sql` cria o papel `radar_reader` (sem login), com `SELECT` só nas tabelas e colunas que a API usa: ficam de fora `source_file.storage_uri`, `ingestion_run.error_summary`, `ingestion_run.code_sha`, `quarantine_observation.original` e `schema_migration`. Também cria os índices `ix_mart_city_series` e `ix_fact_current_collection_date`. A API conecta como `radar_api` (membro de `radar_reader`) e não escreve. Contrato das respostas em [api.md](api.md) e no OpenAPI.

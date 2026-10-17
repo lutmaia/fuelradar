@@ -1,7 +1,7 @@
 """Janelas do estudo e da modelagem v2, fixadas antes de qualquer resultado (docs/estudo/protocolo.md).
 
 As datas são domingos (início da semana da ANP) e valem para `week_start`. O teste final só é lido
-uma vez, no fim do Marco 10; o estudo exploratório (Marco 8) usa apenas desenvolvimento e validação.
+uma vez, no fim da modelagem v2; o estudo exploratório (Q1 a Q3) usa apenas desenvolvimento e validação.
 Mudar qualquer constante daqui exige registrar o desvio no protocolo.
 """
 

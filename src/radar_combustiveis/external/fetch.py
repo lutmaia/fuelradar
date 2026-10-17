@@ -19,7 +19,7 @@ XLSX_MAGIC = b"PK\x03\x04"
 
 
 def targets(today):
-    """(fonte, nome do arquivo, URL) de tudo que o Marco 9 baixa."""
+    """(fonte, nome do arquivo, URL) de tudo que as fontes externas baixam."""
     dollar = DOLLAR_URL.format(start=HISTORY_START.strftime("%d/%m/%Y"), end=today.strftime("%d/%m/%Y"))
     return ([(DOLLAR.source_id, "sgs1.json", dollar), (PRODUCERS.source_id, "precos-medios-ponderados-semanais-2013.xls",
                                                        PRODUCERS_URL)]

@@ -1,4 +1,4 @@
-"""Orquestração do Marco 7: backtest, decisão, previsões do modelo publicado e variações incomuns.
+"""Orquestração da previsão de valor: backtest, decisão, previsões do modelo publicado e variações incomuns.
 
 `compute` é puro (sem banco): recebe as linhas semanais e devolve tudo o que será gravado e
 relatado. A gravação fica em `store.py`.

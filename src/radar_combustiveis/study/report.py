@@ -293,7 +293,7 @@ def write_reports(meta, results, verdict, out_dir):
     return paths
 
 
-# -- Marco 8b: descritivo -----------------------------------------------------------------------
+# -- Descritivo para o consumidor ---------------------------------------------------------------
 
 REGION_LABEL = {"metropolitana": "Região metropolitana (sem a capital)", "litoral": "Litoral", "interior": "Interior"}
 

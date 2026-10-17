@@ -1,4 +1,4 @@
-"""Estado cifrado da rotina semanal no GitHub (Marco 12, etapa B4).
+"""Estado cifrado da rotina semanal no GitHub.
 
 Uso:
   python scripts/state.py pack   --container NOME [--output estado.tar.enc]

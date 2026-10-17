@@ -1,4 +1,4 @@
-"""Resultados congelados do estudo (Marco 8 e 8b), lidos dos relatórios versionados em `reports/study/`.
+"""Resultados congelados do estudo (Q1 a Q3 e descritivo), lidos dos relatórios versionados em `reports/study/`.
 
 Não vêm da API de propósito: são um artefato do estudo, amarrado ao commit do código e ao hash dos
 dados, e não mudam quando a ANP publica semanas novas. O painel só lê e formata (ADR 0005, adendo de 2026-10-14).

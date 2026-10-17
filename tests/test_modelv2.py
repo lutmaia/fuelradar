@@ -1,4 +1,4 @@
-"""Modelagem v2 (Marco 10) com dados sintéticos de resposta conhecida, antes de qualquer execução real.
+"""Modelagem v2 com dados sintéticos de resposta conhecida, antes de qualquer execução real.
 
 Cobre: protocolo × código, alvos, métricas, logística, *as-of* das variáveis externas, ausência de
 vazamento no treino, efeito plantado recuperado pela camada certa, ruído sem candidato, regra de

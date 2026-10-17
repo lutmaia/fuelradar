@@ -1,4 +1,4 @@
-# Imagem única do projeto (Marco 12, etapa B6): painel, API e rotina semanal usam o mesmo ambiente
+# Imagem única do projeto: painel, API e rotina semanal usam o mesmo ambiente
 # do requirements.txt. Os serviços estão no docker-compose.yml; os dados ficam fora da imagem.
 FROM python:3.14-slim-bookworm
 

@@ -10,18 +10,18 @@ dependencies = [
     "psycopg-pool==3.3.3",
     "fastapi==0.143.0",
     "uvicorn==0.54.0",
-    # Painel (Marco 6): Streamlit monta as páginas, Plotly desenha os gráficos e o httpx
+    # Painel: Streamlit monta as páginas, Plotly desenha os gráficos e o httpx
     # (também usado nos testes da API) faz as chamadas do painel à API.
     "streamlit==1.65.0",
     "plotly==7.1.0",
     # Já vem com o Streamlit; usado direto para tabelas tipadas (ordenação por data e número).
     "pandas==3.0.6",
     "httpx==0.28.1",
-    # Previsão (Marco 7): candidato LightGBM da arquitetura (traz scipy). Sem scikit-learn: a API nativa basta.
+    # Previsão: candidato LightGBM da arquitetura (traz scipy). Sem scikit-learn: a API nativa basta.
     "lightgbm==4.7.0",
-    # Estudo (Marco 8): distribuições t, F e qui-quadrado. Já vinha com o LightGBM; agora é uso direto.
+    # Estudo: distribuições t, F e qui-quadrado. Já vinha com o LightGBM; agora é uso direto.
     "scipy==1.18.1",
-    # Fontes externas (Marco 9): a planilha de preços de produtores da ANP só existe em .xls (formato
+    # Fontes externas: a planilha de preços de produtores da ANP só existe em .xls (formato
     # antigo), que o openpyxl não lê. Sem dependências próprias.
     "xlrd==2.0.2",
     # Importado direto em todo o código numérico; já vinha com pandas, LightGBM e scipy (mesma versão de requirements.txt).

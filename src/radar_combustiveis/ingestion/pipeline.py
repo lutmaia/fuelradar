@@ -1,7 +1,7 @@
 """Ingestão local: varre data/raw, atualiza o manifesto e grava observações do recorte configurado.
 
 Nunca altera data/raw. Cada versão de arquivo (SHA-256) tem a própria saída; revisões novas
-não apagam as anteriores. Sem banco: a saída é CSV, a ser carregada no PostgreSQL pelo Marco 4.
+não apagam as anteriores. Sem banco: a saída é CSV, carregada depois no PostgreSQL (`db/load.py`).
 """
 
 import csv
@@ -17,7 +17,7 @@ from .observations import NORMALIZATION_VERSION, OBSERVATION_COLUMNS, REJECTED_C
 from .readers import SourceFormatError, iter_tables, sha256
 
 SUPPORTED_SUFFIXES = {".csv", ".xlsx", ".zip"}
-# Subpastas de raw que não são da pesquisa de preços: as fontes externas (Marco 9) têm a própria leitura.
+# Subpastas de raw que não são da pesquisa de preços: as fontes externas têm a própria leitura.
 OTHER_SOURCES = {"external"}
 
 

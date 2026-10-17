@@ -1,6 +1,6 @@
-"""Avaliação ao vivo (Marcos 10b e 11; docs/estudo/protocolo-ao-vivo.md).
+"""Avaliação ao vivo (Q5; docs/estudo/protocolo-ao-vivo.md).
 
-O modelo do Marco 10 (L2 + LightGBM), calibrado por temperatura na validação, prevê toda semana a
+O candidato da modelagem v2 (L2 + LightGBM), calibrado por temperatura na validação, prevê toda semana a
 classe da mudança. Cada previsão vai para um registro imutável antes de o valor real existir; quando
 a semana-alvo é publicada, ela é pontuada. A decisão (experimental → oficial) só acontece com 26
 origens vencidas em h = 2.

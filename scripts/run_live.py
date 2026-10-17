@@ -1,7 +1,7 @@
-"""Previsão de classe ao vivo (Marcos 10b e 11): calibração, registro imutável, pontuação e placar.
+"""Previsão de classe ao vivo: calibração, registro imutável, pontuação e placar.
 
 Uso:
-  python scripts/run_live.py --fit-calibration   # uma vez: T por horizonte na validação do Marco 10
+  python scripts/run_live.py --fit-calibration   # uma vez: T por horizonte na validação da modelagem v2
   python scripts/run_live.py                     # toda semana: prevê a semana mais recente e pontua
 Lê o banco com DATABASE_URL. Registro em reports/ledger/ (commitar toda semana), calibração em
 reports/modelv2/calibracao.json. Protocolo: docs/estudo/protocolo-ao-vivo.md.

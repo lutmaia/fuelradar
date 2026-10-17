@@ -1,4 +1,4 @@
-"""Endpoints de leitura (arquitetura 15.2), mais previsões (Marco 7) e as medidas para o consumidor do Marco 8b."""
+"""Endpoints de leitura (arquitetura 15.2), mais previsões e as medidas para o consumidor do estudo descritivo."""
 
 from datetime import date, datetime, timedelta, timezone
 import statistics
@@ -47,7 +47,7 @@ MODEL_LABELS = {
 }
 MAX_ANOMALY_WEEKS = 12
 BRAND_MIN_STATIONS = 3   # abaixo disso a mediana de uma bandeira diz pouco e expõe o posto
-# Etanol × gasolina e escolha do posto (Marco 8b, docs/estudo/descritivo.md).
+# Etanol × gasolina e escolha do posto (docs/estudo/descritivo.md).
 GASOLINE, ETHANOL = "GASOLINA_COMUM", "ETANOL_HIDRATADO"
 ETHANOL_PAYS = 0.70        # regra prática: o etanol rende cerca de 70% da gasolina por litro
 CHOICE_MIN_STATIONS = 5    # menos postos que isso e o menor preço da semana diz pouco
@@ -517,7 +517,7 @@ def prices_rankings(conn: Conn, uf: Uf, product: ProductParam = GASOLINE,
                             tank_liters=TANK_LITERS, items=items)
 
 
-# -- Margem bruta de revenda (Marco 9) --------------------------------------------------------
+# -- Margem bruta de revenda -----------------------------------------------------------------
 
 MARGIN_PRODUCTS = {"GASOLINA_COMUM", "GASOLINA_ADITIVADA", "ETANOL_HIDRATADO", "DIESEL_S10", "DIESEL_COMUM"}
 DEFAULT_MARGIN_WEEKS = 52

@@ -1,4 +1,4 @@
-"""Fontes externas (Marco 9): leitura, disponibilidade (*as-of*), qualidade, download e carga.
+"""Fontes externas: leitura, disponibilidade (*as-of*), qualidade, download e carga.
 
 Dados sintéticos de resposta conhecida; os testes de carga exigem RADAR_TEST_DATABASE_URL.
 """

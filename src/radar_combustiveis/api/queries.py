@@ -283,7 +283,7 @@ def brand_prices(conn, uf, location_id, product_id, week_start):
         {"product": product_id, "week": week_start, "uf": uf, "location": location_id}).fetchall()
 
 
-# -- Previsões e variações incomuns (Marco 7) -----------------------------------------------
+# -- Previsões e variações incomuns ------------------------------------------------------
 
 
 def published_model(conn, uf):
@@ -312,7 +312,7 @@ def forecast_eligibility(conn, model_id, uf, location_id, product_id):
 
 
 def class_forecasts(conn, uf, location_id, product_id):
-    """Probabilidades de classe da origem mais recente registrada (Marcos 10b e 11)."""
+    """Probabilidades de classe da origem mais recente registrada (avaliação ao vivo)."""
     return conn.execute("""
         SELECT origin_week, horizon, target_week, p_down, p_flat, p_up, model, temperature
         FROM forecast_class

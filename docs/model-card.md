@@ -30,7 +30,7 @@ Séries com menos de 52 semanas de histórico, dados em menos de 80% das semanas
 - O backtest cobre nov/2022 a out/2026 e semanas ausentes na fonte aparecem como lacunas.
 - Resultado de uma configuração fixa; não houve busca de hiperparâmetros.
 
-## Modelagem v2 (Marco 10): classe da mudança, não aprovada
+## Modelagem v2: classe da mudança, não aprovada
 
 Pré-registro em [protocolo-modelagem.md](estudo/protocolo-modelagem.md); números em [reports/modelv2/final.md](../reports/modelv2/final.md).
 
@@ -46,15 +46,15 @@ Pré-registro em [protocolo-modelagem.md](estudo/protocolo-modelagem.md); númer
 
 Pré-registro em [protocolo-ao-vivo.md](estudo/protocolo-ao-vivo.md), commitado antes de qualquer previsão; operação e datas em [operacao.md](operacao.md).
 
-- **Modelo:** o candidato do Marco 10 (L2 com LightGBM), sem nenhuma outra mudança além da calibração. Retreinado a cada semana com todos os pares cujo alvo já é conhecido.
-- **Calibração:** *temperature scaling*, um parâmetro por horizonte, ajustado uma vez na validação do Marco 10: T = 1,32 (1 semana), 1,39 (2 semanas) e 2,33 (4 semanas). T > 1 deixa o modelo menos confiante, e a classe mais provável nunca muda. Na própria validação, o erro de calibração em 2 semanas caiu de 0,050 para 0,036; o número é otimista por ser a amostra do ajuste ([calibracao.json](../reports/modelv2/calibracao.json)). O teste final do Marco 10 não foi usado.
+- **Modelo:** o candidato da modelagem v2 (L2 com LightGBM), sem nenhuma outra mudança além da calibração. Retreinado a cada semana com todos os pares cujo alvo já é conhecido.
+- **Calibração:** *temperature scaling*, um parâmetro por horizonte, ajustado uma vez na validação da modelagem v2: T = 1,32 (1 semana), 1,39 (2 semanas) e 2,33 (4 semanas). T > 1 deixa o modelo menos confiante, e a classe mais provável nunca muda. Na própria validação, o erro de calibração em 2 semanas caiu de 0,050 para 0,036; o número é otimista por ser a amostra do ajuste ([calibracao.json](../reports/modelv2/calibracao.json)). O teste final da modelagem v2 não foi usado.
 - **Saída:** para cada série elegível, a probabilidade de a mediana cair, ficar ou subir pelo menos R$ 0,05 em 1, 2 e 4 semanas, ao lado da taxa-base de referência. Primeira origem: 04/10/2026, 837 previsões (279 séries × 3 horizontes).
 - **Registro imutável:** as previsões vão para `reports/ledger/` antes de a ANP publicar o preço, com o SHA-256 de cada arquivo no manifesto; a rotina para se algum arquivo mudar.
 - **Placar:** quando a semana-alvo é publicada, cada previsão é pontuada; o painel (*Desempenho ao vivo*) e a API (`/models/scoreboard`) mostram o *Brier skill* contra a taxa-base com IC de 95%, o erro de calibração e as semanas conferidas.
 - **Decisão, uma vez só:** com 26 origens conferidas em 2 semanas (por volta de abril de 2027), as probabilidades passam a oficiais se o ganho tiver limite inferior do IC acima de zero, o erro de calibração for de até 0,05 e nenhum produto, porte ou horizonte ficar abaixo de −0,05. Senão, saem do produto, e o resultado é publicado do mesmo jeito.
 - **Alerta de degradação:** a partir de 13 origens conferidas (por volta de janeiro de 2027), se o ganho em 2 semanas das 13 mais recentes ficar abaixo de zero, o painel avisa.
 - **Situação em 2026-10-16:** nenhuma previsão conferida ainda.
-- **Limitações:** a temperatura foi ajustada numa validação com 16% de quedas, e o teste do Marco 10 teve 39%; a calibração pode não se manter. Lacunas de publicação da ANP atrasam a conferência. A previsão de **valor** publicada continua sendo "último valor"; estas probabilidades não a substituem.
+- **Limitações:** a temperatura foi ajustada numa validação com 16% de quedas, e o teste da modelagem v2 teve 39%; a calibração pode não se manter. Lacunas de publicação da ANP atrasam a conferência. A previsão de **valor** publicada continua sendo "último valor"; estas probabilidades não a substituem.
 
 ## Variações incomuns
 

@@ -1,4 +1,4 @@
-"""Protocolo do estudo (Marco 8): as janelas em código são as do pré-registro e o lacre funciona."""
+"""Protocolo do estudo: as janelas em código são as do pré-registro e o lacre funciona."""
 
 from datetime import timedelta
 from pathlib import Path

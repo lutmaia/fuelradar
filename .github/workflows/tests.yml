@@ -1,4 +1,4 @@
-# Testes a cada push e pull request (Marco 12, etapa B1).
+# Testes a cada push e pull request.
 # Roda a suíte inteira contra um PostgreSQL de serviço, o mesmo 16.15 do docker-compose.yml; o banco
 # existe só durante o job, e a senha abaixo não protege nada fora dele. Falha se algum teste for
 # ignorado: no CI, banco e dependências estão sempre disponíveis.

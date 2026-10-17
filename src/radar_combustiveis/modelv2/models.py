@@ -101,7 +101,7 @@ class LightGBMClass:
 
 
 class LightGBMValue:
-    """Diferença para o último valor, objetivo L1 (como o candidato do Marco 7)."""
+    """Diferença para o último valor, objetivo L1 (como o candidato do backtest de valor)."""
 
     def fit(self, frame, delta):
         import lightgbm as lgb

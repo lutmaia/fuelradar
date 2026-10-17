@@ -1,4 +1,4 @@
-"""Estudo do Marco 8 (Q1 a Q3) com dados sintéticos de resposta conhecida, sem banco.
+"""Estudo (Q1 a Q3) com dados sintéticos de resposta conhecida, sem banco.
 
 Cada análise precisa recuperar o efeito que foi plantado nos dados, não achar efeito onde não há,
 e recusar semanas do teste final. Sobrevivência é conferida contra a implementação do scipy.

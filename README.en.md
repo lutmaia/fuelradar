@@ -58,7 +58,7 @@ ANP (weekly spreadsheets) → ingestion (SHA-256 manifest, raw files untouched) 
 - **Tests:** suite with synthetic data of known answer, against a real PostgreSQL in Docker; dashboard numbers were checked against separately written SQL, and the screens in a browser.
 - **Demo:** the same dashboard reading a package of API responses, with no CNPJ (company tax ID) or company name.
 
-Methods, results and limitations in one place: [technical report](docs/en/technical-report.md). Protocols, decisions (`docs/decisions/`), guides and the milestone log ([PLAN.md](PLAN.md)) are in Portuguese.
+Methods, results and limitations in one place: [technical report](docs/en/technical-report.md). Protocols, decisions (`docs/decisions/`) and guides are in Portuguese.
 
 ## Run it locally
 

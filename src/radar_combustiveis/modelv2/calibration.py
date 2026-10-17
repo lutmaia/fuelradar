@@ -19,7 +19,7 @@ def apply(probs, temperature):
 
 
 def fit(probs, labels, bounds=T_BOUNDS):
-    """T que minimiza o *log-loss* nos pontos dados (a validação do Marco 10)."""
+    """T que minimiza o *log-loss* nos pontos dados (a validação da modelagem v2)."""
     result = minimize_scalar(lambda t: metrics.log_loss(apply(probs, t), labels), bounds=bounds, method="bounded",
                              options={"xatol": 1e-6})
     return float(result.x)

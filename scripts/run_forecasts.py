@@ -1,4 +1,4 @@
-"""Backtest, decisão e publicação das previsões (Marco 7).
+"""Backtest, decisão e publicação das previsões de valor.
 
 Uso: python scripts/run_forecasts.py [--step 4] [--no-store] [--report-dir reports/forecasting]
 Lê as agregações semanais do PostgreSQL (DATABASE_URL), roda o backtest com origem deslizante

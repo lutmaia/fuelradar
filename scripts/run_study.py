@@ -1,9 +1,9 @@
-"""Estudo exploratório do Marco 8 (Q1 a Q3) sobre o PostgreSQL carregado.
+"""Estudo exploratório (Q1 a Q3) sobre o PostgreSQL carregado.
 
 Uso: python scripts/run_study.py [--uf SP] [--report-dir reports/study] [--reps 2000] [--descritivo]
 Lê só as semanas de 2022-11-13 a 2026-03-29 (o teste final fica lacrado), roda as análises do
 protocolo (docs/estudo/protocolo.md), aplica o gate G1 e escreve os relatórios em `reports/study/`. Com `--descritivo`, roda só as análises
-descritivas do Marco 8b (docs/estudo/descritivo.md).
+descritivas para o consumidor (docs/estudo/descritivo.md).
 """
 
 import argparse
@@ -40,7 +40,7 @@ def main(argv=None):
     parser.add_argument("--uf", default="SP")
     parser.add_argument("--report-dir", type=Path, default=ROOT / "reports" / "study")
     parser.add_argument("--reps", type=int, default=protocol.BOOTSTRAP_REPS, help="reamostras do bootstrap")
-    parser.add_argument("--descritivo", action="store_true", help="só as análises descritivas do Marco 8b")
+    parser.add_argument("--descritivo", action="store_true", help="só as análises descritivas para o consumidor")
     args = parser.parse_args(argv)
 
     started = time.time()

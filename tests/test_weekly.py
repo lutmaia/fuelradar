@@ -1,4 +1,4 @@
-"""Rotina semanal (Marco 12, etapa B3) com página, pacote e etapas falsos; nada acessa a internet ou o banco."""
+"""Rotina semanal com página, pacote e etapas falsos; nada acessa a internet ou o banco."""
 
 from contextlib import redirect_stderr, redirect_stdout
 import gzip

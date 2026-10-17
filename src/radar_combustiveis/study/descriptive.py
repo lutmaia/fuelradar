@@ -1,4 +1,4 @@
-"""Marco 8b — análises descritivas para o consumidor (docs/estudo/descritivo.md).
+"""Análises descritivas para o consumidor (docs/estudo/descritivo.md).
 
 Não testam hipóteses: medem e descrevem, na mesma janela do estudo (o teste final continua
 lacrado). Funções puras sobre os mesmos DataFrames de Q1 a Q3.

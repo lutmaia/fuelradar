@@ -1,4 +1,4 @@
-# Atualização semanal sem intervenção (Marco 12, etapas B4 e B5; ADR 0011).
+# Atualização semanal sem intervenção (ADR 0011).
 # Roda todo dia: se a ANP não publicou semana nova, termina em segundos. Se publicou: abre o estado
 # cifrado (banco + histórico processado de SP, anexo da release "estado"), roda a rotina semanal num
 # PostgreSQL efêmero, guarda o estado novo (o anterior vira estado-anterior) e commita o registro

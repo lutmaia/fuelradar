@@ -1,4 +1,4 @@
-"""Testes do Marco 7 com séries sintéticas (sem banco): painel, elegibilidade, baselines, vazamento,
+"""Testes da previsão de valor com séries sintéticas (sem banco): painel, elegibilidade, baselines, vazamento,
 intervalos, métricas, regra de aprovação e o ciclo completo."""
 
 from datetime import date, timedelta

@@ -1,6 +1,6 @@
 # Painel
 
-Guia do painel do Marco 6. Decisões em [ADR 0005](decisions/0005-painel-streamlit.md); os dados vêm da [API](api.md). O painel é uma página Streamlit que consulta a API e **não acessa o banco**.
+Guia do painel. Decisões em [ADR 0005](decisions/0005-painel-streamlit.md); os dados vêm da [API](api.md). O painel é uma página Streamlit que consulta a API e **não acessa o banco**.
 
 ## Subir
 
@@ -64,4 +64,4 @@ Em modo instantâneo, o rodapé avisa que é demonstrativo e quando o pacote foi
 
 ## Não existe ainda
 
-Autenticação. A atualização do pacote é automática desde o Marco 12 ([ADR 0011](decisions/0011-rotina-semanal-no-ci.md)).
+Autenticação. A atualização do pacote é automática ([ADR 0011](decisions/0011-rotina-semanal-no-ci.md)).

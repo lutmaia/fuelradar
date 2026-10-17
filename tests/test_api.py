@@ -1,4 +1,4 @@
-"""API de leitura (Marco 5) contra um PostgreSQL real com dados sintéticos.
+"""API de leitura contra um PostgreSQL real com dados sintéticos.
 
 Exige RADAR_TEST_DATABASE_URL (ver tests/test_database.py) e o httpx, usado pelo TestClient do
 FastAPI. O conjunto é carregado uma vez por classe e a API lê com o usuário somente leitura, o
@@ -794,7 +794,7 @@ class BrandApiTests(ApiCase):
 
 
 class ConsumerApiTests(ApiCase):
-    """Marco 8b: etanol × gasolina e economia de escolher o posto, contra cálculo independente."""
+    """Descritivo: etanol × gasolina e economia de escolher o posto, contra cálculo independente."""
 
     def test_ethanol_ratio_by_week_and_low_coverage_week_has_no_ratio(self):
         body = self.ok("/api/v1/prices/ethanol-vs-gasoline", municipality="Jundiaí", weeks=12)
@@ -856,7 +856,7 @@ class ConsumerApiTests(ApiCase):
 
 
 class RegionAndRankingApiTests(ApiCase):
-    """Páginas Regiões (Marco 9): mediana por região e rankings por município, contra cálculo independente.
+    """Páginas Regiões: mediana por região e rankings por município, contra cálculo independente.
 
     Os dados sintéticos são todos do interior; as regiões são remapeadas no teste para exercitar as
     quatro (Campinas como capital, Jundiaí metropolitana, Tietê litoral, São Carlos e Itu interior)."""
@@ -981,7 +981,7 @@ def distribution_row(geo, level, n, value, product="GASOLINA_COMUM"):
 
 
 class MarginApiTests(ApiCase):
-    """Margem bruta (Marco 9): mediana dos postos menos a distribuição, com o atraso da ANP simulado."""
+    """Margem bruta: mediana dos postos menos a distribuição, com o atraso da ANP simulado."""
 
     @classmethod
     def setUpClass(cls):

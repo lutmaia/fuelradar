@@ -1,4 +1,4 @@
-"""Ficha do conjunto de dados (Marco 13): números calculados no banco, nunca digitados à mão.
+"""Ficha do conjunto de dados: números calculados no banco, nunca digitados à mão.
 
 `collect(conn)` devolve um dicionário só com contagens e agregados (sem CNPJ, razão social nem
 endereço); `sources(conn)` lista os arquivos de origem com SHA-256, para um terceiro conferir que

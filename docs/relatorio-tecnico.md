@@ -68,7 +68,7 @@ Janela de 13/11/2022 a 29/03/2026: 147 semanas com dado e 675.834 observações.
 
 ## 6. Previsão (Q4)
 
-**Valor da mediana semanal, Marco 7** ([relatório](../reports/forecasting/backtest.md), [ADR 0007](decisions/0007-previsao-baselines-e-candidato.md)). Backtest com origem deslizante a cada 4 semanas, 22 origens avaliadas e 24.481 previsões comuns aos quatro modelos, de 1 a 4 semanas à frente:
+**Valor da mediana semanal** ([relatório](../reports/forecasting/backtest.md), [ADR 0007](decisions/0007-previsao-baselines-e-candidato.md)). Backtest com origem deslizante a cada 4 semanas, 22 origens avaliadas e 24.481 previsões comuns aos quatro modelos, de 1 a 4 semanas à frente:
 
 | Modelo | MAE (R$/L) | MAE ponderado por postos | Cobertura do intervalo de 80% |
 |---|---|---|---|
@@ -77,9 +77,9 @@ Janela de 13/11/2022 a 29/03/2026: 147 semanas com dado e 675.834 observações.
 | Mesma semana do ano anterior | 0,4051 | 0,3800 | 73,8% |
 | LightGBM global (candidato) | 0,1120 | 0,0876 | 76,6% |
 
-A regra pedia melhora de 5% no MAE ponderado; o candidato ficou **7,9% pior** e piorou em vários grupos. **Publicado: último valor.** Esta etapa não teve pré-registro formal: a melhora mínima de 5% e a ausência de piora por grupo vêm da especificação escrita no início do projeto ([architecture.md](architecture.md), seção 14.8), mas os limites de viés e de cobertura foram escolhidos no próprio Marco 7, e o Git não mostra se antes ou depois do backtest. Nenhum desses dois limites decidiu o resultado: o candidato falhou nos critérios da especificação.
+A regra pedia melhora de 5% no MAE ponderado; o candidato ficou **7,9% pior** e piorou em vários grupos. **Publicado: último valor.** Esta etapa não teve pré-registro formal: a melhora mínima de 5% e a ausência de piora por grupo vêm da especificação escrita no início do projeto ([architecture.md](architecture.md), seção 14.8), mas os limites de viés e de cobertura foram escolhidos durante essa etapa, e o Git não mostra se antes ou depois do backtest. Nenhum desses dois limites decidiu o resultado: o candidato falhou nos critérios da especificação.
 
-**Direção da mudança, Marco 10** ([protocolo](estudo/protocolo-modelagem.md), [validação](../reports/modelv2/validacao.md), [final](../reports/modelv2/final.md)). Alvo: a mediana em h semanas cai, fica ou sobe, com limiar de R$ 0,05. Desfecho primário: *Brier skill score* (BSS) em h = 2 contra a taxa-base por produto e mês. Três camadas de informação, cada uma com logística multinomial e LightGBM de parâmetros fixos:
+**Direção da mudança (modelagem v2)** ([protocolo](estudo/protocolo-modelagem.md), [validação](../reports/modelv2/validacao.md), [final](../reports/modelv2/final.md)). Alvo: a mediana em h semanas cai, fica ou sobe, com limiar de R$ 0,05. Desfecho primário: *Brier skill score* (BSS) em h = 2 contra a taxa-base por produto e mês. Três camadas de informação, cada uma com logística multinomial e LightGBM de parâmetros fixos:
 
 | Camada | Informação | BSS na validação (melhor modelo) | BSS no teste (melhor modelo) |
 |---|---|---|---|
@@ -97,7 +97,7 @@ A regra pedia melhora de 5% no MAE ponderado; o candidato ficou **7,9% pior** e 
 
 Pré-registro em [protocolo-ao-vivo.md](estudo/protocolo-ao-vivo.md), commitado antes de qualquer previsão.
 
-- **O que muda:** só a calibração. Um parâmetro de temperatura por horizonte, ajustado uma vez na validação do Marco 10: T = 1,32 (h = 1), 1,39 (h = 2) e 2,33 (h = 4). Na própria validação, o erro de calibração em h = 2 caiu de 0,050 para 0,036; o número é otimista por ser a amostra do ajuste. O teste final do Marco 10 não é usado.
+- **O que muda:** só a calibração. Um parâmetro de temperatura por horizonte, ajustado uma vez na validação da modelagem v2: T = 1,32 (h = 1), 1,39 (h = 2) e 2,33 (h = 4). Na própria validação, o erro de calibração em h = 2 caiu de 0,050 para 0,036; o número é otimista por ser a amostra do ajuste. O teste final da modelagem v2 não é usado.
 - **Registro imutável:** toda semana, antes de a ANP publicar o preço, as probabilidades de cada série elegível vão para `reports/ledger/<origem>.csv`, com o SHA-256 no manifesto, e o commit no GitHub serve de carimbo de data. Primeira origem: 04/10/2026, 837 previsões (279 séries × 3 horizontes).
 - **Decisão única**, com 26 origens vencidas em h = 2: passa a oficial se o BSS em h = 2 tiver limite inferior do IC acima de zero, erro de calibração até 0,05 e nenhum grupo abaixo de −0,05. Senão, as probabilidades saem do produto e o resultado é publicado. Até lá aparecem como experimentais.
 - **Datas:** alerta de degradação a partir de 13 origens vencidas (por volta de jan/2027); decisão por volta de abr/2027.
@@ -109,7 +109,7 @@ Pré-registro em [protocolo-ao-vivo.md](estudo/protocolo-ao-vivo.md), commitado 
 - **Margem bruta de revenda:** preço nos postos menos o preço médio das distribuidoras, por estado, município e posto, em tom neutro; não é lucro, e o custo real do posto não é público.
 - **Testes:** 378, com dados sintéticos de resposta conhecida e, para banco, API e integração, contra PostgreSQL real em Docker. As telas foram conferidas no navegador.
 - **Operação a custo zero** ([ADR 0011](decisions/0011-rotina-semanal-no-ci.md), [manual](operacao.md)): testes a cada push; rotina diária no GitHub Actions que, com semana nova, restaura um estado cifrado num PostgreSQL temporário, atualiza tudo e commita registro e pacote. Falha injetada e recuperação foram demonstradas no GitHub. O demonstrativo público lê um pacote sem CNPJ nem razão social ([ADR 0009](decisions/0009-demonstrativo-e-pacote-instantaneo.md)).
-- **Reprodução:** `scripts/reproduce.py` refaz cada relatório numa pasta temporária e compara: 14 de 16 conferências idênticas e 2 avisos (números iguais, hash das observações diferente, provavelmente porque o Marco 8 rodou num banco com outra numeração interna de postos). O teste final é conferido a partir dos pontos da leitura única, sem novo acesso. **Do zero, em outra máquina** (macOS arm64, clone limpo, tudo baixado da ANP, sem o estado do projeto): as mesmas 801.810 observações, o estudo Q1 a Q3 idêntico inclusive no hash dos dados, e a ficha igual nas contagens (difere só pelos arquivos recebidos à mão no início, que não estão na página da ANP). Os números do LightGBM mudam um pouco entre Windows x86-64 e Mac arm64 com os mesmos dados e a mesma versão (validação L2 +0,140 contra +0,145; backtest +11,0% pior contra +7,9%), sem mudar nenhuma decisão: eles só se reproduzem exatamente na mesma arquitetura. Detalhes no [PLAN.md](../PLAN.md).
+- **Reprodução:** `scripts/reproduce.py` refaz cada relatório numa pasta temporária e compara: 14 de 16 conferências idênticas e 2 avisos (números iguais, hash das observações diferente, provavelmente porque o estudo rodou num banco com outra numeração interna de postos). O teste final é conferido a partir dos pontos da leitura única, sem novo acesso. **Do zero, em outra máquina** (macOS arm64, clone limpo, tudo baixado da ANP, sem o estado do projeto): as mesmas 801.810 observações, o estudo Q1 a Q3 idêntico inclusive no hash dos dados, e a ficha igual nas contagens (difere só pelos arquivos recebidos à mão no início, que não estão na página da ANP). Os números do LightGBM mudam um pouco entre Windows x86-64 e Mac arm64 com os mesmos dados e a mesma versão (validação L2 +0,140 contra +0,145; backtest +11,0% pior contra +7,9%), sem mudar nenhuma decisão: eles só se reproduzem exatamente na mesma arquitetura.
 
 ## 9. Onde está cada número
 
@@ -118,7 +118,7 @@ Pré-registro em [protocolo-ao-vivo.md](estudo/protocolo-ao-vivo.md), commitado 
 | Cobertura e qualidade dos dados | [ficha-dados.md](ficha-dados.md) | `reports/dataset/ficha.json` |
 | Q1 a Q3 e gate G1 | [resumo](../reports/study/resumo.md) | `reports/study/resultados.json` |
 | Descritivo para o consumidor | [descritivo](../reports/study/descritivo.md) | `reports/study/descritivo.json` |
-| Previsão do valor (Marco 7) | [backtest](../reports/forecasting/backtest.md) | `reports/forecasting/backtest.json` |
+| Previsão do valor | [backtest](../reports/forecasting/backtest.md) | `reports/forecasting/backtest.json` |
 | Modelagem v2: validação e teste | [validação](../reports/modelv2/validacao.md), [final](../reports/modelv2/final.md) | `reports/modelv2/validacao.json`, `final.json` |
 | Calibração | — | `reports/modelv2/calibracao.json` |
 | Avaliação ao vivo | página *Desempenho ao vivo* | `reports/ledger/placar.json` |

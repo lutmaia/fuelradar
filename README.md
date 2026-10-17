@@ -58,7 +58,7 @@ ANP (planilhas semanais) → ingestão (manifesto SHA-256, brutos intactos) → 
 - **Testes:** suíte com dados sintéticos de resposta conhecida, contra PostgreSQL real em Docker; os números do painel foram conferidos contra SQL escrito à parte e as telas, no navegador.
 - **Demonstração:** o mesmo painel lendo um pacote de respostas da API ([ADR 0009](docs/decisions/0009-demonstrativo-e-pacote-instantaneo.md)), sem CNPJ nem razão social.
 
-Métodos, resultados e limitações num só lugar: [relatório técnico](docs/relatorio-tecnico.md) ([English](docs/en/technical-report.md)). Decisões em [docs/decisions/](docs/decisions/), marcos e evidências em [PLAN.md](PLAN.md).
+Métodos, resultados e limitações num só lugar: [relatório técnico](docs/relatorio-tecnico.md) ([English](docs/en/technical-report.md)). Decisões em [docs/decisions/](docs/decisions/).
 
 ## Rodar localmente
 
