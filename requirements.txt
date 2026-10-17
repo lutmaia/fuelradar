@@ -1,7 +1,8 @@
 # Ambiente reproduzível do projeto (Python 3.14.7, Windows). Gerado de `pip freeze` em 2026-10-12.
+# Instalado sem mudanças no macOS (Python 3.14.8, Apple Silicon) em 2026-10-16 e no Linux do GitHub Actions.
 # Dependências diretas, também listadas em pyproject.toml:
 #   openpyxl, psycopg[binary], psycopg-pool, fastapi, uvicorn, streamlit, plotly, pandas, httpx, lightgbm,
-#   scipy, xlrd
+#   scipy, xlrd, numpy
 # O restante são dependências transitivas fixadas para que dois computadores tenham o mesmo ambiente.
 # Instalar: python -m pip install -r requirements.txt
 altair==6.3.0

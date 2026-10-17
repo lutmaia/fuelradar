@@ -4,6 +4,8 @@ Guia de uso da API do Marco 5. O contrato completo e executável é o OpenAPI em
 
 ## Subir
 
+No PowerShell; no macOS ou no Linux, `./iniciar.sh` faz estes passos e sobe também o painel (as traduções dos comandos estão em [local-database.md](local-database.md)).
+
 ```powershell
 $pw = (Get-Content .env | Where-Object { $_ -like 'POSTGRES_PASSWORD=*' }).Split('=', 2)[1]
 $env:DATABASE_URL = "postgresql://radar:$pw@127.0.0.1:54329/radar"
@@ -108,7 +110,7 @@ Formato único, com o mesmo `request_id` do cabeçalho `X-Request-ID`:
 | 422 | `VALIDATION_ERROR` | parâmetro ausente ou malformado (`details` lista os campos) |
 | 422 | `UF_NOT_PUBLISHED` | `uf` fora de `TARGET_UFS` |
 | 422 | `INVALID_RANGE`, `RANGE_TOO_LARGE`, `INVALID_WEEK` | `start` > `end`; intervalo acima de 1.096 dias; `week_start` que não é domingo |
-| 503 | `NOT_READY`, `DATABASE_UNAVAILABLE`, `QUERY_TIMEOUT` | banco sem carga, fora do ar ou consulta acima de 5 s |
+| 503 | `NOT_READY`, `DATABASE_UNAVAILABLE`, `QUERY_TIMEOUT` | banco sem migrações ou sem carga, fora do ar, ou consulta acima de 5 s |
 | 500 | `INTERNAL_ERROR` | falha inesperada; só o `request_id` sai, o detalhe fica no log |
 
 ## Limites

@@ -2,9 +2,11 @@
 
 Runbook do PostgreSQL de desenvolvimento e teste (decisões em [ADR 0003](decisions/0003-banco-postgresql.md)). Comandos no PowerShell, a partir da raiz do projeto. O banco roda somente em Docker Compose, na porta 54329 de `127.0.0.1`.
 
+**No macOS ou no Linux**, os comandos são os mesmos com `.venv/bin/python` no lugar de `.\.venv\Scripts\python.exe`, `export VAR="valor"` no lugar de `$env:VAR = "valor"` e `pw=$(grep '^POSTGRES_PASSWORD=' .env | cut -d= -f2-)` para ler a senha do `.env`.
+
 ## Docker Compose
 
-Requisito: Docker Desktop com WSL2. Instalação (uma vez, com permissão de administrador; depois saia e entre na sessão do Windows para o grupo `docker-users` valer):
+Requisito: Docker com o `docker compose`: no macOS, o Docker Desktop; no Linux, o Docker Engine com o plugin `compose`; no Windows, o Docker Desktop com WSL2. Instalação no Windows (uma vez, com permissão de administrador; depois saia e entre na sessão do Windows para o grupo `docker-users` valer):
 
 ```powershell
 winget install --id Docker.DockerDesktop --exact

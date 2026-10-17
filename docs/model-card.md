@@ -1,6 +1,6 @@
 # Cartão do modelo — previsão da mediana semanal de preços
 
-Documento curto e honesto sobre o que a previsão faz e o que não faz. Decisões em [ADR 0007](decisions/0007-previsao-baselines-e-candidato.md); relatório numérico reproduzível em [reports/forecasting/backtest.md](../reports/forecasting/backtest.md).
+Documento curto e honesto sobre o que a previsão faz e o que não faz. O produto mostra duas coisas: a **previsão do valor** (modelo publicado: último valor) e, marcadas como **experimentais**, as **probabilidades de queda, estabilidade e alta**, que estão em avaliação ao vivo. Decisões em [ADR 0007](decisions/0007-previsao-baselines-e-candidato.md); relatório numérico reproduzível em [reports/forecasting/backtest.md](../reports/forecasting/backtest.md); visão geral no [relatório técnico](relatorio-tecnico.md). English version: [en/model-card.md](en/model-card.md).
 
 ## O que é previsto
 
@@ -40,7 +40,21 @@ Pré-registro em [protocolo-modelagem.md](estudo/protocolo-modelagem.md); númer
 - **Teste final** (abr a out/2026, 25 origens, lido uma vez): BSS **+0,164** (IC +0,104 a +0,208), sem piora em nenhum produto, porte ou horizonte, reprodutível. **Erro de calibração 0,0504**, acima do limite pré-registrado de 0,05: **não aprovado**. O produto não mudou e a previsão de valor publicada continua "último valor".
 - **O que cada camada trouxe** (teste, Holm): a própria série, nada significativo (+0,031); os sinais do estado, **+0,133** (p < 0,001); dólar e produtores, nada (−0,012).
 - **Valor (secundário):** o LightGBM da L2 teve MAE 6,3% menor que "último valor", mas sem significância depois da correção (p de Holm 1,0).
-- **Limitações:** probabilidades um pouco mal calibradas (o próximo passo natural seria uma etapa explícita de calibração, num novo protocolo); o período de teste teve mais quedas (39%) do que a validação (16%); o preço de produtores é do Sudeste e não há etanol nele.
+- **Limitações:** probabilidades um pouco mal calibradas (tratado na avaliação ao vivo, abaixo, com um novo protocolo); o período de teste teve mais quedas (39%) do que a validação (16%); o preço de produtores é do Sudeste e não há etanol nele.
+
+## Probabilidades ao vivo (experimental, em avaliação)
+
+Pré-registro em [protocolo-ao-vivo.md](estudo/protocolo-ao-vivo.md), commitado antes de qualquer previsão; operação e datas em [operacao.md](operacao.md).
+
+- **Modelo:** o candidato do Marco 10 (L2 com LightGBM), sem nenhuma outra mudança além da calibração. Retreinado a cada semana com todos os pares cujo alvo já é conhecido.
+- **Calibração:** *temperature scaling*, um parâmetro por horizonte, ajustado uma vez na validação do Marco 10: T = 1,32 (1 semana), 1,39 (2 semanas) e 2,33 (4 semanas). T > 1 deixa o modelo menos confiante, e a classe mais provável nunca muda. Na própria validação, o erro de calibração em 2 semanas caiu de 0,050 para 0,036; o número é otimista por ser a amostra do ajuste ([calibracao.json](../reports/modelv2/calibracao.json)). O teste final do Marco 10 não foi usado.
+- **Saída:** para cada série elegível, a probabilidade de a mediana cair, ficar ou subir pelo menos R$ 0,05 em 1, 2 e 4 semanas, ao lado da taxa-base de referência. Primeira origem: 04/10/2026, 837 previsões (279 séries × 3 horizontes).
+- **Registro imutável:** as previsões vão para `reports/ledger/` antes de a ANP publicar o preço, com o SHA-256 de cada arquivo no manifesto; a rotina para se algum arquivo mudar.
+- **Placar:** quando a semana-alvo é publicada, cada previsão é pontuada; o painel (*Desempenho ao vivo*) e a API (`/models/scoreboard`) mostram o *Brier skill* contra a taxa-base com IC de 95%, o erro de calibração e as semanas conferidas.
+- **Decisão, uma vez só:** com 26 origens conferidas em 2 semanas (por volta de abril de 2027), as probabilidades passam a oficiais se o ganho tiver limite inferior do IC acima de zero, o erro de calibração for de até 0,05 e nenhum produto, porte ou horizonte ficar abaixo de −0,05. Senão, saem do produto, e o resultado é publicado do mesmo jeito.
+- **Alerta de degradação:** a partir de 13 origens conferidas (por volta de janeiro de 2027), se o ganho em 2 semanas das 13 mais recentes ficar abaixo de zero, o painel avisa.
+- **Situação em 2026-10-16:** nenhuma previsão conferida ainda.
+- **Limitações:** a temperatura foi ajustada numa validação com 16% de quedas, e o teste do Marco 10 teve 39%; a calibração pode não se manter. Lacunas de publicação da ANP atrasam a conferência. A previsão de **valor** publicada continua sendo "último valor"; estas probabilidades não a substituem.
 
 ## Variações incomuns
 

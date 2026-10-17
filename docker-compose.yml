@@ -1,4 +1,4 @@
-# Serviços do projeto. Sem perfil, sobe só o banco (é o que iniciar.ps1 e atualizar.ps1 usam).
+# Serviços do projeto. Sem perfil, sobe só o banco (é o que iniciar e atualizar, .sh ou .ps1, usam).
 # Uso (exige o .env com POSTGRES_PASSWORD; copie de .env.example):
 #   docker compose up -d --wait                       # só o banco
 #   docker compose --profile demo up --build demo     # painel com o pacote commitado, sem banco: http://127.0.0.1:8501

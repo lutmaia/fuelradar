@@ -91,6 +91,11 @@ def install_error_handlers(app):
         log.warning("consulta cancelada por tempo (request_id=%s)", request_id_of(request))
         return error_response(request, 503, "QUERY_TIMEOUT", "A consulta demorou mais que o limite permitido.")
 
+    @app.exception_handler(psycopg.errors.UndefinedTable)
+    async def schema_missing(request: Request, exc: psycopg.errors.UndefinedTable):
+        log.warning("banco sem as migrações (request_id=%s); rode scripts/load_db.py", request_id_of(request))
+        return error_response(request, 503, "NOT_READY", "O banco ainda não foi preparado.")
+
     @app.exception_handler(psycopg.OperationalError)
     async def database_down(request: Request, exc: psycopg.OperationalError):
         log.error("erro operacional do banco (request_id=%s): %s", request_id_of(request), type(exc).__name__)

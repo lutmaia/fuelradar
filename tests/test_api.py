@@ -226,6 +226,18 @@ class HealthAndMetadataTests(ApiCase):
             self.assertEqual(client.get("/health/live").status_code, 200)
             self.assertError(client.get("/api/v1/prices/latest", params={"product": "GASOLINA_COMUM"}), 404, "NO_DATA")
 
+    def test_database_without_migrations_is_503_not_500(self):
+        # Primeiro uso: banco recém-criado pelo docker compose, antes do load_db.py.
+        name = f"radar_test_api_bare_{uuid.uuid4().hex[:8]}"
+        with psycopg.connect(TEST_URL, autocommit=True) as admin:
+            admin.execute(f'CREATE DATABASE "{name}"')
+        self.addCleanup(self.drop_database, name)
+        with self.make_client(self.url_for(name)) as client, self.assertLogs("radar.api", "WARNING"):
+            self.assertEqual(client.get("/health/live").status_code, 200)
+            error = self.assertError(client.get("/health/ready"), 503, "NOT_READY")
+            self.assertNotIn("ingestion_run", json.dumps(error))
+            self.assertError(client.get("/api/v1/prices/latest", params={"product": "GASOLINA_COMUM"}), 503, "NOT_READY")
+
     def test_database_down_is_503_and_live_stays_up(self):
         with self.make_client("postgresql://radar_api:x@127.0.0.1:1/radar", pool_timeout=1) as client, \
                 self.assertLogs("radar.api", "WARNING"):

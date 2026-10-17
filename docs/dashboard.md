@@ -4,7 +4,7 @@ Guia do painel do Marco 6. Decisões em [ADR 0005](decisions/0005-painel-streaml
 
 ## Subir
 
-Com a API no ar (passo a passo em [api.md](api.md)):
+Com a API no ar (passo a passo em [api.md](api.md); no macOS ou no Linux, `./iniciar.sh` sobe os dois):
 
 ```powershell
 $env:RADAR_API_URL = "http://127.0.0.1:8000"          # padrão; ajuste se a API estiver em outra porta
@@ -56,8 +56,8 @@ A página de qualidade mostra o modelo publicado e o resultado do backtest, incl
 
 Com `RADAR_SNAPSHOT` apontando para um pacote, o painel lê o pacote em vez da API ([ADR 0009](decisions/0009-demonstrativo-e-pacote-instantaneo.md)). O pacote é gerado por `scripts/build_snapshot.py` (com `API_DATABASE_URL`) e fica em `snapshot/radar-sp.json.gz`; `demo/streamlit_app.py` é o ponto de entrada do demonstrativo:
 
-```powershell
-.\.venv\Scripts\python.exe -m streamlit run demo/streamlit_app.py
+```bash
+.venv/bin/python -m streamlit run demo/streamlit_app.py      # Windows: .\.venv\Scripts\python.exe
 ```
 
 Em modo instantâneo, o rodapé avisa que é demonstrativo e quando o pacote foi gerado, e os postos aparecem sem CNPJ nem razão social (sem nome fantasia, pela bandeira).

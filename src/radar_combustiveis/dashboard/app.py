@@ -16,7 +16,7 @@ from radar_combustiveis.dashboard import views  # noqa: E402
 
 def main():
     st.set_page_config(page_title="Radar de Combustíveis SP", page_icon="⛽", layout="wide",
-                       initial_sidebar_state="expanded")
+                       initial_sidebar_state="auto")  # fechado no celular
     explore_page = st.Page(views.guarded(views.explore), title="Explorar município", url_path="municipio", icon="🔎")
     home_page = st.Page(views.guarded(lambda: views.home(explore_page)), title="Início", url_path="inicio",
                         icon="🏠", default=True)

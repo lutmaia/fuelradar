@@ -1,0 +1,2 @@
+# Scripts de shell com fim de linha LF, mesmo num clone no Windows (senão o bash recusa).
+*.sh text eol=lf

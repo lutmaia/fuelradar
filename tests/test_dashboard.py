@@ -225,6 +225,13 @@ class ChartAndExportTests(unittest.TestCase):
         self.assertEqual(low.marker.symbol, "x")  # não depende só da cor
         self.assertLess(fig.layout.legend.y, 0)  # legenda abaixo do gráfico, não sobre o título
 
+    def test_date_axes_use_numbers_not_english_month_names(self):
+        points = [point("2026-09-06", 6.0), point("2026-09-13", 6.1)]
+        ethanol = [{"week_start": "2026-09-06", "ratio": 0.62}]
+        for fig in (charts.history_figure(points, "CAMPINAS", "R$/litro"), charts.ethanol_figure(ethanol, 0.7)):
+            self.assertEqual(fig.layout.xaxis.tickformat, "%m/%Y")
+            self.assertEqual(fig.layout.xaxis.hoverformat, "%d/%m/%Y")
+
     def test_normalized_index_starts_at_100_on_the_first_common_week(self):
         a = [point("2026-09-06", 5.0), point("2026-09-13", 5.5)]
         b = [point("2026-09-13", 6.0), point("2026-09-20", 6.3)]

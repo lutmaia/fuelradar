@@ -2,10 +2,9 @@
 
 Exige um servidor real. Defina RADAR_TEST_DATABASE_URL com uma URL de superusuário/criador de
 bancos; cada teste cria e remove o próprio banco (`radar_test_*`), sem tocar no banco `radar`.
-Com o contêiner do docker-compose.yml no ar (PowerShell):
+Com o contêiner do docker-compose.yml no ar (macOS ou Linux; no PowerShell, ver docs/local-database.md):
 
-    $pw = (Get-Content .env | Where-Object { $_ -like 'POSTGRES_PASSWORD=*' }).Split('=', 2)[1]
-    $env:RADAR_TEST_DATABASE_URL = "postgresql://radar:$pw@127.0.0.1:54329/postgres"
+    export RADAR_TEST_DATABASE_URL="postgresql://radar:$(grep '^POSTGRES_PASSWORD=' .env | cut -d= -f2-)@127.0.0.1:54329/postgres"
 
 Use 127.0.0.1, não localhost (IPv6 primeiro, ~30 s por conexão). Sem a variável, os testes são
 ignorados e a suíte continua válida.

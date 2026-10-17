@@ -34,10 +34,14 @@ def _series(points, key):
     return weeks, values, by_week
 
 
+# Datas em número (05/2026): o Plotly só escreve o nome do mês em inglês ("May 2026").
+DATE_AXIS = {"tickformat": "%m/%Y", "hoverformat": "%d/%m/%Y"}
+
+
 def _layout(fig, title, y_title):
     fig.update_layout(
         title=title, margin={"l": 10, "r": 10, "t": 50, "b": 90}, hovermode="x unified",
-        yaxis={"title": y_title, "tickformat": ",.2f"}, xaxis={"title": "Início da semana"},
+        yaxis={"title": y_title, "tickformat": ",.2f"}, xaxis={"title": "Início da semana", **DATE_AXIS},
         # Legenda abaixo do gráfico: acima ela se sobrepunha ao título.
         legend={"orientation": "h", "yanchor": "top", "y": -0.25, "xanchor": "left", "x": 0},
         separators=",.")
@@ -228,5 +232,5 @@ def ethanol_figure(items, threshold):
     fig.add_hline(y=threshold * 100, line_dash="dash", line_color=STATE_COLOR,
                   annotation_text=f"{threshold * 100:.0f}%: abaixo, o etanol compensa", annotation_position="top left")
     fig.update_layout(margin={"l": 10, "r": 10, "t": 30, "b": 30}, height=260, showlegend=False,
-                      yaxis={"title": "% do preço da gasolina", "ticksuffix": "%"}, separators=",.")
+                      yaxis={"title": "% do preço da gasolina", "ticksuffix": "%"}, xaxis=DATE_AXIS, separators=",.")
     return fig

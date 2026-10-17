@@ -26,13 +26,13 @@ O GitHub avisa por e-mail; uma falha não publica nada pela metade (estado e rep
 
 Para rodar na hora (sem esperar as 19h): Actions → Atualização semanal → *Run workflow*. "Rodar mesmo com o pacote em dia" força uma execução completa; o campo de falha (nome de uma etapa) simula uma falha, para testar a detecção.
 
-**Plano B, no computador:** com o Docker Desktop aberto, `.\atualizar.ps1` faz a mesma rotina sobre o banco local (`--dry-run` só diz se há semana nova); depois, commitar `reports/ledger/` e `snapshot/`.
+**Plano B, no computador:** com o Docker aberto, `./atualizar.sh` (macOS e Linux) ou `.\atualizar.ps1` (Windows) faz a mesma rotina sobre o banco local (`--dry-run` só diz se há semana nova); depois, commitar `reports/ledger/` e `snapshot/`.
 
 ## Estado cifrado
 
 - **O que é:** cópia do banco (`pg_dump`) e histórico processado de SP, num `.tar.gz` cifrado (AES-256). Fica nos anexos da release `estado`. Os arquivos brutos da ANP não entram.
 - **Chave:** em `RADAR_STATE_KEY` no `.env` local e em `STATE_KEY` nos Secrets do repositório. O GitHub não deixa ler o secret de volta: guarde uma cópia num gerenciador de senhas.
-- **Definir a chave no PowerShell** (os scripts não leem o `.env` sozinhos): `$env:RADAR_STATE_KEY = ((Get-Content .env | Select-String '^RADAR_STATE_KEY=').Line -split '=', 2)[1]`
+- **Definir a chave** (os scripts não leem o `.env` sozinhos): no macOS ou no Linux, `export RADAR_STATE_KEY="$(grep '^RADAR_STATE_KEY=' .env | cut -d= -f2-)"`; no PowerShell, `$env:RADAR_STATE_KEY = ((Get-Content .env | Select-String '^RADAR_STATE_KEY=').Line -split '=', 2)[1]`
 - **Voltar ao estado anterior:** baixar `estado-anterior.tar.enc` da release, renomear para `estado.tar.enc` e subir de novo, substituindo o atual (editar a release).
 - **Restaurar o banco local a partir do estado** (banco vazio): `python scripts/state.py unpack --container <contêiner do postgres> --input estado.tar.enc`, com `RADAR_STATE_KEY` definida.
 - **Trocar a chave ou refazer o estado:** com o banco local em dia, `python scripts/state.py pack --container radar-combustiveis-postgres-1 --output estado.tar.enc` com a chave nova; subir o arquivo na release (substituindo) e atualizar o secret.
@@ -53,4 +53,4 @@ O registro não se altera: `scripts/run_live.py` confere o SHA-256 de cada arqui
 
 ## Rodar no computador
 
-Instalação no [README](../README.md#rodar-localmente). `.\iniciar.ps1` sobe o banco, a API e o painel (http://127.0.0.1:8501); `docker compose --profile demo up --build demo` sobe só o demonstrativo, sem banco. O banco de desenvolvimento roda em Docker, em `127.0.0.1:54329` (use `127.0.0.1`, não `localhost`).
+Instalação no [README](../README.md#rodar-localmente). `./iniciar.sh` (ou `.\iniciar.ps1` no Windows) sobe o banco, a API e o painel (http://127.0.0.1:8501); `docker compose --profile demo up --build demo` sobe só o demonstrativo, sem banco. O banco de desenvolvimento roda em Docker, em `127.0.0.1:54329` (use `127.0.0.1`, não `localhost`).

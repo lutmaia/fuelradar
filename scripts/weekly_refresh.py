@@ -4,7 +4,7 @@ Uso: python scripts/weekly_refresh.py [--dry-run] [--force]
 Lê a página da ANP; se o pacote do demonstrativo já tem a semana mais recente, sai sem fazer nada.
 Senão roda, em ordem: baixar a ANP, ingerir, qualidade, carregar, fontes externas, previsões de valor,
 previsão ao vivo e pacote. Para na primeira falha. Exige DATABASE_URL e API_DATABASE_URL (o
-atualizar.ps1 prepara as duas). Histórico das execuções em data/processed/weekly_runs.jsonl.
+atualizar.sh ou o atualizar.ps1 prepara as duas). Histórico das execuções em data/processed/weekly_runs.jsonl.
 Retorno 0 quando conclui ou já está em dia; 1 quando algo falha. Com RADAR_INJECT_FAILURE=<etapa>,
 essa etapa falha de propósito (teste de detecção e recuperação). No CI, grava new_week em GITHUB_OUTPUT.
 """
@@ -77,7 +77,7 @@ def main(argv=None):
         return 0
     missing = [name for name in ("DATABASE_URL", "API_DATABASE_URL") if not os.environ.get(name)]
     if missing:
-        print(f"Faltam variáveis: {', '.join(missing)} (use .\\atualizar.ps1).", file=sys.stderr)
+        print(f"Faltam variáveis: {', '.join(missing)} (use ./atualizar.sh ou .\\atualizar.ps1).", file=sys.stderr)
         return finish({"status": "falhou", "failed_stage": "configuração", "page_week": page_week, "stages": []})
 
     inject = os.environ.get("RADAR_INJECT_FAILURE") or None

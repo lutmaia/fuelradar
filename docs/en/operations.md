@@ -26,13 +26,13 @@ GitHub sends an email; a failure never publishes anything halfway (state and rep
 
 To run it now: Actions → Atualização semanal → *Run workflow*. "Rodar mesmo com o pacote em dia" forces a full run; the failure field (a stage name) simulates a failure to test detection.
 
-**Plan B, on your computer:** with Docker Desktop open, `.\atualizar.ps1` runs the same routine on the local database (`--dry-run` only says whether there is a new week); then commit `reports/ledger/` and `snapshot/`.
+**Plan B, on your computer:** with Docker running, `./atualizar.sh` (macOS and Linux) or `.\atualizar.ps1` (Windows) runs the same routine on the local database (`--dry-run` only says whether there is a new week); then commit `reports/ledger/` and `snapshot/`.
 
 ## Encrypted state
 
 - **What it is:** a database copy (`pg_dump`) plus the processed São Paulo history, in an AES-256 encrypted `.tar.gz`, attached to the `estado` release. Raw ANP files are not included.
 - **Key:** `RADAR_STATE_KEY` in the local `.env` and `STATE_KEY` in the repository secrets. GitHub cannot show a secret again: keep a copy in a password manager.
-- **Set the key in PowerShell** (scripts do not read `.env` on their own): `$env:RADAR_STATE_KEY = ((Get-Content .env | Select-String '^RADAR_STATE_KEY=').Line -split '=', 2)[1]`
+- **Set the key** (scripts do not read `.env` on their own): on macOS or Linux, `export RADAR_STATE_KEY="$(grep '^RADAR_STATE_KEY=' .env | cut -d= -f2-)"`; in PowerShell, `$env:RADAR_STATE_KEY = ((Get-Content .env | Select-String '^RADAR_STATE_KEY=').Line -split '=', 2)[1]`
 - **Go back to the previous state:** download `estado-anterior.tar.enc` from the release, rename it to `estado.tar.enc` and upload it again, replacing the current one (edit the release).
 - **Restore the local database from the state** (empty database): `python scripts/state.py unpack --container <postgres container> --input estado.tar.enc`, with `RADAR_STATE_KEY` set.
 - **Change the key or rebuild the state:** with the local database up to date, `python scripts/state.py pack --container radar-combustiveis-postgres-1 --output estado.tar.enc` with the new key; upload it to the release (replacing) and update the secret.
@@ -53,4 +53,4 @@ The ledger never changes: `scripts/run_live.py` checks each file's SHA-256 in `m
 
 ## Running on your computer
 
-Setup in the [README](../../README.md#rodar-localmente). `.\iniciar.ps1` starts the database, API and dashboard (http://127.0.0.1:8501); `docker compose --profile demo up --build demo` starts only the demo, without a database. The development database runs in Docker at `127.0.0.1:54329` (use `127.0.0.1`, not `localhost`).
+Setup in the [README](../../README.md#rodar-localmente). `./iniciar.sh` (or `.\iniciar.ps1` on Windows) starts the database, API and dashboard (http://127.0.0.1:8501); `docker compose --profile demo up --build demo` starts only the demo, without a database. The development database runs in Docker at `127.0.0.1:54329` (use `127.0.0.1`, not `localhost`).
