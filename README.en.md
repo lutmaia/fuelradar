@@ -23,10 +23,12 @@ Numbers from the [study](reports/study/resumo.md), over 2022-11-13 to 2026-03-29
 ```mermaid
 xychart-beta
     title "Ethanol paid off: % of municipality-weeks"
-    x-axis ["2023", "2024", "2025", "2026 (to Mar)"]
+    x-axis ["2023", "2024", "2025", "Jan–Mar 2026"]
     y-axis "% of municipality-weeks" 0 --> 100
     bar [74, 99, 90, 33]
 ```
+
+*2026 covers only January to March (the study ends on 29 March), the sugarcane off-season, when ethanol is more expensive. In the last week, it already paid off in 73 of 89 municipalities.*
 
 ![Study page in the dashboard: the three pre-registered questions, only the unbranded-station one stable, and the difference by product with confidence intervals](docs/img/estudo.png)
 

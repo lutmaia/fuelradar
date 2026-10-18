@@ -23,10 +23,12 @@ Números do [estudo](reports/study/resumo.md), na janela de 13/11/2022 a 29/03/2
 ```mermaid
 xychart-beta
     title "Etanol compensou: % das semanas, por município"
-    x-axis ["2023", "2024", "2025", "2026 (até mar.)"]
+    x-axis ["2023", "2024", "2025", "jan–mar/2026"]
     y-axis "% das município-semanas" 0 --> 100
     bar [74, 99, 90, 33]
 ```
+
+*2026 só tem janeiro a março (o estudo para em 29/03), que é a entressafra da cana, quando o etanol fica mais caro. Na última semana, ele já compensava em 73 de 89 municípios.*
 
 ![Página Estudo do painel: as três perguntas pré-registradas, só a da bandeira branca estável, e a diferença por produto com intervalo de confiança](docs/img/estudo.png)
 
