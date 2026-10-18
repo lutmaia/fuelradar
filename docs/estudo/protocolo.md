@@ -84,7 +84,7 @@ O que foi consultado nos dados antes deste protocolo, só para desenhá-lo (estr
 
 ## 5. Gate G1
 
-Q1 a Q3 têm um desfecho primário cada. **G1 passa se ao menos dois dos três forem achados estáveis**, pelas definições acima. Se não passar, o resultado é publicado como está e o escopo da modelagem (Marco 10) é reavaliado com o usuário antes de seguir; nada é refeito para "passar".
+Q1 a Q3 têm um desfecho primário cada. **G1 passa se ao menos dois dos três forem achados estáveis**, pelas definições acima. Se não passar, o resultado é publicado como está e o escopo da modelagem (Marco 10) é reavaliado pelo autor antes de seguir; nada é refeito para "passar".
 
 ## 6. Entregáveis
 
@@ -106,4 +106,4 @@ Qualquer mudança neste protocolo depois do commit inicial é registrada abaixo,
 | 2026-10-13 | **Todas:** uma checagem de robustez sem estimativa (por exemplo, sem dados suficientes) impede o "achado estável"; ausência de evidência não conta como mesmo sinal. | Evitar que falta de dado passe por concordância. | Antes. |
 | 2026-10-13 | **Carregador:** as linhas lidas do banco passam a ser ordenadas antes da análise. | Duas execuções diferiam no 16º dígito de Q1 (ordem das somas em ponto flutuante); agora são idênticas byte a byte. Nenhuma regra, limiar ou amostra mudou. | **Depois** da primeira execução; não altera nenhum resultado além desse dígito. |
 | 2026-10-13 | **Dependências:** sem `statsmodels`; regressão, teste F, Kaplan–Meier e log-rank estão em `study/` com numpy, pandas e as distribuições do `scipy`, conferidos contra o scipy nos testes. | Menos uma dependência; o scipy já estava instalado. | Antes. |
-| 2026-10-14 | **Marco 10, escopo depois do G1 (opção B):** a camada L2 perde a variação dos municípios líderes e fica só com os sinais do estado (variação estadual na semana e fração de municípios que subiram). L0, L1 e L3, alvos, desfecho primário, partição, lacre e regra de decisão não mudam. | G1 não passou (1 de 3); Q3, que definiria os líderes, não foi estável (0% no subperíodo A). Decisão do usuário, pela seção 5. | **Depois** dos resultados de Q1 a Q3 (é a reavaliação que a seção 5 prevê); antes de qualquer modelagem v2 e sem ler o teste final. |
+| 2026-10-14 | **Marco 10, escopo depois do G1 (opção B):** a camada L2 perde a variação dos municípios líderes e fica só com os sinais do estado (variação estadual na semana e fração de municípios que subiram). L0, L1 e L3, alvos, desfecho primário, partição, lacre e regra de decisão não mudam. | G1 não passou (1 de 3); Q3, que definiria os líderes, não foi estável (0% no subperíodo A). Decisão do autor, pela seção 5. | **Depois** dos resultados de Q1 a Q3 (é a reavaliação que a seção 5 prevê); antes de qualquer modelagem v2 e sem ler o teste final. |

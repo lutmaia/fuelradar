@@ -1,7 +1,7 @@
 # 0010 — Fontes externas, disponibilidade (*as-of*) e margem bruta de revenda
 
 - **Status:** aceita (Marco 9, 2026-10-15)
-- **Contexto:** o [desenho](../estudo-de-caso.md) (seção 4) prevê fontes externas para a camada L3 da modelagem, sem olhar para o futuro. A [triagem](../estudo/triagem-fontes-externas.md) aprovou o dólar do BCB e os preços de produtores e de distribuição da ANP; o usuário decidiu usar as três e mostrar quanto o preço nos postos fica acima da distribuição.
+- **Contexto:** o [desenho](../estudo-de-caso.md) (seção 4) prevê fontes externas para a camada L3 da modelagem, sem olhar para o futuro. A [triagem](../estudo/triagem-fontes-externas.md) aprovou o dólar do BCB e os preços de produtores e de distribuição da ANP; a decisão foi usar as três e mostrar quanto o preço nos postos fica acima da distribuição.
 
 ## Decisão
 
@@ -9,7 +9,7 @@
 2. **`available_at` pela regra publicada de cada fonte**, sem histórico real de publicação: dólar no dia seguinte à cotação; produtores 12 dias após o fim da semana (estimativa da ANP); distribuição no último dia do mês seguinte (prazo da ANP). Se o projeto baixou o valor antes desse prazo, vale o dia do download. `external/asof.py` devolve o valor já disponível no sábado da semana de origem de uma previsão. Isso é o que o Marco 10 vai usar.
 3. **Qualidade por fonte** (desenho, 4.4): crítico (nenhuma linha, chave repetida, valor fora da faixa plausível, período incoerente) bloqueia só aquela fonte; lacunas semanais e atraso acima do esperado são avisos. Relatório em `data/processed/external/quality.json`.
 4. **Revisões:** a carga é idempotente; um valor que muda num download posterior é atualizado e marcado `revised`, sem mudar `first_retrieved_at` nem `available_at`.
-5. **Margem bruta de revenda** = mediana da pesquisa nos postos − preço médio de distribuição da ANP, no estado ou município e na mesma semana (as duas usam domingo a sábado). Endpoints `/prices/margins`, `/prices/margins/municipalities` e `/prices/margins/stations`, página *Margem dos postos*. Por posto, o número é o preço do posto na semana menos a **média** do município, chamado de **margem bruta estimada**; o texto é neutro ("segundo os dados da ANP, a margem bruta estimada é de…"), diz que não é lucro e que o custo real de cada posto não é público (decisão do usuário, 2026-10-15).
+5. **Margem bruta de revenda** = mediana da pesquisa nos postos − preço médio de distribuição da ANP, no estado ou município e na mesma semana (as duas usam domingo a sábado). Endpoints `/prices/margins`, `/prices/margins/municipalities` e `/prices/margins/stations`, página *Margem dos postos*. Por posto, o número é o preço do posto na semana menos a **média** do município, chamado de **margem bruta estimada**; o texto é neutro ("segundo os dados da ANP, a margem bruta estimada é de…"), diz que não é lucro e que o custo real de cada posto não é público.
 6. **Licenças.** Os termos de uso do portal da ANP autorizam reprodução sem fins lucrativos com citação e link; o rodapé do painel passou a trazer os dois links. O dólar (ODbL) entra no banco, mas **não** no pacote público do demonstrativo, para não publicar um banco derivado que misture ODbL com dados da ANP sem fins lucrativos.
 7. **Dependência nova:** `xlrd==2.0.2`, só para a planilha `.xls` de produtores (o `openpyxl` não lê o formato antigo).
 

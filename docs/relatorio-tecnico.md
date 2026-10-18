@@ -62,7 +62,7 @@ Janela de 13/11/2022 a 29/03/2026: 147 semanas com dado e 675.834 observações.
 
 **Q3, difusão.** As variações dos quatro líderes (São Paulo, Campinas, Guarulhos, Ribeirão Preto) melhoram a previsão de **38,6%** dos 83 seguidores, contra 4,8% no sentido reverso, mas **0,0%** no subperíodo A: **não estável**. A maioria dos municípios tem a maior correlação na mesma semana dos líderes, o que a resolução semanal não separa. [Relatório](../reports/study/q3.md)
 
-**Gate G1:** 1 de 3 achados estáveis; o protocolo exigia 2. O resultado foi publicado como está e o escopo da modelagem foi reavaliado com o usuário (camada L2 sem os líderes de Q3).
+**Gate G1:** 1 de 3 achados estáveis; o protocolo exigia 2. O resultado foi publicado como está e o escopo da modelagem foi reavaliado (camada L2 sem os líderes de Q3).
 
 **Descritivo para o consumidor** ([relatório](../reports/study/descritivo.md)): o etanol compensou (até 70% da gasolina) em **82,6%** das 13.593 combinações de município e semana, de 99,4% em 2024 a 32,8% em 2026; o posto mais barato fica tipicamente **R$ 0,40/L** abaixo da mediana do município, cerca de 4 vezes um reajuste semanal típico (R$ 0,10); a capital foi a região mais barata em gasolina comum (interior e metropolitana +R$ 0,10, litoral +R$ 0,30, em mediana).
 

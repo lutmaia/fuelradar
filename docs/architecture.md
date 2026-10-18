@@ -1458,7 +1458,6 @@ Cache distribuído não é necessário inicialmente. A primeira otimização dev
 - documentar decisões e limitações;
 - demonstrar que a expansão de UF é configurável sem afirmar cobertura nacional;
 - publicar resultados de backtesting;
-- criar roteiro de entrevista;
 - executar revisão final de segurança e custos.
 
 **Entrega:** projeto pronto para recrutadores.
@@ -1542,20 +1541,7 @@ O projeto está pronto para o portfólio quando:
 
 ---
 
-## 31. Roteiro de demonstração para entrevista
-
-1. **Problema:** dados públicos úteis, mas fragmentados em arquivos periódicos.
-2. **Produto:** busca, comparação, histórico e previsão para municípios de São Paulo.
-3. **Dados:** origem oficial, atualização e limites da amostra.
-4. **Engenharia:** raw imutável, checksum, idempotência, dbt e API.
-5. **Ciência de Dados:** baseline, validação temporal, métricas e incerteza.
-6. **Produção:** Docker, CI/CD, nuvem e monitoramento.
-7. **Decisão:** explicar o recorte paulista e como o desenho permite expansão nacional.
-8. **Resultado:** demonstrar um município e abrir o Swagger.
-
----
-
-## 32. Ordem recomendada de implementação
+## 31. Ordem recomendada de implementação
 
 1. EDA real dos arquivos da ANP.
 2. Contrato e ingestão histórica.
@@ -1572,7 +1558,7 @@ Essa ordem produz valor demonstrável cedo e reduz o risco de construir o modelo
 
 ---
 
-## 33. Referências da fonte
+## 32. Referências da fonte
 
 - Série histórica de preços de combustíveis e GLP da ANP: <https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/serie-historica-de-precos-de-combustiveis>
 - Últimas semanas pesquisadas: <https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/levantamento-de-precos-de-combustiveis-ultimas-semanas-pesquisadas>

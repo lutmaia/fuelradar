@@ -16,7 +16,7 @@
 
 - **Treino de produção:** a cada execução, um modelo por horizonte, com todos os pares cujo alvo já é conhecido na semana mais recente do conjunto (janela crescente, como no Marco 10).
 - **Origem:** a semana mais recente com dado. **Séries:** as elegíveis pela regra do Marco 7 nessa semana.
-- **Registro:** `reports/ledger/<origem>.csv` com, por série e horizonte, as probabilidades calibradas, as da taxa-base e o último valor; e uma linha em `reports/ledger/manifesto.csv` com o SHA-256 do arquivo. Um arquivo de origem **nunca é reescrito**: se já existe, a execução não o altera. O commit semanal desses arquivos (feito pelo usuário) é o carimbo de data de que a previsão veio antes do valor real.
+- **Registro:** `reports/ledger/<origem>.csv` com, por série e horizonte, as probabilidades calibradas, as da taxa-base e o último valor; e uma linha em `reports/ledger/manifesto.csv` com o SHA-256 do arquivo. Um arquivo de origem **nunca é reescrito**: se já existe, a execução não o altera. O commit semanal desses arquivos (feito pelo autor) é o carimbo de data de que a previsão veio antes do valor real.
 - O banco recebe uma cópia do registro (tabela `forecast_class`), para a API e o painel.
 
 ## 3. Pontuação e placar

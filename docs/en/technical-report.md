@@ -62,7 +62,7 @@ Window 2022-11-13 to 2026-03-29: 147 weeks with data and 675,834 observations. P
 
 **Q3, diffusion.** Moves in the four leaders (São Paulo, Campinas, Guarulhos, Ribeirão Preto) improve the forecast of **38.6%** of 83 followers, against 4.8% in reverse, but **0.0%** in subperiod A: **not stable**. Most municipalities correlate most strongly in the same week as the leaders, which weekly resolution cannot separate. [Report](../../reports/study/q3.md)
 
-**Gate G1:** 1 of 3 stable findings; the protocol required 2. The result was published as is and the modelling scope was reassessed with the project owner (layer L2 without the Q3 leaders).
+**Gate G1:** 1 of 3 stable findings; the protocol required 2. The result was published as is and the modelling scope was reassessed (layer L2 without the Q3 leaders).
 
 **Consumer descriptives** ([report](../../reports/study/descritivo.md)): ethanol paid off (at most 70% of the gasoline price) in **82.6%** of 13,593 municipality-weeks, from 99.4% in 2024 to 32.8% in 2026; the cheapest station is typically **R$ 0.40/L** below the municipal median, about 4 times a typical weekly price change (R$ 0.10); the capital was the cheapest region for regular gasoline (interior and metropolitan area +R$ 0.10, coast +R$ 0.30, in median).
 

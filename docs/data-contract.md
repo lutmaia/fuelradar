@@ -109,7 +109,7 @@ Coerência mínimo/média/máximo, dia 1, contagem inteira e validação complet
 
 O preâmbulo dos agregados informa que OLEO DIESEL se refere a diesel B S500 comum. ETANOL segue a correspondência proposta entre as famílias. `GASOLINA` foi observado em H, junto de GASOLINA ADITIVADA: o alias explícito GASOLINA_COMUM passa a ser exercitado em fonte real, com original preservado. Essa correspondência é uma decisão proposta do contrato, não uma confirmação independente de metadados oficiais.
 
-`DIESEL` (H), `DIESEL S500` (R) e `OLEO DIESEL` (agregados) são o mesmo diesel comum, por decisão do usuário em 2026-10-10, apoiada pela sobreposição: preço idêntico em 305 de 305 pares de posto e dia entre `DIESEL` e `DIESEL S500`, contra 9 de 249 para S10. `DIESEL_S10` permanece separado. O rótulo original continua em `product_original`. Há seis produtos no histórico e sete nas semanas (incluindo GLP), com sete nomes canônicos na união.
+`DIESEL` (H), `DIESEL S500` (R) e `OLEO DIESEL` (agregados) são o mesmo diesel comum, decisão de 2026-10-10 apoiada pela sobreposição: preço idêntico em 305 de 305 pares de posto e dia entre `DIESEL` e `DIESEL S500`, contra 9 de 249 para S10. `DIESEL_S10` permanece separado. O rótulo original continua em `product_original`. Há seis produtos no histórico e sete nas semanas (incluindo GLP), com sete nomes canônicos na união.
 
 `R$/l`/`R$ / litro` → BRL/L; `R$/m3`/`R$/m³`/`R$ / m³` → BRL/M3; `R$/13kg`/`R$ / 13 kg` → BRL/13KG. Desconhecidos são sinalizados, sem associação por similaridade.
 

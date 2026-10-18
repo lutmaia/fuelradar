@@ -40,5 +40,5 @@ O Marco 2 precisa de ingestão rastreável e idempotente a partir de `data/raw/`
 - Quando duas versões novas do mesmo período aparecem na mesma execução, a ordem de revisão segue a data de modificação do arquivo.
 - `source_url` e `retrieved_at` só são preenchidos com evidência do registro de downloads, porque o nome do arquivo não prova a origem. O CSV semestral recebido à mão continua sem URL.
 - A data "Atualizado em" é publicada pela ANP na página, não no arquivo; uma correção sem mudança dessa data não seria vista sem `--force`.
-- O ZIP semestral oficial (`ca-2026-01.zip`) não foi baixado: seu conteúdo coincidiria com o CSV que já temos e criaria duplicidade entre fontes. Decisão pendente do usuário.
+- O ZIP semestral oficial (`ca-2026-01.zip`) não foi baixado: seu conteúdo coincidiria com o CSV que já temos e criaria duplicidade entre fontes.
 - As saídas de revisões antigas acumulam em `data/processed/`; a limpeza é uma decisão futura, nunca automática.

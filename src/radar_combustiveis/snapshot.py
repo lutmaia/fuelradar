@@ -6,7 +6,7 @@ para todo parâmetro que o painel usa e que é finito (produto × município), e
 o cliente instantâneo reproduzir as consultas combinatórias (histórico por intervalo, comparação
 de municípios, variações por filtro) com a mesma regra da API.
 
-Privacidade (decisão do usuário, 2026-10-14): nenhum CNPJ nem razão social vai ao pacote. O posto
+Privacidade: nenhum CNPJ nem razão social vai ao pacote. O posto
 aparece pelo nome fantasia publicado pela ANP ou, sem ele, pela bandeira (o endereço vai à parte).
 """
 

@@ -1,12 +1,12 @@
 # Triagem das fontes externas (gate G2, Marco 9)
 
-Triagem feita em 2026-10-14, antes de qualquer código de ingestão, pelos critérios da [seção 4.2 do desenho](../estudo-de-caso.md): licença que permita usar e redistribuir os números derivados, cobertura desde 2022-11, periodicidade semanal ou melhor, formato estável e atraso de publicação conhecido. Política do usuário: dado aberto de governo ou licença aberta explícita; **dúvida é motivo de descarte**.
+Triagem feita em 2026-10-14, antes de qualquer código de ingestão, pelos critérios da [seção 4.2 do desenho](../estudo-de-caso.md): licença que permita usar e redistribuir os números derivados, cobertura desde 2022-11, periodicidade semanal ou melhor, formato estável e atraso de publicação conhecido. Política do projeto: dado aberto de governo ou licença aberta explícita; **dúvida é motivo de descarte**.
 
 Os arquivos baixados para a triagem ficaram fora do repositório (pasta temporária). Nada foi ingerido.
 
 ## Atualização de 2026-10-15: termos de uso da ANP e preços de distribuição
 
-A pedido do usuário, revista a página geral de preços da ANP (`gov.br/anp/.../precos-e-defesa-da-concorrencia/precos`). Duas descobertas:
+Revista a página geral de preços da ANP (`gov.br/anp/.../precos-e-defesa-da-concorrencia/precos`). Duas descobertas:
 
 1. **Os termos de uso do portal da ANP são explícitos** ("Termos de uso do portal da ANP"): *"É autorizada a reprodução total ou parcial, sem fins lucrativos, do conteúdo, mediante a citação obrigatória da fonte de forma clara e visível, de preferência com link (endereço eletrônico) que remeta às informações originais do conteúdo reproduzido no site da Agência."* O uso *"com finalidade comercial de venda de serviços"* é proibido. Isso vale para todo o conteúdo do portal, **inclusive o levantamento de preços nos postos que o projeto já usa**. O projeto é sem fins lucrativos; falta o rodapé do painel trazer o link da fonte. A dúvida de licença dos preços de produtores deixa de existir: eles têm os mesmos termos da fonte principal.
 2. **Preços de distribuição de combustíveis** (página própria, arquivos `.xlsx` em `.../precos/pdc/semanal/`): preço médio ponderado por volume que as distribuidoras cobram, com tributos e frete, **por estado e por município** (459 municípios no Brasil). Medido nos arquivos baixados em 2026-10-15:
@@ -19,19 +19,18 @@ A pedido do usuário, revista a página geral de preços da ANP (`gov.br/anp/...
 
 **Consequência para o ODbL do dólar:** a ODbL exige que um banco de dados derivado publicado fique sob ODbL, que permite uso comercial; os dados da ANP não permitem. Para não misturar as duas condições, a série do dólar não deve entrar no pacote público do demonstrativo; números e gráficos calculados com ela podem ser exibidos com o crédito ao BCB.
 
-## Decisões do usuário (2026-10-15)
+## Decisões (2026-10-15)
 
 - **Produtores e distribuição entram**, nos termos de uso da ANP. Produtores como sinal de custo (camada L3 do Marco 10, pelo menor atraso); distribuição para medir quanto o posto cobra acima da distribuidora, por município e por posto.
 - **Dólar entra** como fonte, **fora do pacote público** do demonstrativo (por causa da ODbL); números e gráficos derivados mostram o crédito ao BCB.
-- Envio ao GitHub adiado a pedido do usuário.
 
 ## Resumo (2026-10-14)
 
 | Fonte | Acesso | Licença | Cobertura | Situação |
 |---|---|---|---|---|
 | Dólar comercial, venda (BCB, SGS série 1) | API JSON aberta, sem chave | **ODbL**, declarada na ficha do portal de dados abertos do BCB | diária, 991 cotações de 01/11/2022 a 13/10/2026 | **aprovada** |
-| Preços médios ponderados de produtores e importadores (ANP) | planilha `.xls` oficial, atualizada semanalmente | **não declarada** em nenhuma página encontrada | semanal, 204 semanas sem lacuna desde 11/2022 (gasolina A, diesel S-10 e S-500) | **aguarda decisão do usuário** |
-| Preços de distribuição (ANP), *visto em 2026-10-15* | planilhas `.xlsx` oficiais | termos do portal da ANP: sem fins lucrativos, com citação e link | semanal, SP e 108 municípios, 5 produtos com etanol; atraso de 5 a 9 semanas | **candidata** (decisão do usuário) |
+| Preços médios ponderados de produtores e importadores (ANP) | planilha `.xls` oficial, atualizada semanalmente | **não declarada** em nenhuma página encontrada | semanal, 204 semanas sem lacuna desde 11/2022 (gasolina A, diesel S-10 e S-500) | **aprovada** em 2026-10-15, pelos termos do portal da ANP (ver acima) |
+| Preços de distribuição (ANP), *visto em 2026-10-15* | planilhas `.xlsx` oficiais | termos do portal da ANP: sem fins lucrativos, com citação e link | semanal, SP e 108 municípios, 5 produtos com etanol; atraso de 5 a 9 semanas | **aprovada** em 2026-10-15 |
 | Preço do etanol na usina | não há na publicação da ANP (só derivados de petróleo e biodiesel) | indicador CEPEA/Esalq tem licença restritiva | — | **descartada** pela política (já prevista no desenho) |
 | Paridade de importação (PPI) publicada pela ANP | página da ANP | dados fornecidos pela S&P Global (terceiro) | — | **descartada**: licença de terceiro, dúvida |
 
@@ -49,13 +48,15 @@ A pedido do usuário, revista a página geral de preços da ANP (`gov.br/anp/...
 - **Limites para o projeto:** não há valor por estado (o mais próximo de SP é o Sudeste); não há etanol; a semana começa na segunda e a da pesquisa nos postos no domingo (resolvido pelo alinhamento *as-of*); a ANP estima publicar cerca de 12 dias após a semana, e a planilha é sobrescrita a cada atualização (cada download precisa ser guardado intacto); o formato `.xls` antigo exige uma dependência nova para leitura (`xlrd`).
 - **Licença:** não encontrada. A página da série não menciona licença; a página de dados abertos da ANP também não; o Plano de Dados Abertos 2026–2028 é um PDF de imagens que não foi possível ler. Indício indireto: um catálogo de terceiros (`data.amerigeoss.org`) lista a série de preços nos postos da ANP, já usada pelo projeto, como Creative Commons com atribuição. A publicação é obrigação legal da ANP (Portaria ANP nº 297/2001), do mesmo órgão e com o mesmo status da fonte principal.
 
-### Decisão pendente
+### Decisão
 
-Opções apresentadas ao usuário em 2026-10-14 (a primeira reforçada pelos termos de uso encontrados em 2026-10-15):
+Opções consideradas em 2026-10-14 (a primeira reforçada pelos termos de uso encontrados em 2026-10-15):
 
 1. **Aceitar** como dado aberto de governo, com crédito à ANP, igual à fonte principal (sugestão registrada).
 2. **Perguntar à ANP** (faleconosco@anp.gov.br) e só usar depois da resposta.
 3. **Descartar** pela regra da dúvida; o Marco 9 segue só com o dólar.
+
+Escolhida a opção 1, em 2026-10-15.
 
 ## Fontes consultadas
 
