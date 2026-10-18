@@ -1,6 +1,6 @@
 [project]
 name = "radar-combustiveis-sp"
-version = "0.0.1"
+version = "1.0.0"
 description = "Radar de Combustíveis SP: preços da ANP organizados, estudo pré-registrado e previsões avaliadas ao vivo"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -27,5 +27,3 @@ dependencies = [
     # Importado direto em todo o código numérico; já vinha com pandas, LightGBM e scipy (mesma versão de requirements.txt).
     "numpy==2.5.4",
 ]
-
-# Backend de build e ferramentas serão definidos quando necessários.

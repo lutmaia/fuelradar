@@ -7,6 +7,8 @@
 **Data:** 26 de setembro de 2026  
 **Objetivo:** projeto pessoal de portfólio para Ciência de Dados e Machine Learning Engineering
 
+> **Nota (outubro de 2026):** esta é a especificação escrita antes da implementação, mantida como registro. O que foi construído difere em alguns pontos, cada um explicado nos [ADRs](decisions/): transformações em SQL versionado nas migrações, sem dbt, e migrações com executor próprio, sem Alembic nem SQLAlchemy ([0003](decisions/0003-banco-postgresql.md), [0004](decisions/0004-api-de-leitura.md)); regras de qualidade em Python, sem Pandera ([0002](decisions/0002-qualidade-quarentena-e-precedencia.md)); sem nuvem paga (AWS, S3, RDS, ECS/Fargate, Terraform): a rotina semanal roda no GitHub Actions e o demonstrativo no Streamlit Community Cloud ([0009](decisions/0009-demonstrativo-e-pacote-instantaneo.md), [0011](decisions/0011-rotina-semanal-no-ci.md)); sem MLflow: versões de modelo e métricas ficam no banco e em `reports/` ([0007](decisions/0007-previsao-baselines-e-candidato.md)). O estado atual está no [README](../README.md) e no [relatório técnico](relatorio-tecnico.md).
+
 ---
 
 ## 1. Resumo do produto
