@@ -28,9 +28,11 @@ MAX_BYTES = 300 * 1024 * 1024
 RETRY_STATUS = {429, 500, 502, 503, 504}
 ZIP_MAGIC = b"PK\x03\x04"
 
+# A ANP usa revendas_lpc_2026-10-04_2026-10-10.xlsx e, desde out/2026, também
+# revendas_lpc_2026_10_11-2026_10_17.xlsx; as datas saem sempre em ISO.
 _WEEKLY_LINK = re.compile(
     r'href="(https://[^"/]+/[^"]*?/arquivos-lpc/\d{4}/'
-    r'(revendas_lpc_(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})\.xlsx))"[^>]*>[^<]*</a>'
+    r'(revendas_lpc_(\d{4}[-_]\d{2}[-_]\d{2})[-_](\d{4}[-_]\d{2}[-_]\d{2})\.xlsx))"[^>]*>[^<]*</a>'
     r'\s*(?:<em>\s*\(Atualizado em (\d{1,2})/(\d{1,2})/(\d{4})\)\s*</em>)?')
 
 
@@ -65,7 +67,7 @@ def parse_weekly_links(html):
                 updated = date(int(year), int(month), int(day)).isoformat()
             except ValueError:
                 updated = None
-        links[url] = WeeklyLink(url, filename, start, end, updated)
+        links[url] = WeeklyLink(url, filename, start.replace("_", "-"), end.replace("_", "-"), updated)
     return sorted(links.values(), key=lambda link: (link.week_start, link.url))
 
 

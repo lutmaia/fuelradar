@@ -9,7 +9,8 @@ from pathlib import Path
 import re
 
 MANIFEST_VERSION = 1
-_PERIOD_IN_NAME = re.compile(r"(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})")
+# AAAA-MM-DD_AAAA-MM-DD ou, desde out/2026, AAAA_MM_DD-AAAA_MM_DD.
+_PERIOD_IN_NAME = re.compile(r"(\d{4}[-_]\d{2}[-_]\d{2})[-_](\d{4}[-_]\d{2}[-_]\d{2})")
 
 
 def empty_manifest():
@@ -60,7 +61,7 @@ def period_key(path):
 def reference_period(path):
     """(início, fim) em ISO quando o nome traz o período, como nas semanas por revenda."""
     match = _PERIOD_IN_NAME.search(Path(path).name)
-    return (match.group(1), match.group(2)) if match else (None, None)
+    return (match.group(1).replace("_", "-"), match.group(2).replace("_", "-")) if match else (None, None)
 
 
 def apply_provenance(manifest, records):

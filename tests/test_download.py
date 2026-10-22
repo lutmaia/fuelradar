@@ -272,6 +272,18 @@ class DiscoveryTests(unittest.TestCase):
         ])
         self.assertTrue(all(l.url.startswith("https://www.gov.br/") for l in links))
 
+    def test_parse_weekly_links_new_name_format(self):
+        # Como apareceu na página em 20/10/2026: sublinhado nas datas e hífen entre elas.
+        html = ('<a target="_blank" title="" href="https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/'
+                'precos/arquivos-lpc/2026/revendas_lpc_2026_10_11-2026_10_17.xlsx" class="internal-link">Preços por posto '
+                'revendedor (combustíveis automotivos e GLP P13)</a> <em>(Atualizado em 20/10/2026)</em>'
+                '<a href="https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/arquivos-lpc/2026/'
+                'resumo_semanal_lpc_2026_10_11-2026_10_17.xlsx">Preços médios semanais</a>')
+        links = parse_weekly_links(PAGE_SNIPPET + html)
+        self.assertEqual([(l.filename, l.week_start, l.week_end, l.page_updated_on) for l in links][-1],
+                         ("revendas_lpc_2026_10_11-2026_10_17.xlsx", "2026-10-11", "2026-10-17", "2026-10-20"))
+        self.assertEqual(len(links), 3)
+
     def test_select_links_by_week_start(self):
         links = parse_weekly_links(PAGE_SNIPPET)
         self.assertEqual(len(select_links(links)), 2)

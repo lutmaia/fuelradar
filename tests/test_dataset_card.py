@@ -28,8 +28,9 @@ class GapTests(unittest.TestCase):
 
     def test_defective_weeks_from_exclusion_list(self):
         excluded = {"a" * 64: {"file": "revendas_lpc_2025-06-29_2025-07-05.xlsx"},
-                    "b" * 64: {"file": "outro-arquivo.xlsx"}}
-        self.assertEqual(dataset_card.defective_weeks(excluded), {D("2025-06-29")})
+                    "b" * 64: {"file": "outro-arquivo.xlsx"},
+                    "c" * 64: {"file": "revendas_lpc_2026_10_11-2026_10_17.xlsx"}}
+        self.assertEqual(dataset_card.defective_weeks(excluded), {D("2025-06-29"), D("2026-10-11")})
 
     def test_shipped_exclusion_list_covers_known_defects(self):
         excluded = load_excluded_sources(ROOT / "config" / "excluded_sources.json")

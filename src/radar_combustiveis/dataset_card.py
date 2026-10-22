@@ -42,12 +42,12 @@ def gaps(weeks, defective=frozenset()):
 
 
 def defective_weeks(excluded):
-    """Inícios de semana dos arquivos semanais da lista de exclusão (pelo nome revendas_lpc_AAAA-MM-DD_...)."""
+    """Inícios de semana dos arquivos semanais da lista de exclusão (pelo nome revendas_lpc_AAAA-MM-DD_... ou AAAA_MM_DD-...)."""
     weeks = set()
     for item in excluded.values():
-        match = re.match(r"revendas_lpc_(\d{4}-\d{2}-\d{2})_", item["file"])
+        match = re.match(r"revendas_lpc_(\d{4}[-_]\d{2}[-_]\d{2})[-_]", item["file"])
         if match:
-            weeks.add(date.fromisoformat(match.group(1)))
+            weeks.add(date.fromisoformat(match.group(1).replace("_", "-")))
     return weeks
 
 

@@ -99,6 +99,14 @@ class WeeklyXlsxTests(IngestionCase):
                 weekly_row(price=None), weekly_row(uf="SAO PAULO", day=22, price="abc"), *extra]
         write_xlsx(self.raw / name, WEEKLY_HEADER, rows)
 
+    def test_new_name_format_keeps_the_reference_period(self):
+        self.make_weekly(name="revendas_lpc_2026_09_20-2026_09_26.xlsx")
+        report = self.run_ingestion()
+        self.assertEqual(report["errors"], [])
+        entry = self.manifest()["files"][0]
+        self.assertEqual((entry["reference_start"], entry["reference_end"]), ("2026-09-20", "2026-09-26"))
+        self.assertEqual(entry["ingestion"]["rows_accepted"], 2)
+
     def test_ingests_only_target_uf_with_audit_columns(self):
         self.make_weekly()
         report = self.run_ingestion()
@@ -389,6 +397,9 @@ class ConfigAndNamingTests(unittest.TestCase):
         self.assertEqual(period_key("x/revendas_lpc_2026-09-20_2026-09-26.xlsx"), "revendas_lpc_2026-09-20_2026-09-26")
         self.assertEqual(reference_period("revendas_lpc_2026-09-20_2026-09-26.xlsx"), ("2026-09-20", "2026-09-26"))
         self.assertEqual(reference_period("Preços semestrais - AUTOMOTIVOS_2026.01.csv"), (None, None))
+        # Formato usado pela ANP desde out/2026.
+        self.assertEqual(reference_period("revendas_lpc_2026_10_11-2026_10_17.xlsx"), ("2026-10-11", "2026-10-17"))
+        self.assertEqual(period_key("revendas_lpc_2026_10_11-2026_10_17.xlsx"), "revendas_lpc_2026_10_11-2026_10_17")
 
 
 if __name__ == "__main__":
